@@ -1,8 +1,8 @@
 I want to make an iOS app named Timer using the frameworks - UIKit, SwiftData. Use Swift as the programming language. Have iOS18 as the minimum version.
 
 It will have these view controllers - 
-ActivityInstanceViewController
 ActivityTypesViewController
+ActivityTypeDetailsViewController
 ActivityHistoryViewController
 TimerViewController
 MultipleTimersViewController
