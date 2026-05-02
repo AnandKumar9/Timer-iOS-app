@@ -55,6 +55,7 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private struct ActivityHistoryRow {
+        let activity: Activity
         let doneTimeText: String
         let durationText: String
     }
@@ -62,6 +63,7 @@ final class ActivityHistoryViewController: UIViewController {
     private let activityNameLabel = UILabel()
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
+    private let currentTimersButton = UIButton(type: .system)
     private var activityRows: [ActivityHistoryRow] = []
 
     var modelContext: ModelContext?
@@ -85,6 +87,11 @@ final class ActivityHistoryViewController: UIViewController {
         super.viewWillAppear(animated)
 
         loadActivities()
+        updateCurrentTimersButtonVisibility()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     private func configureAppearance() {
@@ -94,14 +101,17 @@ final class ActivityHistoryViewController: UIViewController {
         configureActivityNameLabel()
         configureTableView()
         configureEmptyStateLabel()
+        configureCurrentTimersButton()
 
         activityNameLabel.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
+        currentTimersButton.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(activityNameLabel)
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
+        view.addSubview(currentTimersButton)
 
         NSLayoutConstraint.activate([
             activityNameLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
@@ -116,7 +126,12 @@ final class ActivityHistoryViewController: UIViewController {
             emptyStateLabel.centerXAnchor.constraint(equalTo: tableView.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: tableView.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)
+            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+
+            currentTimersButton.widthAnchor.constraint(equalToConstant: 56),
+            currentTimersButton.heightAnchor.constraint(equalToConstant: 56),
+            currentTimersButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            currentTimersButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
 
@@ -129,6 +144,7 @@ final class ActivityHistoryViewController: UIViewController {
 
     private func configureTableView() {
         tableView.dataSource = self
+        tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 56
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
@@ -141,6 +157,31 @@ final class ActivityHistoryViewController: UIViewController {
         emptyStateLabel.textColor = .secondaryLabel
         emptyStateLabel.textAlignment = .center
         emptyStateLabel.isHidden = true
+    }
+
+    private func configureCurrentTimersButton() {
+        var configuration = UIButton.Configuration.filled()
+        configuration.image = UIImage(systemName: "timer")
+        configuration.baseBackgroundColor = .systemBlue
+        configuration.baseForegroundColor = .white
+
+        currentTimersButton.configuration = configuration
+        currentTimersButton.layer.cornerRadius = 18
+        currentTimersButton.layer.cornerCurve = .continuous
+        currentTimersButton.clipsToBounds = true
+        currentTimersButton.isHidden = !TimerSessionState.hasStartedTimer
+        currentTimersButton.addAction(
+            UIAction { [weak self] _ in
+                self?.showTimerViewController()
+            },
+            for: .touchUpInside
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(timerSessionDidStartTimer),
+            name: TimerSessionState.didStartTimerNotification,
+            object: nil
+        )
     }
 
     private func loadActivities() {
@@ -175,6 +216,7 @@ final class ActivityHistoryViewController: UIViewController {
         }
 
         return ActivityHistoryRow(
+            activity: activity,
             doneTimeText: doneTimeDateFormatter.string(from: completionTime),
             durationText: makeDurationText(for: activity, completionTime: completionTime)
         )
@@ -207,6 +249,27 @@ final class ActivityHistoryViewController: UIViewController {
         tableView.reloadData()
         emptyStateLabel.isHidden = !activityRows.isEmpty
     }
+
+    @objc private func timerSessionDidStartTimer() {
+        updateCurrentTimersButtonVisibility()
+    }
+
+    private func updateCurrentTimersButtonVisibility() {
+        currentTimersButton.isHidden = !TimerSessionState.hasStartedTimer
+    }
+
+    private func showActivityDetails(for activity: Activity) {
+        let activityDetailsViewController = ActivityDetailsViewController(
+            nibName: "ActivityDetailsViewController",
+            bundle: nil
+        )
+        activityDetailsViewController.modelContext = modelContext
+        navigationController?.pushViewController(activityDetailsViewController, animated: true)
+    }
+
+    private func showTimerViewController() {
+        presentTimerViewController(modelContext: modelContext)
+    }
 }
 
 extension ActivityHistoryViewController: UITableViewDataSource {
@@ -224,5 +287,13 @@ extension ActivityHistoryViewController: UITableViewDataSource {
         ) as? ActivityHistoryCell
         cell?.configure(with: activityRows[indexPath.row])
         return cell ?? UITableViewCell()
+    }
+}
+
+extension ActivityHistoryViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+
+        showActivityDetails(for: activityRows[indexPath.row].activity)
     }
 }

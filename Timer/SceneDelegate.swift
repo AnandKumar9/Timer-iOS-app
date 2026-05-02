@@ -26,35 +26,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func makeInitialViewController(modelContext: ModelContext?) -> UIViewController {
-        guard
-            let modelContext,
-            hasExistingActivityTypes(in: modelContext)
-        else {
-            let timerViewController = TimerViewController(
-                nibName: "TimerViewController",
-                bundle: nil
-            )
-            timerViewController.modelContext = modelContext
-            return timerViewController
-        }
-
         let activityTypesViewController = ActivityTypesViewController(
             nibName: "ActivityTypesViewController",
             bundle: nil
         )
         activityTypesViewController.modelContext = modelContext
         return activityTypesViewController
-    }
-
-    private func hasExistingActivityTypes(in modelContext: ModelContext) -> Bool {
-        var descriptor = FetchDescriptor<ActivityType>()
-        descriptor.fetchLimit = 1
-
-        do {
-            return try !modelContext.fetch(descriptor).isEmpty
-        } catch {
-            assertionFailure("Unable to check activity types: \(error)")
-            return false
-        }
     }
 }

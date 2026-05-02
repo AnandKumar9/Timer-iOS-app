@@ -99,7 +99,9 @@ final class ActivityTypesViewController: UIViewController {
 
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
+    private let currentTimersButton = UIButton(type: .system)
     private var activityTypeRows: [ActivityTypeRow] = []
+    private var didPromptForInitialActivityTypeCreation = false
 
     var modelContext: ModelContext?
 
@@ -121,6 +123,17 @@ final class ActivityTypesViewController: UIViewController {
         super.viewWillAppear(animated)
 
         loadActivityTypes()
+        updateCurrentTimersButtonVisibility()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        promptForInitialActivityTypeIfNeeded()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     private func configureAppearance() {
@@ -136,12 +149,15 @@ final class ActivityTypesViewController: UIViewController {
 
         configureTableView()
         configureEmptyStateLabel()
+        configureCurrentTimersButton()
 
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
+        currentTimersButton.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
+        view.addSubview(currentTimersButton)
 
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -152,7 +168,12 @@ final class ActivityTypesViewController: UIViewController {
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)
+            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+
+            currentTimersButton.widthAnchor.constraint(equalToConstant: 56),
+            currentTimersButton.heightAnchor.constraint(equalToConstant: 56),
+            currentTimersButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            currentTimersButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
 
@@ -170,6 +191,35 @@ final class ActivityTypesViewController: UIViewController {
         emptyStateLabel.textColor = .secondaryLabel
         emptyStateLabel.textAlignment = .center
         emptyStateLabel.isHidden = true
+    }
+
+    private func configureCurrentTimersButton() {
+        var configuration = UIButton.Configuration.filled()
+        configuration.image = UIImage(systemName: "timer")
+        configuration.baseBackgroundColor = .systemBlue
+        configuration.baseForegroundColor = .white
+
+        currentTimersButton.configuration = configuration
+        currentTimersButton.layer.cornerRadius = 18
+        currentTimersButton.layer.cornerCurve = .continuous
+        currentTimersButton.clipsToBounds = true
+        currentTimersButton.layer.shadowColor = UIColor.black.cgColor
+        currentTimersButton.layer.shadowOpacity = 0.18
+        currentTimersButton.layer.shadowRadius = 10
+        currentTimersButton.layer.shadowOffset = CGSize(width: 0, height: 4)
+        currentTimersButton.isHidden = !TimerSessionState.hasStartedTimer
+        currentTimersButton.addAction(
+            UIAction { [weak self] _ in
+                self?.showTimerViewController()
+            },
+            for: .touchUpInside
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(timerSessionDidStartTimer),
+            name: TimerSessionState.didStartTimerNotification,
+            object: nil
+        )
     }
 
     private func loadActivityTypes() {
@@ -219,14 +269,33 @@ final class ActivityTypesViewController: UIViewController {
         emptyStateLabel.isHidden = !activityTypeRows.isEmpty
     }
 
+    private func promptForInitialActivityTypeIfNeeded() {
+        guard !didPromptForInitialActivityTypeCreation else {
+            return
+        }
+
+        guard activityTypeRows.isEmpty else {
+            return
+        }
+
+        didPromptForInitialActivityTypeCreation = true
+        presentCreateActivityTypeAlert()
+    }
+
+    @objc private func timerSessionDidStartTimer() {
+        updateCurrentTimersButtonVisibility()
+    }
+
+    private func updateCurrentTimersButtonVisibility() {
+        currentTimersButton.isHidden = !TimerSessionState.hasStartedTimer
+    }
+
     private func startActivityType(_ activityType: ActivityType) {
-        let timerViewController = TimerViewController(
-            nibName: "TimerViewController",
-            bundle: nil
-        )
-        timerViewController.modelContext = modelContext
-        timerViewController.configure(activityType: activityType)
-        navigationController?.pushViewController(timerViewController, animated: true)
+        presentTimerViewController(modelContext: modelContext, activityType: activityType)
+    }
+
+    private func showTimerViewController(activityType: ActivityType? = nil) {
+        presentTimerViewController(modelContext: modelContext, activityType: activityType)
     }
 
     private func viewAllActivities(for activityType: ActivityType) {

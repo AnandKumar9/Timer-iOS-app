@@ -1,5 +1,19 @@
 import UIKit
 
+enum TimerSessionState {
+    static let didStartTimerNotification = Notification.Name("TimerSessionState.didStartTimerNotification")
+    private(set) static var hasStartedTimer = false
+
+    static func markTimerStarted() {
+        guard !hasStartedTimer else {
+            return
+        }
+
+        hasStartedTimer = true
+        NotificationCenter.default.post(name: didStartTimerNotification, object: nil)
+    }
+}
+
 final class TimerControlsView: UIView {
     private enum TimerState {
         case running
@@ -22,6 +36,9 @@ final class TimerControlsView: UIView {
     private let activity: Activity
     private var timerState = TimerState.stopped
     var onActivityStopped: ((Activity) -> Void)?
+    var hasActiveTimer: Bool {
+        timerState != .stopped
+    }
 
     init(activity: Activity) {
         self.activity = activity
@@ -187,6 +204,8 @@ final class TimerControlsView: UIView {
     }
 
     private func startTimer() {
+        TimerSessionState.markTimerStarted()
+
         if timerState == .stopped {
             activity.activityStartTime = Date()
             activity.activityCompletionTime = nil

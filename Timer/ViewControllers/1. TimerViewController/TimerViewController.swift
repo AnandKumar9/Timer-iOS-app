@@ -2,6 +2,9 @@ import UIKit
 import SwiftData
 
 final class TimerViewController: UIViewController {
+    fileprivate static var activeInstance: TimerViewController?
+    fileprivate static var activeNavigationController: UINavigationController?
+
     private let timerControlsContainerView = UIView()
     private weak var timerControlsView: TimerControlsView?
     private var didPromptForInitialActivityType = false
@@ -12,6 +15,7 @@ final class TimerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        Self.activeInstance = self
         configureAppearance()
         configureTimerPersistence()
 
@@ -54,16 +58,34 @@ final class TimerViewController: UIViewController {
     }
 
     func configure(activityType: ActivityType) {
+        guard timerControlsView?.hasActiveTimer != true else {
+            return
+        }
+
         initialActivityType = activityType
+
+        if isViewLoaded {
+            didPromptForInitialActivityType = true
+            installTimerControlsView(activityType: activityType)
+        }
     }
 
     @objc private func activityTypesButtonTapped() {
-        let activityTypesViewController = ActivityTypesViewController(
-            nibName: "ActivityTypesViewController",
-            bundle: nil
-        )
-        activityTypesViewController.modelContext = modelContext
-        navigationController?.pushViewController(activityTypesViewController, animated: true)
+        let presentingNavigationController = mainPresentingNavigationController()
+
+        dismiss(animated: true) {
+            presentingNavigationController?.popToRootViewController(animated: true)
+        }
+    }
+
+    private func mainPresentingNavigationController() -> UINavigationController? {
+        let presentingViewController = navigationController?.presentingViewController ?? presentingViewController
+
+        if let navigationController = presentingViewController as? UINavigationController {
+            return navigationController
+        }
+
+        return presentingViewController?.navigationController
     }
 
     private func makeTimerActivity(activityType: ActivityType) -> Activity {
@@ -229,5 +251,41 @@ final class TimerViewController: UIViewController {
             modelContext.delete(activity)
             assertionFailure("Unable to save timer activity: \(error)")
         }
+    }
+}
+
+extension UIViewController {
+    func presentTimerViewController(
+        modelContext: ModelContext?,
+        activityType: ActivityType? = nil
+    ) {
+        if let timerViewController = TimerViewController.activeInstance,
+           let navigationController = TimerViewController.activeNavigationController {
+            timerViewController.modelContext = modelContext
+
+            if let activityType {
+                timerViewController.configure(activityType: activityType)
+            }
+
+            guard navigationController.presentingViewController == nil else {
+                return
+            }
+
+            present(navigationController, animated: true)
+            return
+        }
+
+        let timerViewController = TimerViewController(nibName: "TimerViewController", bundle: nil)
+        timerViewController.modelContext = modelContext
+
+        if let activityType {
+            timerViewController.configure(activityType: activityType)
+        }
+
+        let navigationController = UINavigationController(rootViewController: timerViewController)
+        navigationController.modalPresentationStyle = .pageSheet
+        TimerViewController.activeInstance = timerViewController
+        TimerViewController.activeNavigationController = navigationController
+        present(navigationController, animated: true)
     }
 }
