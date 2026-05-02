@@ -13,6 +13,9 @@ final class TimerControlsView: UIView {
     private let stopButton = UIButton(type: .system)
     private let contentStackView = UIStackView()
     private let buttonStackView = UIStackView()
+    private let lastActivityRowView = UIView()
+    private let lastActivityDateLabel = UILabel()
+    private let lastActivityDurationLabel = UILabel()
 
     private var timer: Timer?
     private var elapsedSeconds = 0
@@ -43,9 +46,11 @@ final class TimerControlsView: UIView {
     private func configureView() {
         configureActivityTypeNameLabel()
         configureTimerLabel()
+        configureLastActivityRow()
         configureButtons()
         configureLayout()
         updateTimerLabel()
+        updateLastActivityRow()
         updateStartButtonTitle()
     }
 
@@ -65,6 +70,36 @@ final class TimerControlsView: UIView {
         timerLabel.adjustsFontSizeToFitWidth = true
         timerLabel.minimumScaleFactor = 0.7
         timerLabel.translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    private func configureLastActivityRow() {
+        lastActivityDateLabel.font = .systemFont(ofSize: 15, weight: .regular)
+        lastActivityDateLabel.textColor = .secondaryLabel
+        lastActivityDateLabel.numberOfLines = 1
+
+        lastActivityDurationLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        lastActivityDurationLabel.textColor = .secondaryLabel
+        lastActivityDurationLabel.textAlignment = .right
+        lastActivityDurationLabel.numberOfLines = 1
+        lastActivityDurationLabel.setContentHuggingPriority(.required, for: .horizontal)
+        lastActivityDurationLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let stackView = UIStackView(arrangedSubviews: [lastActivityDateLabel, lastActivityDurationLabel])
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.spacing = 12
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        lastActivityRowView.addSubview(stackView)
+        lastActivityRowView.isHidden = true
+        lastActivityRowView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            stackView.topAnchor.constraint(equalTo: lastActivityRowView.topAnchor),
+            stackView.leadingAnchor.constraint(equalTo: lastActivityRowView.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: lastActivityRowView.trailingAnchor),
+            stackView.bottomAnchor.constraint(equalTo: lastActivityRowView.bottomAnchor)
+        ])
     }
 
     private func configureButtons() {
@@ -115,6 +150,7 @@ final class TimerControlsView: UIView {
         contentStackView.addArrangedSubview(activityTypeNameLabel)
         contentStackView.addArrangedSubview(timerLabel)
         contentStackView.addArrangedSubview(buttonStackView)
+        contentStackView.addArrangedSubview(lastActivityRowView)
         addSubview(contentStackView)
 
         NSLayoutConstraint.activate([
@@ -204,6 +240,58 @@ final class TimerControlsView: UIView {
             timerLabel.text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
         } else {
             timerLabel.text = String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+
+    private func updateLastActivityRow() {
+        guard
+            let lastActivity = activity.activityType.activities
+                .filter({ $0 !== activity })
+                .filter({ $0.activityCompletionTime != nil })
+                .sorted(by: activityCompletionSort)
+                .first,
+            let startTime = lastActivity.activityStartTime,
+            let completionTime = lastActivity.activityCompletionTime
+        else {
+            lastActivityRowView.isHidden = true
+            return
+        }
+
+        lastActivityDateLabel.text = "Last: \(formattedDate(completionTime))"
+        lastActivityDurationLabel.text = formattedDuration(from: startTime, to: completionTime)
+        lastActivityRowView.isHidden = false
+    }
+
+    private func activityCompletionSort(_ lhs: Activity, _ rhs: Activity) -> Bool {
+        guard let lhsCompletionTime = lhs.activityCompletionTime else {
+            return false
+        }
+
+        guard let rhsCompletionTime = rhs.activityCompletionTime else {
+            return true
+        }
+
+        return lhsCompletionTime > rhsCompletionTime
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM/dd (hh:mm a)"
+        return formatter.string(from: date)
+    }
+
+    private func formattedDuration(from startTime: Date, to completionTime: Date) -> String {
+        let duration = max(0, Int(completionTime.timeIntervalSince(startTime)))
+        let hours = duration / 3_600
+        let minutes = (duration % 3_600) / 60
+        let seconds = duration % 60
+
+        if hours > 0 {
+            return "\(hours) hr \(minutes) min"
+        } else if minutes > 0 {
+            return "\(minutes) min \(seconds) sec"
+        } else {
+            return "\(seconds) sec"
         }
     }
 }

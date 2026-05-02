@@ -2,82 +2,18 @@ import UIKit
 import SwiftData
 
 final class TimerViewController: UIViewController {
-    private final class TimerHistoryCell: UITableViewCell {
-        static let reuseIdentifier = "TimerHistoryCell"
-
-        private let dateLabel = UILabel()
-        private let durationLabel = UILabel()
-
-        override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-            super.init(style: style, reuseIdentifier: reuseIdentifier)
-            configureCell()
-        }
-
-        required init?(coder: NSCoder) {
-            super.init(coder: coder)
-            configureCell()
-        }
-
-        func configure(with row: TimerHistoryRow) {
-            dateLabel.text = row.dateText
-            durationLabel.text = row.durationText
-        }
-
-        private func configureCell() {
-            selectionStyle = .none
-
-            dateLabel.font = .systemFont(ofSize: 16, weight: .regular)
-            dateLabel.textColor = .label
-            dateLabel.textAlignment = .left
-
-            durationLabel.font = .systemFont(ofSize: 16, weight: .regular)
-            durationLabel.textColor = .secondaryLabel
-            durationLabel.textAlignment = .right
-            durationLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-            let stackView = UIStackView(arrangedSubviews: [dateLabel, durationLabel])
-            stackView.axis = .horizontal
-            stackView.alignment = .center
-            stackView.spacing = 12
-            stackView.translatesAutoresizingMaskIntoConstraints = false
-
-            contentView.addSubview(stackView)
-
-            NSLayoutConstraint.activate([
-                stackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-                stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-                stackView.topAnchor.constraint(equalTo: contentView.topAnchor),
-                stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
-            ])
-        }
-    }
-
-    private struct TimerHistoryRow {
-        let dateText: String
-        let durationText: String
-    }
-
     private let timerControlsContainerView = UIView()
     private weak var timerControlsView: TimerControlsView?
-    private let tableView = UITableView(frame: .zero, style: .plain)
-    private var historyRows: [TimerHistoryRow] = []
     private var didPromptForInitialActivityType = false
     private var initialActivityType: ActivityType?
 
     var modelContext: ModelContext?
-
-    private lazy var historyDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM/dd (hh:mm a)"
-        return formatter
-    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         configureAppearance()
         configureTimerPersistence()
-        loadTimerHistory()
 
         if let initialActivityType {
             didPromptForInitialActivityType = true
@@ -102,31 +38,16 @@ final class TimerViewController: UIViewController {
 
         view.backgroundColor = .systemBackground
 
-        configureTableView()
-
         timerControlsContainerView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(timerControlsContainerView)
-        view.addSubview(tableView)
 
         NSLayoutConstraint.activate([
             timerControlsContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 96),
             timerControlsContainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
             timerControlsContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
-
-            tableView.topAnchor.constraint(equalTo: timerControlsContainerView.bottomAnchor, constant: 32),
-            tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            timerControlsContainerView.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -24)
         ])
-    }
-
-    private func configureTableView() {
-        tableView.dataSource = self
-        tableView.rowHeight = 48
-        tableView.separatorInset = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
-        tableView.register(TimerHistoryCell.self, forCellReuseIdentifier: TimerHistoryCell.reuseIdentifier)
     }
 
     private func configureTimerPersistence() {
@@ -303,92 +224,10 @@ final class TimerViewController: UIViewController {
 
         do {
             try modelContext.save()
-            loadTimerHistory()
             installTimerControlsView(activityType: activity.activityType)
         } catch {
             modelContext.delete(activity)
             assertionFailure("Unable to save timer activity: \(error)")
         }
-    }
-
-    private func loadTimerHistory() {
-        guard let modelContext else {
-            historyRows = []
-            tableView.reloadData()
-            return
-        }
-
-        var descriptor = FetchDescriptor<Activity>(
-            predicate: #Predicate { $0.activityCompletionTime != nil }
-        )
-        descriptor.fetchLimit = 50
-
-        do {
-            let activities = try modelContext.fetch(descriptor)
-            historyRows = activities
-                .sorted { lhs, rhs in
-                    guard let lhsStartTime = lhs.activityStartTime else {
-                        return false
-                    }
-
-                    guard let rhsStartTime = rhs.activityStartTime else {
-                        return true
-                    }
-
-                    return lhsStartTime > rhsStartTime
-                }
-                .compactMap(makeHistoryRow)
-            tableView.reloadData()
-        } catch {
-            assertionFailure("Unable to load timer history: \(error)")
-        }
-    }
-
-    private func makeHistoryRow(from activity: Activity) -> TimerHistoryRow? {
-        guard
-            let startTime = activity.activityStartTime,
-            let completionTime = activity.activityCompletionTime
-        else {
-            return nil
-        }
-
-        return TimerHistoryRow(
-            dateText: historyDateFormatter.string(from: startTime),
-            durationText: formattedDuration(from: startTime, to: completionTime)
-        )
-    }
-
-    private func formattedDuration(from startTime: Date, to completionTime: Date) -> String {
-        let duration = max(0, Int(completionTime.timeIntervalSince(startTime)))
-        let hours = duration / 3_600
-        let minutes = (duration % 3_600) / 60
-        let seconds = duration % 60
-
-        if hours > 0 {
-            return "\(hours) hr \(minutes) min"
-        } else if minutes > 0 {
-            return "\(minutes) min \(seconds) sec"
-        } else {
-            return "\(seconds) sec"
-        }
-    }
-}
-
-extension TimerViewController: UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        historyRows.count
-    }
-
-    func tableView(
-        _ tableView: UITableView,
-        cellForRowAt indexPath: IndexPath
-    ) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(
-            withIdentifier: TimerHistoryCell.reuseIdentifier,
-            for: indexPath
-        ) as? TimerHistoryCell
-        let row = historyRows[indexPath.row]
-        cell?.configure(with: row)
-        return cell ?? UITableViewCell()
     }
 }

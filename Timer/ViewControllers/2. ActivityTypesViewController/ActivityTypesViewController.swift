@@ -18,7 +18,7 @@ final class ActivityTypesViewController: UIViewController {
 
         private lazy var startButton: UIButton = {
             var configuration = UIButton.Configuration.filled()
-            configuration.title = "Start"
+            configuration.title = "Record New"
             configuration.buttonSize = .small
             configuration.cornerStyle = .fixed
             configuration.baseBackgroundColor = .systemBlue
@@ -125,6 +125,13 @@ final class ActivityTypesViewController: UIViewController {
 
     private func configureAppearance() {
         title = "Activity Types"
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            systemItem: .add,
+            primaryAction: UIAction { [weak self] _ in
+                self?.addButtonTapped()
+            }
+        )
+
         view.backgroundColor = .systemBackground
 
         configureTableView()
@@ -240,6 +247,98 @@ final class ActivityTypesViewController: UIViewController {
         modelContext.delete(activityType)
         try modelContext.save()
         loadActivityTypes()
+    }
+
+    private func addButtonTapped() {
+        presentCreateActivityTypeAlert()
+    }
+
+    private func presentCreateActivityTypeAlert() {
+        let existingNames = fetchExistingActivityTypeNames()
+        let alertController = UIAlertController(
+            title: "New Activity Type",
+            message: "Enter an activity type name.",
+            preferredStyle: .alert
+        )
+
+        let submitAction = UIAlertAction(title: "Submit", style: .default) { [weak self, weak alertController] _ in
+            guard let name = alertController?.textFields?.first?.text else {
+                return
+            }
+
+            self?.createActivityType(named: name)
+        }
+        submitAction.isEnabled = false
+
+        alertController.addTextField { [weak self] textField in
+            textField.placeholder = "Activity type name"
+            textField.autocapitalizationType = .words
+            textField.clearButtonMode = .whileEditing
+            textField.addAction(
+                UIAction { [weak self, weak textField] _ in
+                    submitAction.isEnabled = self?.isUniqueActivityTypeName(
+                        textField?.text,
+                        existingNames: existingNames
+                    ) ?? false
+                },
+                for: .editingChanged
+            )
+        }
+
+        alertController.addAction(submitAction)
+        present(alertController, animated: true)
+    }
+
+    private func createActivityType(named name: String) {
+        guard let modelContext else {
+            return
+        }
+
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isUniqueActivityTypeName(trimmedName, existingNames: fetchExistingActivityTypeNames()) else {
+            presentCreateActivityTypeAlert()
+            return
+        }
+
+        let activityType = ActivityType(name: trimmedName)
+        modelContext.insert(activityType)
+
+        do {
+            try modelContext.save()
+            loadActivityTypes()
+        } catch {
+            modelContext.delete(activityType)
+            assertionFailure("Unable to save activity type: \(error)")
+            presentCreateActivityTypeAlert()
+        }
+    }
+
+    private func fetchExistingActivityTypeNames() -> Set<String> {
+        guard let modelContext else {
+            return []
+        }
+
+        do {
+            let activityTypes = try modelContext.fetch(FetchDescriptor<ActivityType>())
+            return Set(activityTypes.map { normalizeActivityTypeName($0.name) })
+        } catch {
+            assertionFailure("Unable to fetch activity type names: \(error)")
+            return []
+        }
+    }
+
+    private func isUniqueActivityTypeName(
+        _ name: String?,
+        existingNames: Set<String>
+    ) -> Bool {
+        let normalizedName = normalizeActivityTypeName(name)
+        return !normalizedName.isEmpty && !existingNames.contains(normalizedName)
+    }
+
+    private func normalizeActivityTypeName(_ name: String?) -> String {
+        name?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .localizedLowercase ?? ""
     }
 }
 
