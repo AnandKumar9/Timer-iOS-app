@@ -1,135 +1,128 @@
 import UIKit
 
 final class TimerViewController: UIViewController {
-    private enum TimerState {
-        case stopped
-        case running
-        case paused
+    private final class TimerHistoryCell: UITableViewCell {
+        static let reuseIdentifier = "TimerHistoryCell"
+
+        private let dateLabel = UILabel()
+        private let durationLabel = UILabel()
+
+        override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+            super.init(style: style, reuseIdentifier: reuseIdentifier)
+            configureCell()
+        }
+
+        required init?(coder: NSCoder) {
+            super.init(coder: coder)
+            configureCell()
+        }
+
+        func configure(with row: TimerHistoryRow) {
+            dateLabel.text = row.dateText
+            durationLabel.text = row.durationText
+        }
+
+        private func configureCell() {
+            selectionStyle = .none
+
+            dateLabel.font = .systemFont(ofSize: 16, weight: .regular)
+            dateLabel.textColor = .label
+            dateLabel.textAlignment = .left
+
+            durationLabel.font = .systemFont(ofSize: 16, weight: .regular)
+            durationLabel.textColor = .secondaryLabel
+            durationLabel.textAlignment = .right
+            durationLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+            let stackView = UIStackView(arrangedSubviews: [dateLabel, durationLabel])
+            stackView.axis = .horizontal
+            stackView.alignment = .center
+            stackView.spacing = 12
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+
+            contentView.addSubview(stackView)
+
+            NSLayoutConstraint.activate([
+                stackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+                stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+                stackView.topAnchor.constraint(equalTo: contentView.topAnchor),
+                stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+            ])
+        }
     }
 
-    @IBOutlet private weak var timerLabel: UILabel!
-    @IBOutlet private weak var startButton: UIButton!
-    @IBOutlet private weak var stopButton: UIButton!
+    private struct TimerHistoryRow {
+        let dateText: String
+        let durationText: String
+    }
 
-    private var timer: Timer?
-    private var elapsedSeconds = 0
-    private var timerState = TimerState.stopped
+    private let timerControlsView = TimerControlsView()
+    private let tableView = UITableView(frame: .zero, style: .plain)
+    private let historyRows = [
+        TimerHistoryRow(dateText: "05/02 (09:15 AM)", durationText: "1 hr 20 min"),
+        TimerHistoryRow(dateText: "05/01 (06:40 PM)", durationText: "45 min"),
+        TimerHistoryRow(dateText: "04/30 (07:10 AM)", durationText: "2 hr 5 min"),
+        TimerHistoryRow(dateText: "04/29 (08:30 PM)", durationText: "30 min"),
+        TimerHistoryRow(dateText: "04/28 (12:05 PM)", durationText: "1 hr 0 min"),
+        TimerHistoryRow(dateText: "04/27 (03:45 PM)", durationText: "3 hr 15 min"),
+        TimerHistoryRow(dateText: "04/26 (10:20 AM)", durationText: "55 min"),
+        TimerHistoryRow(dateText: "04/25 (05:35 PM)", durationText: "1 hr 40 min"),
+        TimerHistoryRow(dateText: "04/24 (11:50 AM)", durationText: "2 hr 25 min"),
+        TimerHistoryRow(dateText: "04/23 (09:05 PM)", durationText: "20 min")
+    ]
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         configureAppearance()
-        updateTimerLabel()
-    }
-
-    deinit {
-        timer?.invalidate()
-    }
-
-    @IBAction private func startButtonTapped(_ sender: UIButton) {
-        switch timerState {
-        case .stopped, .paused:
-            startTimer()
-        case .running:
-            pauseTimer()
-        }
-    }
-
-    @IBAction private func stopButtonTapped(_ sender: UIButton) {
-        timer?.invalidate()
-        timer = nil
-        elapsedSeconds = 0
-        timerState = .stopped
-        updateStartButtonTitle()
-        updateTimerLabel()
-    }
-
-    private func startTimer() {
-        timerState = .running
-        updateStartButtonTitle()
-
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            self?.tick()
-        }
-    }
-
-    private func pauseTimer() {
-        timer?.invalidate()
-        timer = nil
-        timerState = .paused
-        updateStartButtonTitle()
     }
 
     private func configureAppearance() {
         view.backgroundColor = .systemBackground
 
-        timerLabel.font = .monospacedDigitSystemFont(ofSize: 56, weight: .regular)
-        timerLabel.textColor = .label
-        timerLabel.adjustsFontSizeToFitWidth = true
-        timerLabel.minimumScaleFactor = 0.7
+        configureTableView()
 
-        configureButton(
-            startButton,
-            backgroundColor: .systemBlue.withAlphaComponent(0.12),
-            foregroundColor: .systemBlue
-        )
-        configureButton(
-            stopButton,
-            backgroundColor: .systemGray5,
-            foregroundColor: .systemRed
-        )
-        stopButton.setTitle("Stop", for: .normal)
+        timerControlsView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.translatesAutoresizingMaskIntoConstraints = false
 
-        updateStartButtonTitle()
+        view.addSubview(timerControlsView)
+        view.addSubview(tableView)
+
+        NSLayoutConstraint.activate([
+            timerControlsView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 96),
+            timerControlsView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
+            timerControlsView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+
+            tableView.topAnchor.constraint(equalTo: timerControlsView.bottomAnchor, constant: 32),
+            tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
 
-    private func configureButton(
-        _ button: UIButton,
-        backgroundColor: UIColor,
-        foregroundColor: UIColor
-    ) {
-        button.configuration = nil
-        button.backgroundColor = backgroundColor
-        button.setTitleColor(foregroundColor, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        button.layer.cornerRadius = 10
-        button.layer.cornerCurve = .continuous
-        button.clipsToBounds = true
+    private func configureTableView() {
+        tableView.dataSource = self
+        tableView.rowHeight = 48
+        tableView.separatorInset = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
+        tableView.register(TimerHistoryCell.self, forCellReuseIdentifier: TimerHistoryCell.reuseIdentifier)
+    }
+}
+
+extension TimerViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        historyRows.count
     }
 
-    private func updateStartButtonTitle() {
-        let title: String
-        switch timerState {
-        case .stopped:
-            title = "Start"
-        case .running:
-            title = "Pause"
-        case .paused:
-            title = "Resume"
-        }
-
-        startButton.setTitle(title, for: .normal)
-
-        let shouldEnableStopButton = timerState != .stopped
-        stopButton.isEnabled = shouldEnableStopButton
-        stopButton.alpha = shouldEnableStopButton ? 1.0 : 0.45
-    }
-
-    private func tick() {
-        elapsedSeconds += 1
-        updateTimerLabel()
-    }
-
-    private func updateTimerLabel() {
-        let hours = elapsedSeconds / 3_600
-        let minutes = (elapsedSeconds % 3_600) / 60
-        let seconds = elapsedSeconds % 60
-
-        if hours > 0 {
-            timerLabel.text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            timerLabel.text = String(format: "%02d:%02d", minutes, seconds)
-        }
+    func tableView(
+        _ tableView: UITableView,
+        cellForRowAt indexPath: IndexPath
+    ) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: TimerHistoryCell.reuseIdentifier,
+            for: indexPath
+        ) as? TimerHistoryCell
+        let row = historyRows[indexPath.row]
+        cell?.configure(with: row)
+        return cell ?? UITableViewCell()
     }
 }
