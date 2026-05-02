@@ -28,10 +28,10 @@ final class ActivityTypeDetailsViewController: UIViewController {
 
     @IBAction private func startButtonTapped(_ sender: UIButton) {
         switch timerState {
-        case .stopped, .paused:
-            startTimer()
         case .running:
             pauseTimer()
+        case .stopped, .paused:
+            startTimer()
         }
     }
 
@@ -93,12 +93,12 @@ final class ActivityTypeDetailsViewController: UIViewController {
     private func updateStartButtonTitle() {
         let title: String
         switch timerState {
-        case .stopped:
-            title = "Start"
         case .running:
             title = "Pause"
         case .paused:
             title = "Resume"
+        case .stopped:
+            title = "Start"
         }
 
         startButton.configuration?.title = title

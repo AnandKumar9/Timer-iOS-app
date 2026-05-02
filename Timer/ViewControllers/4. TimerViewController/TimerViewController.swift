@@ -61,6 +61,9 @@ final class TimerViewController: UIViewController {
     private let tableView = UITableView(frame: .zero, style: .plain)
     private var historyRows: [TimerHistoryRow] = []
     private let activityTypeName = "Timer"
+    private var didCheckForInitialActivityType = false
+    private var existingActivityTypeNames: Set<String> = []
+    private weak var createActivityTypeAction: UIAlertAction?
 
     var modelContext: ModelContext?
 
@@ -76,6 +79,12 @@ final class TimerViewController: UIViewController {
         configureAppearance()
         configureTimerPersistence()
         loadTimerHistory()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        checkForInitialActivityType()
     }
 
     private func configureAppearance() {
@@ -112,6 +121,117 @@ final class TimerViewController: UIViewController {
         timerControlsView.onTimerStopped = { [weak self] startTime, completionTime in
             self?.saveTimerActivity(startTime: startTime, completionTime: completionTime)
         }
+    }
+
+    private func checkForInitialActivityType() {
+        guard !didCheckForInitialActivityType else {
+            return
+        }
+
+        didCheckForInitialActivityType = true
+
+        guard let modelContext else {
+            return
+        }
+
+        var descriptor = FetchDescriptor<ActivityType>()
+        descriptor.fetchLimit = 1
+
+        do {
+            let activityTypes = try modelContext.fetch(descriptor)
+            if activityTypes.isEmpty {
+                presentCreateActivityTypeAlert()
+            }
+        } catch {
+            assertionFailure("Unable to check activity types: \(error)")
+        }
+    }
+
+    private func presentCreateActivityTypeAlert() {
+        existingActivityTypeNames = fetchExistingActivityTypeNames()
+
+        let alertController = UIAlertController(
+            title: "New Activity",
+            message: "Enter an activity name.",
+            preferredStyle: .alert
+        )
+
+        alertController.addTextField { [weak self] textField in
+            textField.placeholder = "Activity name"
+            textField.autocapitalizationType = .words
+            textField.clearButtonMode = .whileEditing
+            textField.addTarget(
+                self,
+                action: #selector(TimerViewController.activityTypeNameChanged(_:)),
+                for: .editingChanged
+            )
+        }
+
+        let submitAction = UIAlertAction(title: "Submit", style: .default) { [weak self, weak alertController] _ in
+            guard let activityName = alertController?.textFields?.first?.text else {
+                return
+            }
+
+            self?.createActivityType(named: activityName)
+        }
+        submitAction.isEnabled = false
+        createActivityTypeAction = submitAction
+
+        alertController.addAction(submitAction)
+        present(alertController, animated: true)
+    }
+
+    @objc private func activityTypeNameChanged(_ textField: UITextField) {
+        createActivityTypeAction?.isEnabled = isUniqueActivityTypeName(textField.text)
+    }
+
+    private func isUniqueActivityTypeName(_ name: String?) -> Bool {
+        let normalizedName = normalizeActivityTypeName(name)
+        return !normalizedName.isEmpty && !existingActivityTypeNames.contains(normalizedName)
+    }
+
+    private func createActivityType(named name: String) {
+        guard let modelContext else {
+            return
+        }
+
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isUniqueActivityTypeName(trimmedName) else {
+            presentCreateActivityTypeAlert()
+            return
+        }
+
+        let activityType = ActivityType(activityName: trimmedName)
+        modelContext.insert(activityType)
+
+        do {
+            try modelContext.save()
+            existingActivityTypeNames.insert(normalizeActivityTypeName(trimmedName))
+        } catch {
+            modelContext.delete(activityType)
+            assertionFailure("Unable to save activity type: \(error)")
+            presentCreateActivityTypeAlert()
+        }
+    }
+
+    private func fetchExistingActivityTypeNames() -> Set<String> {
+        guard let modelContext else {
+            return []
+        }
+
+        do {
+            let activityTypes = try modelContext.fetch(FetchDescriptor<ActivityType>())
+            return Set(activityTypes.map { normalizeActivityTypeName($0.activityName) })
+        } catch {
+            assertionFailure("Unable to fetch activity type names: \(error)")
+            return []
+        }
+    }
+
+    private func normalizeActivityTypeName(_ name: String?) -> String {
+        name?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .localizedLowercase ?? ""
     }
 
     private func saveTimerActivity(startTime: Date, completionTime: Date) {

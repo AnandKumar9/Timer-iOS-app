@@ -2,9 +2,9 @@ import UIKit
 
 final class TimerControlsView: UIView {
     private enum TimerState {
-        case stopped
         case running
         case paused
+        case stopped
     }
 
     private let timerLabel = UILabel()
@@ -112,10 +112,10 @@ final class TimerControlsView: UIView {
 
     @objc private func startButtonTapped() {
         switch timerState {
-        case .stopped, .paused:
-            startTimer()
         case .running:
             pauseTimer()
+        case .stopped, .paused:
+            startTimer()
         }
     }
 
@@ -159,12 +159,12 @@ final class TimerControlsView: UIView {
     private func updateStartButtonTitle() {
         let title: String
         switch timerState {
-        case .stopped:
-            title = "Start"
         case .running:
             title = "Pause"
         case .paused:
             title = "Resume"
+        case .stopped:
+            title = "Start"
         }
 
         startButton.setTitle(title, for: .normal)
