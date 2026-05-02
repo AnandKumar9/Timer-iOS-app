@@ -39,6 +39,18 @@ final class TimerControlsView: UIView {
     var hasActiveTimer: Bool {
         timerState != .stopped
     }
+    var activityTypeID: UUID {
+        activity.activityType.uniqueID
+    }
+    var hasStartedTimer: Bool {
+        activity.activityStartTime != nil
+    }
+    var hasCompletedTimer: Bool {
+        activity.activityCompletionTime != nil
+    }
+    var stoppedAt: Date? {
+        activity.activityCompletionTime
+    }
 
     init(activity: Activity) {
         self.activity = activity
@@ -194,16 +206,19 @@ final class TimerControlsView: UIView {
     @objc private func stopButtonTapped() {
         timer?.invalidate()
         timer = nil
-        elapsedSeconds = 0
         timerState = .stopped
-        updateStartButtonTitle()
         updateTimerLabel()
 
         activity.activityCompletionTime = Date()
+        updateStartButtonTitle()
         onActivityStopped?(activity)
     }
 
     private func startTimer() {
+        guard activity.activityCompletionTime == nil else {
+            return
+        }
+
         TimerSessionState.markTimerStarted()
 
         if timerState == .stopped {
@@ -228,6 +243,15 @@ final class TimerControlsView: UIView {
     }
 
     private func updateStartButtonTitle() {
+        if activity.activityCompletionTime != nil {
+            startButton.setTitle("Done", for: .normal)
+            startButton.isEnabled = false
+            startButton.alpha = 0.45
+            stopButton.isEnabled = false
+            stopButton.alpha = 0.45
+            return
+        }
+
         let title: String
         switch timerState {
         case .running:
@@ -239,6 +263,8 @@ final class TimerControlsView: UIView {
         }
 
         startButton.setTitle(title, for: .normal)
+        startButton.isEnabled = true
+        startButton.alpha = 1.0
 
         let shouldEnableStopButton = timerState != .stopped
         stopButton.isEnabled = shouldEnableStopButton

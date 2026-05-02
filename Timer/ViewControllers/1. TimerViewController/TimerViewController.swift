@@ -5,8 +5,9 @@ final class TimerViewController: UIViewController {
     fileprivate static var activeInstance: TimerViewController?
     fileprivate static var activeNavigationController: UINavigationController?
 
-    private let timerControlsContainerView = UIView()
-    private weak var timerControlsView: TimerControlsView?
+    private let scrollView = UIScrollView()
+    private let timerControlsStackView = UIStackView()
+    private var timerControlsViews: [TimerControlsView] = []
     private var didPromptForInitialActivityType = false
     private var initialActivityType: ActivityType?
 
@@ -21,7 +22,7 @@ final class TimerViewController: UIViewController {
 
         if let initialActivityType {
             didPromptForInitialActivityType = true
-            installTimerControlsView(activityType: initialActivityType)
+            appendTimerControlsView(activityType: initialActivityType)
         }
     }
 
@@ -42,15 +43,27 @@ final class TimerViewController: UIViewController {
 
         view.backgroundColor = .systemBackground
 
-        timerControlsContainerView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
 
-        view.addSubview(timerControlsContainerView)
+        timerControlsStackView.axis = .vertical
+        timerControlsStackView.spacing = 28
+        timerControlsStackView.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(timerControlsStackView)
 
         NSLayoutConstraint.activate([
-            timerControlsContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 96),
-            timerControlsContainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            timerControlsContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
-            timerControlsContainerView.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -24)
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 48),
+            scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+
+            timerControlsStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 48),
+            timerControlsStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 24),
+            timerControlsStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -24),
+            timerControlsStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24),
+            timerControlsStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -48)
         ])
     }
 
@@ -58,7 +71,8 @@ final class TimerViewController: UIViewController {
     }
 
     func configure(activityType: ActivityType) {
-        guard timerControlsView?.hasActiveTimer != true else {
+        if let existingTimerControlsView = reusableTimerControlsView(activityType: activityType) {
+            scrollToTimerControlsView(existingTimerControlsView)
             return
         }
 
@@ -66,7 +80,7 @@ final class TimerViewController: UIViewController {
 
         if isViewLoaded {
             didPromptForInitialActivityType = true
-            installTimerControlsView(activityType: activityType)
+            appendTimerControlsView(activityType: activityType)
         }
     }
 
@@ -92,8 +106,8 @@ final class TimerViewController: UIViewController {
         return Activity(activityType: activityType)
     }
 
-    private func installTimerControlsView(activityType: ActivityType) {
-        timerControlsView?.removeFromSuperview()
+    private func appendTimerControlsView(activityType: ActivityType) {
+        removeExpiredInactiveTimerControls()
 
         let activity = makeTimerActivity(activityType: activityType)
         let timerControlsView = TimerControlsView(activity: activity)
@@ -102,16 +116,47 @@ final class TimerViewController: UIViewController {
             self?.saveTimerActivity(activity)
         }
 
-        timerControlsContainerView.addSubview(timerControlsView)
+        timerControlsStackView.addArrangedSubview(timerControlsView)
+        timerControlsViews.append(timerControlsView)
+        scrollToTimerControlsView(timerControlsView)
+    }
 
-        NSLayoutConstraint.activate([
-            timerControlsView.topAnchor.constraint(equalTo: timerControlsContainerView.topAnchor),
-            timerControlsView.leadingAnchor.constraint(equalTo: timerControlsContainerView.leadingAnchor),
-            timerControlsView.trailingAnchor.constraint(equalTo: timerControlsContainerView.trailingAnchor),
-            timerControlsView.bottomAnchor.constraint(equalTo: timerControlsContainerView.bottomAnchor)
-        ])
+    private func reusableTimerControlsView(activityType: ActivityType) -> TimerControlsView? {
+        removeExpiredInactiveTimerControls()
 
-        self.timerControlsView = timerControlsView
+        return timerControlsViews.first {
+            $0.activityTypeID == activityType.uniqueID && !$0.hasCompletedTimer
+        }
+    }
+
+    private func scrollToTimerControlsView(_ timerControlsView: TimerControlsView) {
+        view.layoutIfNeeded()
+
+        let targetRect = timerControlsView.convert(timerControlsView.bounds, to: scrollView)
+        scrollView.scrollRectToVisible(targetRect.insetBy(dx: 0, dy: -24), animated: true)
+    }
+
+    private func removeExpiredInactiveTimerControls() {
+        let cutoffDate = Date().addingTimeInterval(-86_400)
+        let expiredTimerControlsViews = timerControlsViews.filter { timerControlsView in
+            guard
+                !timerControlsView.hasActiveTimer,
+                let stoppedAt = timerControlsView.stoppedAt
+            else {
+                return false
+            }
+
+            return stoppedAt < cutoffDate
+        }
+
+        for timerControlsView in expiredTimerControlsViews {
+            timerControlsStackView.removeArrangedSubview(timerControlsView)
+            timerControlsView.removeFromSuperview()
+        }
+
+        timerControlsViews.removeAll { timerControlsView in
+            expiredTimerControlsViews.contains { $0 === timerControlsView }
+        }
     }
 
     private func promptForInitialActivityTypeIfNeeded() {
@@ -121,7 +166,7 @@ final class TimerViewController: UIViewController {
 
         didPromptForInitialActivityType = true
 
-        guard timerControlsView == nil else {
+        guard timerControlsViews.isEmpty else {
             return
         }
 
@@ -193,7 +238,7 @@ final class TimerViewController: UIViewController {
 
         do {
             try modelContext.save()
-            installTimerControlsView(activityType: activityType)
+            appendTimerControlsView(activityType: activityType)
         } catch {
             modelContext.delete(activityType)
             assertionFailure("Unable to save activity type: \(error)")
@@ -246,7 +291,7 @@ final class TimerViewController: UIViewController {
 
         do {
             try modelContext.save()
-            installTimerControlsView(activityType: activity.activityType)
+            removeExpiredInactiveTimerControls()
         } catch {
             modelContext.delete(activity)
             assertionFailure("Unable to save timer activity: \(error)")
