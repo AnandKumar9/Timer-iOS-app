@@ -15,7 +15,9 @@ final class TimerControlsView: UIView {
 
     private var timer: Timer?
     private var elapsedSeconds = 0
+    private var currentStartTime: Date?
     private var timerState = TimerState.stopped
+    var onTimerStopped: ((Date, Date) -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -118,15 +120,26 @@ final class TimerControlsView: UIView {
     }
 
     @objc private func stopButtonTapped() {
+        let completionTime = Date()
+        let startTime = currentStartTime
         timer?.invalidate()
         timer = nil
         elapsedSeconds = 0
+        currentStartTime = nil
         timerState = .stopped
         updateStartButtonTitle()
         updateTimerLabel()
+
+        if let startTime {
+            onTimerStopped?(startTime, completionTime)
+        }
     }
 
     private func startTimer() {
+        if currentStartTime == nil {
+            currentStartTime = Date()
+        }
+
         timerState = .running
         updateStartButtonTitle()
 
