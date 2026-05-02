@@ -16,15 +16,45 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         let modelContext = (UIApplication.shared.delegate as? AppDelegate)?.modelContainer.mainContext
-        let timerViewController = TimerViewController(
-            nibName: "TimerViewController",
-            bundle: nil
+        window.rootViewController = UINavigationController(
+            rootViewController: makeInitialViewController(modelContext: modelContext)
         )
-        timerViewController.modelContext = modelContext
-        window.rootViewController = timerViewController
         window.makeKeyAndVisible()
 
         self.window = window
         self.modelContext = modelContext
+    }
+
+    private func makeInitialViewController(modelContext: ModelContext?) -> UIViewController {
+        guard
+            let modelContext,
+            hasExistingActivityTypes(in: modelContext)
+        else {
+            let timerViewController = TimerViewController(
+                nibName: "TimerViewController",
+                bundle: nil
+            )
+            timerViewController.modelContext = modelContext
+            return timerViewController
+        }
+
+        let activityTypesViewController = ActivityTypesViewController(
+            nibName: "ActivityTypesViewController",
+            bundle: nil
+        )
+        activityTypesViewController.modelContext = modelContext
+        return activityTypesViewController
+    }
+
+    private func hasExistingActivityTypes(in modelContext: ModelContext) -> Bool {
+        var descriptor = FetchDescriptor<ActivityType>()
+        descriptor.fetchLimit = 1
+
+        do {
+            return try !modelContext.fetch(descriptor).isEmpty
+        } catch {
+            assertionFailure("Unable to check activity types: \(error)")
+            return false
+        }
     }
 }

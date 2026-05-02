@@ -3,17 +3,20 @@ import SwiftData
 
 @Model
 final class ActivityType {
-    @Attribute(.unique) var activityID: UUID
-    var activityName: String
+    @Attribute(.unique) var uniqueID: UUID
+    var name: String
+    var creationDate: Date
     @Relationship(deleteRule: .cascade, inverse: \Activity.activityType) var activities: [Activity]
 
     init(
-        activityID: UUID = UUID(),
-        activityName: String,
+        uniqueID: UUID = UUID(),
+        name: String,
+        creationDate: Date = .now,
         activities: [Activity] = []
     ) {
-        self.activityID = activityID
-        self.activityName = activityName
+        self.uniqueID = uniqueID
+        self.name = name
+        self.creationDate = creationDate
         self.activities = activities
     }
 }

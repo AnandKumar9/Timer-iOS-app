@@ -57,13 +57,12 @@ final class TimerViewController: UIViewController {
         let durationText: String
     }
 
-    private let timerControlsView = TimerControlsView()
+    private let timerControlsContainerView = UIView()
+    private weak var timerControlsView: TimerControlsView?
     private let tableView = UITableView(frame: .zero, style: .plain)
     private var historyRows: [TimerHistoryRow] = []
-    private let activityTypeName = "Timer"
-    private var didCheckForInitialActivityType = false
-    private var existingActivityTypeNames: Set<String> = []
-    private weak var createActivityTypeAction: UIAlertAction?
+    private var didPromptForInitialActivityType = false
+    private var initialActivityType: ActivityType?
 
     var modelContext: ModelContext?
 
@@ -79,31 +78,44 @@ final class TimerViewController: UIViewController {
         configureAppearance()
         configureTimerPersistence()
         loadTimerHistory()
+
+        if let initialActivityType {
+            didPromptForInitialActivityType = true
+            installTimerControlsView(activityType: initialActivityType)
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        checkForInitialActivityType()
+        promptForInitialActivityTypeIfNeeded()
     }
 
     private func configureAppearance() {
+        title = "Timers"
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "Activity Types",
+            style: .plain,
+            target: self,
+            action: #selector(activityTypesButtonTapped)
+        )
+
         view.backgroundColor = .systemBackground
 
         configureTableView()
 
-        timerControlsView.translatesAutoresizingMaskIntoConstraints = false
+        timerControlsContainerView.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
 
-        view.addSubview(timerControlsView)
+        view.addSubview(timerControlsContainerView)
         view.addSubview(tableView)
 
         NSLayoutConstraint.activate([
-            timerControlsView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 96),
-            timerControlsView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            timerControlsView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+            timerControlsContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 96),
+            timerControlsContainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
+            timerControlsContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
 
-            tableView.topAnchor.constraint(equalTo: timerControlsView.bottomAnchor, constant: 32),
+            tableView.topAnchor.constraint(equalTo: timerControlsContainerView.bottomAnchor, constant: 32),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -118,17 +130,57 @@ final class TimerViewController: UIViewController {
     }
 
     private func configureTimerPersistence() {
-        timerControlsView.onTimerStopped = { [weak self] startTime, completionTime in
-            self?.saveTimerActivity(startTime: startTime, completionTime: completionTime)
-        }
     }
 
-    private func checkForInitialActivityType() {
-        guard !didCheckForInitialActivityType else {
+    func configure(activityType: ActivityType) {
+        initialActivityType = activityType
+    }
+
+    @objc private func activityTypesButtonTapped() {
+        let activityTypesViewController = ActivityTypesViewController(
+            nibName: "ActivityTypesViewController",
+            bundle: nil
+        )
+        activityTypesViewController.modelContext = modelContext
+        navigationController?.pushViewController(activityTypesViewController, animated: true)
+    }
+
+    private func makeTimerActivity(activityType: ActivityType) -> Activity {
+        return Activity(activityType: activityType)
+    }
+
+    private func installTimerControlsView(activityType: ActivityType) {
+        timerControlsView?.removeFromSuperview()
+
+        let activity = makeTimerActivity(activityType: activityType)
+        let timerControlsView = TimerControlsView(activity: activity)
+        timerControlsView.translatesAutoresizingMaskIntoConstraints = false
+        timerControlsView.onActivityStopped = { [weak self] activity in
+            self?.saveTimerActivity(activity)
+        }
+
+        timerControlsContainerView.addSubview(timerControlsView)
+
+        NSLayoutConstraint.activate([
+            timerControlsView.topAnchor.constraint(equalTo: timerControlsContainerView.topAnchor),
+            timerControlsView.leadingAnchor.constraint(equalTo: timerControlsContainerView.leadingAnchor),
+            timerControlsView.trailingAnchor.constraint(equalTo: timerControlsContainerView.trailingAnchor),
+            timerControlsView.bottomAnchor.constraint(equalTo: timerControlsContainerView.bottomAnchor)
+        ])
+
+        self.timerControlsView = timerControlsView
+    }
+
+    private func promptForInitialActivityTypeIfNeeded() {
+        guard !didPromptForInitialActivityType else {
             return
         }
 
-        didCheckForInitialActivityType = true
+        didPromptForInitialActivityType = true
+
+        guard timerControlsView == nil else {
+            return
+        }
 
         guard let modelContext else {
             return
@@ -138,8 +190,7 @@ final class TimerViewController: UIViewController {
         descriptor.fetchLimit = 1
 
         do {
-            let activityTypes = try modelContext.fetch(descriptor)
-            if activityTypes.isEmpty {
+            if try modelContext.fetch(descriptor).isEmpty {
                 presentCreateActivityTypeAlert()
             }
         } catch {
@@ -148,65 +199,58 @@ final class TimerViewController: UIViewController {
     }
 
     private func presentCreateActivityTypeAlert() {
-        existingActivityTypeNames = fetchExistingActivityTypeNames()
-
+        let existingNames = fetchExistingActivityTypeNames()
         let alertController = UIAlertController(
-            title: "New Activity",
-            message: "Enter an activity name.",
+            title: "New Activity Type",
+            message: "Enter an activity type name.",
             preferredStyle: .alert
         )
 
-        alertController.addTextField { [weak self] textField in
-            textField.placeholder = "Activity name"
-            textField.autocapitalizationType = .words
-            textField.clearButtonMode = .whileEditing
-            textField.addTarget(
-                self,
-                action: #selector(TimerViewController.activityTypeNameChanged(_:)),
-                for: .editingChanged
-            )
-        }
-
         let submitAction = UIAlertAction(title: "Submit", style: .default) { [weak self, weak alertController] _ in
-            guard let activityName = alertController?.textFields?.first?.text else {
+            guard let name = alertController?.textFields?.first?.text else {
                 return
             }
 
-            self?.createActivityType(named: activityName)
+            self?.createInitialActivityType(named: name)
         }
         submitAction.isEnabled = false
-        createActivityTypeAction = submitAction
+
+        alertController.addTextField { [weak self] textField in
+            textField.placeholder = "Activity type name"
+            textField.autocapitalizationType = .words
+            textField.clearButtonMode = .whileEditing
+            textField.addAction(
+                UIAction { [weak self, weak textField] _ in
+                    submitAction.isEnabled = self?.isUniqueActivityTypeName(
+                        textField?.text,
+                        existingNames: existingNames
+                    ) ?? false
+                },
+                for: .editingChanged
+            )
+        }
 
         alertController.addAction(submitAction)
         present(alertController, animated: true)
     }
 
-    @objc private func activityTypeNameChanged(_ textField: UITextField) {
-        createActivityTypeAction?.isEnabled = isUniqueActivityTypeName(textField.text)
-    }
-
-    private func isUniqueActivityTypeName(_ name: String?) -> Bool {
-        let normalizedName = normalizeActivityTypeName(name)
-        return !normalizedName.isEmpty && !existingActivityTypeNames.contains(normalizedName)
-    }
-
-    private func createActivityType(named name: String) {
+    private func createInitialActivityType(named name: String) {
         guard let modelContext else {
             return
         }
 
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isUniqueActivityTypeName(trimmedName) else {
+        guard isUniqueActivityTypeName(trimmedName, existingNames: fetchExistingActivityTypeNames()) else {
             presentCreateActivityTypeAlert()
             return
         }
 
-        let activityType = ActivityType(activityName: trimmedName)
+        let activityType = ActivityType(name: trimmedName)
         modelContext.insert(activityType)
 
         do {
             try modelContext.save()
-            existingActivityTypeNames.insert(normalizeActivityTypeName(trimmedName))
+            installTimerControlsView(activityType: activityType)
         } catch {
             modelContext.delete(activityType)
             assertionFailure("Unable to save activity type: \(error)")
@@ -221,11 +265,19 @@ final class TimerViewController: UIViewController {
 
         do {
             let activityTypes = try modelContext.fetch(FetchDescriptor<ActivityType>())
-            return Set(activityTypes.map { normalizeActivityTypeName($0.activityName) })
+            return Set(activityTypes.map { normalizeActivityTypeName($0.name) })
         } catch {
             assertionFailure("Unable to fetch activity type names: \(error)")
             return []
         }
+    }
+
+    private func isUniqueActivityTypeName(
+        _ name: String?,
+        existingNames: Set<String>
+    ) -> Bool {
+        let normalizedName = normalizeActivityTypeName(name)
+        return !normalizedName.isEmpty && !existingNames.contains(normalizedName)
     }
 
     private func normalizeActivityTypeName(_ name: String?) -> String {
@@ -234,39 +286,29 @@ final class TimerViewController: UIViewController {
             .localizedLowercase ?? ""
     }
 
-    private func saveTimerActivity(startTime: Date, completionTime: Date) {
+    private func saveTimerActivity(_ activity: Activity) {
         guard let modelContext else {
             return
         }
 
-        guard let activityType = fetchTimerActivityType(in: modelContext) else {
+        guard activity.activityStartTime != nil else {
             return
         }
 
-        let activity = Activity(
-            activityType: activityType,
-            actvityStartTime: startTime,
-            activityCompletionTime: completionTime
-        )
+        if !activity.activityType.activities.contains(where: { $0 === activity }) {
+            activity.activityType.activities.append(activity)
+        }
 
         modelContext.insert(activity)
 
         do {
             try modelContext.save()
             loadTimerHistory()
+            installTimerControlsView(activityType: activity.activityType)
         } catch {
             modelContext.delete(activity)
             assertionFailure("Unable to save timer activity: \(error)")
         }
-    }
-
-    private func fetchTimerActivityType(in modelContext: ModelContext) -> ActivityType? {
-        let activityTypeName = self.activityTypeName
-        let descriptor = FetchDescriptor<ActivityType>(
-            predicate: #Predicate { $0.activityName == activityTypeName }
-        )
-
-        return try? modelContext.fetch(descriptor).first
     }
 
     private func loadTimerHistory() {
@@ -277,14 +319,25 @@ final class TimerViewController: UIViewController {
         }
 
         var descriptor = FetchDescriptor<Activity>(
-            predicate: #Predicate { $0.activityCompletionTime != nil },
-            sortBy: [SortDescriptor(\.actvityStartTime, order: .reverse)]
+            predicate: #Predicate { $0.activityCompletionTime != nil }
         )
         descriptor.fetchLimit = 50
 
         do {
             let activities = try modelContext.fetch(descriptor)
-            historyRows = activities.compactMap(makeHistoryRow)
+            historyRows = activities
+                .sorted { lhs, rhs in
+                    guard let lhsStartTime = lhs.activityStartTime else {
+                        return false
+                    }
+
+                    guard let rhsStartTime = rhs.activityStartTime else {
+                        return true
+                    }
+
+                    return lhsStartTime > rhsStartTime
+                }
+                .compactMap(makeHistoryRow)
             tableView.reloadData()
         } catch {
             assertionFailure("Unable to load timer history: \(error)")
@@ -292,13 +345,16 @@ final class TimerViewController: UIViewController {
     }
 
     private func makeHistoryRow(from activity: Activity) -> TimerHistoryRow? {
-        guard let completionTime = activity.activityCompletionTime else {
+        guard
+            let startTime = activity.activityStartTime,
+            let completionTime = activity.activityCompletionTime
+        else {
             return nil
         }
 
         return TimerHistoryRow(
-            dateText: historyDateFormatter.string(from: activity.actvityStartTime),
-            durationText: formattedDuration(from: activity.actvityStartTime, to: completionTime)
+            dateText: historyDateFormatter.string(from: startTime),
+            durationText: formattedDuration(from: startTime, to: completionTime)
         )
     }
 

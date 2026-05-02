@@ -7,6 +7,7 @@ final class TimerControlsView: UIView {
         case stopped
     }
 
+    private let activityTypeNameLabel = UILabel()
     private let timerLabel = UILabel()
     private let startButton = UIButton(type: .system)
     private let stopButton = UIButton(type: .system)
@@ -15,18 +16,24 @@ final class TimerControlsView: UIView {
 
     private var timer: Timer?
     private var elapsedSeconds = 0
-    private var currentStartTime: Date?
+    private let activity: Activity
     private var timerState = TimerState.stopped
-    var onTimerStopped: ((Date, Date) -> Void)?
+    var onActivityStopped: ((Activity) -> Void)?
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(activity: Activity) {
+        self.activity = activity
+        super.init(frame: .zero)
         configureView()
     }
 
+    @available(*, unavailable, message: "Use init(activity:) instead.")
+    override init(frame: CGRect) {
+        fatalError("Use init(activity:) instead.")
+    }
+
+    @available(*, unavailable, message: "Use init(activity:) instead.")
     required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        configureView()
+        fatalError("Use init(activity:) instead.")
     }
 
     deinit {
@@ -34,11 +41,21 @@ final class TimerControlsView: UIView {
     }
 
     private func configureView() {
+        configureActivityTypeNameLabel()
         configureTimerLabel()
         configureButtons()
         configureLayout()
         updateTimerLabel()
         updateStartButtonTitle()
+    }
+
+    private func configureActivityTypeNameLabel() {
+        activityTypeNameLabel.text = activity.activityType.name
+        activityTypeNameLabel.font = .systemFont(ofSize: 25, weight: .semibold)
+        activityTypeNameLabel.textColor = .label
+        activityTypeNameLabel.textAlignment = .center
+        activityTypeNameLabel.numberOfLines = 2
+        activityTypeNameLabel.translatesAutoresizingMaskIntoConstraints = false
     }
 
     private func configureTimerLabel() {
@@ -95,6 +112,7 @@ final class TimerControlsView: UIView {
         buttonStackView.addArrangedSubview(startButton)
         buttonStackView.addArrangedSubview(stopButton)
 
+        contentStackView.addArrangedSubview(activityTypeNameLabel)
         contentStackView.addArrangedSubview(timerLabel)
         contentStackView.addArrangedSubview(buttonStackView)
         addSubview(contentStackView)
@@ -105,6 +123,7 @@ final class TimerControlsView: UIView {
             contentStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             contentStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
+            activityTypeNameLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 24),
             timerLabel.heightAnchor.constraint(equalToConstant: 72),
             buttonStackView.heightAnchor.constraint(equalToConstant: 46)
         ])
@@ -120,24 +139,21 @@ final class TimerControlsView: UIView {
     }
 
     @objc private func stopButtonTapped() {
-        let completionTime = Date()
-        let startTime = currentStartTime
         timer?.invalidate()
         timer = nil
         elapsedSeconds = 0
-        currentStartTime = nil
         timerState = .stopped
         updateStartButtonTitle()
         updateTimerLabel()
 
-        if let startTime {
-            onTimerStopped?(startTime, completionTime)
-        }
+        activity.activityCompletionTime = Date()
+        onActivityStopped?(activity)
     }
 
     private func startTimer() {
-        if currentStartTime == nil {
-            currentStartTime = Date()
+        if timerState == .stopped {
+            activity.activityStartTime = Date()
+            activity.activityCompletionTime = nil
         }
 
         timerState = .running
