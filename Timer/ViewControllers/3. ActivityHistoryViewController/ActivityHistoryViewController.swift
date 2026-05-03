@@ -223,15 +223,19 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private func makeDurationText(for activity: Activity, completionTime: Date) -> String {
-        guard let startTime = activity.activityStartTime else {
-            return "Start time unavailable"
+        if let timeTaken = activity.timeTaken {
+            return formattedDuration(seconds: Int(timeTaken))
         }
 
-        return formattedDuration(from: startTime, to: completionTime)
+        guard let startTime = activity.activityStartTime else {
+            return "Unavailable"
+        }
+
+        return formattedDuration(seconds: Int(completionTime.timeIntervalSince(startTime)))
     }
 
-    private func formattedDuration(from startTime: Date, to completionTime: Date) -> String {
-        let duration = max(0, Int(completionTime.timeIntervalSince(startTime)))
+    private func formattedDuration(seconds: Int) -> String {
+        let duration = max(0, seconds)
         let hours = duration / 3_600
         let minutes = (duration % 3_600) / 60
         let seconds = duration % 60

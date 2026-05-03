@@ -85,6 +85,7 @@
 			children = (
 				9A0000010000000000000014 /* TimerViewController.swift */,
 				9A0000010000000000000036 /* TimerViewController.xib */,
+				9A0000010000000000000018 /* TimerControlsView.swift */,
 			);
 			path = "1. TimerViewController";
 			sourceTree = "<group>";
@@ -125,7 +126,6 @@
 				4413A30F2FA432240005EE3C /* 2. ActivityTypesViewController */,
 				4413A3102FA4322D0005EE3C /* 3. ActivityHistoryViewController */,
 				4413A30D2FA432020005EE3C /* 4. ActivityDetailsViewController */,
-				9A0000010000000000000018 /* TimerControlsView.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";

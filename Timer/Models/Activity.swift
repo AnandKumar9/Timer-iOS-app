@@ -7,16 +7,19 @@ final class Activity {
     var activityType: ActivityType
     var activityStartTime: Date?
     var activityCompletionTime: Date?
+    var timeTaken: TimeInterval?
 
     init(
         activityTypeID: UUID = UUID(),
         activityType: ActivityType,
         activityStartTime: Date? = nil,
-        activityCompletionTime: Date? = nil
+        activityCompletionTime: Date? = nil,
+        timeTaken: TimeInterval? = nil
     ) {
         self.activityTypeID = activityTypeID
         self.activityType = activityType
         self.activityStartTime = activityStartTime
         self.activityCompletionTime = activityCompletionTime
+        self.timeTaken = timeTaken
     }
 }

@@ -6,6 +6,7 @@ final class ActivityTypesViewController: UIViewController {
         let activityType: ActivityType
         let name: String
         let latestActivityStartTime: Date?
+        let hasRunningOrPausedTimer: Bool
     }
 
     private final class ActivityTypeCell: UITableViewCell {
@@ -53,10 +54,12 @@ final class ActivityTypesViewController: UIViewController {
             super.prepareForReuse()
 
             onStartTapped = nil
+            startButton.isHidden = false
         }
 
         func configure(with row: ActivityTypeRow, dateFormatter: DateFormatter) {
             nameLabel.text = row.name
+            startButton.isHidden = row.hasRunningOrPausedTimer
 
             if let latestActivityStartTime = row.latestActivityStartTime {
                 latestActivityLabel.text = "Latest: \(dateFormatter.string(from: latestActivityStartTime))"
@@ -220,6 +223,12 @@ final class ActivityTypesViewController: UIViewController {
             name: TimerSessionState.didStartTimerNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(activeTimersDidChange),
+            name: TimerSessionState.didChangeActiveTimersNotification,
+            object: nil
+        )
     }
 
     private func loadActivityTypes() {
@@ -244,7 +253,8 @@ final class ActivityTypesViewController: UIViewController {
         ActivityTypeRow(
             activityType: activityType,
             name: activityType.name,
-            latestActivityStartTime: activityType.activities.compactMap(\.activityStartTime).max()
+            latestActivityStartTime: activityType.activities.compactMap(\.activityStartTime).max(),
+            hasRunningOrPausedTimer: TimerViewController.hasRunningOrPausedTimer(for: activityType)
         )
     }
 
@@ -284,6 +294,10 @@ final class ActivityTypesViewController: UIViewController {
 
     @objc private func timerSessionDidStartTimer() {
         updateCurrentTimersButtonVisibility()
+    }
+
+    @objc private func activeTimersDidChange() {
+        loadActivityTypes()
     }
 
     private func updateCurrentTimersButtonVisibility() {
@@ -354,6 +368,7 @@ final class ActivityTypesViewController: UIViewController {
             )
         }
 
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alertController.addAction(submitAction)
         present(alertController, animated: true)
     }

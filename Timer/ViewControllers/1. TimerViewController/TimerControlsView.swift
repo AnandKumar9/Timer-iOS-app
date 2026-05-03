@@ -2,6 +2,7 @@ import UIKit
 
 enum TimerSessionState {
     static let didStartTimerNotification = Notification.Name("TimerSessionState.didStartTimerNotification")
+    static let didChangeActiveTimersNotification = Notification.Name("TimerSessionState.didChangeActiveTimersNotification")
     private(set) static var hasStartedTimer = false
 
     static func markTimerStarted() {
@@ -11,6 +12,10 @@ enum TimerSessionState {
 
         hasStartedTimer = true
         NotificationCenter.default.post(name: didStartTimerNotification, object: nil)
+    }
+
+    static func notifyActiveTimersChanged() {
+        NotificationCenter.default.post(name: didChangeActiveTimersNotification, object: nil)
     }
 }
 
@@ -33,8 +38,10 @@ final class TimerControlsView: UIView {
 
     private var timer: Timer?
     private var elapsedSeconds = 0
-    private let activity: Activity
+    private var activeTimeTaken: TimeInterval = 0
+    private var activity: Activity
     private var timerState = TimerState.stopped
+    private var latestCurrentSessionCompletionTime: Date?
     var onActivityStopped: ((Activity) -> Void)?
     var hasActiveTimer: Bool {
         timerState != .stopped
@@ -45,11 +52,8 @@ final class TimerControlsView: UIView {
     var hasStartedTimer: Bool {
         activity.activityStartTime != nil
     }
-    var hasCompletedTimer: Bool {
-        activity.activityCompletionTime != nil
-    }
-    var stoppedAt: Date? {
-        activity.activityCompletionTime
+    var latestCurrentSessionCompletionDate: Date? {
+        latestCurrentSessionCompletionTime
     }
 
     init(activity: Activity) {
@@ -206,28 +210,35 @@ final class TimerControlsView: UIView {
     @objc private func stopButtonTapped() {
         timer?.invalidate()
         timer = nil
+        elapsedSeconds = 0
         timerState = .stopped
-        updateTimerLabel()
 
-        activity.activityCompletionTime = Date()
-        updateStartButtonTitle()
+        let completionTime = Date()
+        activity.activityCompletionTime = completionTime
+        activity.timeTaken = activeTimeTaken
+        latestCurrentSessionCompletionTime = completionTime
         onActivityStopped?(activity)
+        activity = Activity(activityType: activity.activityType)
+        updateLastActivityRow()
+        updateStartButtonTitle()
+        updateTimerLabel()
+        TimerSessionState.notifyActiveTimersChanged()
     }
 
     private func startTimer() {
-        guard activity.activityCompletionTime == nil else {
-            return
-        }
-
         TimerSessionState.markTimerStarted()
 
         if timerState == .stopped {
+            activeTimeTaken = 0
+            elapsedSeconds = 0
             activity.activityStartTime = Date()
             activity.activityCompletionTime = nil
+            activity.timeTaken = nil
         }
 
         timerState = .running
         updateStartButtonTitle()
+        TimerSessionState.notifyActiveTimersChanged()
 
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -240,18 +251,10 @@ final class TimerControlsView: UIView {
         timer = nil
         timerState = .paused
         updateStartButtonTitle()
+        TimerSessionState.notifyActiveTimersChanged()
     }
 
     private func updateStartButtonTitle() {
-        if activity.activityCompletionTime != nil {
-            startButton.setTitle("Done", for: .normal)
-            startButton.isEnabled = false
-            startButton.alpha = 0.45
-            stopButton.isEnabled = false
-            stopButton.alpha = 0.45
-            return
-        }
-
         let title: String
         switch timerState {
         case .running:
@@ -272,7 +275,8 @@ final class TimerControlsView: UIView {
     }
 
     private func tick() {
-        elapsedSeconds += 1
+        activeTimeTaken += 1
+        elapsedSeconds = Int(activeTimeTaken)
         updateTimerLabel()
     }
 
@@ -290,12 +294,7 @@ final class TimerControlsView: UIView {
 
     private func updateLastActivityRow() {
         guard
-            let lastActivity = activity.activityType.activities
-                .filter({ $0 !== activity })
-                .filter({ $0.activityCompletionTime != nil })
-                .sorted(by: activityCompletionSort)
-                .first,
-            let startTime = lastActivity.activityStartTime,
+            let lastActivity = latestCompletedActivity(),
             let completionTime = lastActivity.activityCompletionTime
         else {
             lastActivityRowView.isHidden = true
@@ -303,8 +302,15 @@ final class TimerControlsView: UIView {
         }
 
         lastActivityDateLabel.text = "Last: \(formattedDate(completionTime))"
-        lastActivityDurationLabel.text = formattedDuration(from: startTime, to: completionTime)
+        lastActivityDurationLabel.text = formattedDuration(for: lastActivity)
         lastActivityRowView.isHidden = false
+    }
+
+    private func latestCompletedActivity() -> Activity? {
+        activity.activityType.activities
+            .filter { $0.activityCompletionTime != nil }
+            .sorted(by: activityCompletionSort)
+            .first
     }
 
     private func activityCompletionSort(_ lhs: Activity, _ rhs: Activity) -> Bool {
@@ -325,8 +331,19 @@ final class TimerControlsView: UIView {
         return formatter.string(from: date)
     }
 
-    private func formattedDuration(from startTime: Date, to completionTime: Date) -> String {
-        let duration = max(0, Int(completionTime.timeIntervalSince(startTime)))
+    private func formattedDuration(for activity: Activity) -> String {
+        let duration: Int
+
+        if let timeTaken = activity.timeTaken {
+            duration = max(0, Int(timeTaken))
+        } else if
+            let startTime = activity.activityStartTime,
+            let completionTime = activity.activityCompletionTime {
+            duration = max(0, Int(completionTime.timeIntervalSince(startTime)))
+        } else {
+            duration = 0
+        }
+
         let hours = duration / 3_600
         let minutes = (duration % 3_600) / 60
         let seconds = duration % 60

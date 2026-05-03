@@ -4,6 +4,9 @@ import SwiftData
 final class TimerViewController: UIViewController {
     fileprivate static var activeInstance: TimerViewController?
     fileprivate static var activeNavigationController: UINavigationController?
+    static func hasRunningOrPausedTimer(for activityType: ActivityType) -> Bool {
+        activeInstance?.hasRunningOrPausedTimer(activityTypeID: activityType.uniqueID) ?? false
+    }
 
     private let scrollView = UIScrollView()
     private let timerControlsStackView = UIStackView()
@@ -29,6 +32,7 @@ final class TimerViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        removeExpiredInactiveTimerControls()
         promptForInitialActivityTypeIfNeeded()
     }
 
@@ -68,6 +72,14 @@ final class TimerViewController: UIViewController {
     }
 
     private func configureTimerPersistence() {
+    }
+
+    private func hasRunningOrPausedTimer(activityTypeID: UUID) -> Bool {
+        removeExpiredInactiveTimerControls()
+
+        return timerControlsViews.contains {
+            $0.activityTypeID == activityTypeID && $0.hasActiveTimer
+        }
     }
 
     func configure(activityType: ActivityType) {
@@ -116,8 +128,8 @@ final class TimerViewController: UIViewController {
             self?.saveTimerActivity(activity)
         }
 
-        timerControlsStackView.addArrangedSubview(timerControlsView)
-        timerControlsViews.append(timerControlsView)
+        timerControlsStackView.insertArrangedSubview(timerControlsView, at: 0)
+        timerControlsViews.insert(timerControlsView, at: 0)
         scrollToTimerControlsView(timerControlsView)
     }
 
@@ -125,7 +137,7 @@ final class TimerViewController: UIViewController {
         removeExpiredInactiveTimerControls()
 
         return timerControlsViews.first {
-            $0.activityTypeID == activityType.uniqueID && !$0.hasCompletedTimer
+            $0.activityTypeID == activityType.uniqueID
         }
     }
 
@@ -137,16 +149,16 @@ final class TimerViewController: UIViewController {
     }
 
     private func removeExpiredInactiveTimerControls() {
-        let cutoffDate = Date().addingTimeInterval(-86_400)
+        let cutoffDate = Date().addingTimeInterval(-300)
         let expiredTimerControlsViews = timerControlsViews.filter { timerControlsView in
             guard
                 !timerControlsView.hasActiveTimer,
-                let stoppedAt = timerControlsView.stoppedAt
+                let latestCurrentSessionCompletionDate = timerControlsView.latestCurrentSessionCompletionDate
             else {
                 return false
             }
 
-            return stoppedAt < cutoffDate
+            return latestCurrentSessionCompletionDate < cutoffDate
         }
 
         for timerControlsView in expiredTimerControlsViews {
@@ -218,6 +230,7 @@ final class TimerViewController: UIViewController {
             )
         }
 
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alertController.addAction(submitAction)
         present(alertController, animated: true)
     }
