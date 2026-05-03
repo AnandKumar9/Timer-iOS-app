@@ -140,6 +140,10 @@ final class ActivityHistoryViewController: UIViewController {
         activityNameLabel.minimumScaleFactor = 0.55
         activityNameLabel.lineBreakMode = .byClipping
         activityNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        activityNameLabel.isUserInteractionEnabled = true
+        activityNameLabel.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(activityNameLabelTapped))
+        )
     }
 
     private func configureTableView() {
@@ -254,6 +258,76 @@ final class ActivityHistoryViewController: UIViewController {
         present(alertController, animated: true)
     }
 
+    private func presentRenameActivityTypeAlert() {
+        guard let activityType else {
+            return
+        }
+
+        let existingNames = fetchExistingActivityTypeNames(excluding: activityType)
+        let alertController = UIAlertController(
+            title: "Rename Activity Type",
+            message: nil,
+            preferredStyle: .alert
+        )
+
+        let renameAction = UIAlertAction(title: "Rename", style: .default) { [weak self, weak alertController] _ in
+            guard let name = alertController?.textFields?.first?.text else {
+                return
+            }
+
+            self?.renameActivityType(to: name)
+        }
+        renameAction.isEnabled = false
+
+        alertController.addTextField { [weak self] textField in
+            textField.text = activityType.name
+            textField.placeholder = "Activity type name"
+            textField.autocapitalizationType = .words
+            textField.clearButtonMode = .whileEditing
+            textField.addAction(
+                UIAction { [weak self, weak textField] _ in
+                    renameAction.isEnabled = self?.isValidActivityTypeName(
+                        textField?.text,
+                        existingNames: existingNames
+                    ) ?? false
+                },
+                for: .editingChanged
+            )
+        }
+
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alertController.addAction(renameAction)
+        present(alertController, animated: true)
+    }
+
+    private func renameActivityType(to name: String) {
+        guard let modelContext, let activityType else {
+            return
+        }
+
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isValidActivityTypeName(
+            trimmedName,
+            existingNames: fetchExistingActivityTypeNames(excluding: activityType)
+        ) else {
+            presentRenameActivityTypeAlert()
+            return
+        }
+
+        let previousName = activityType.name
+        activityType.name = trimmedName
+
+        do {
+            try modelContext.save()
+            activityNameLabel.text = trimmedName
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activityType.uniqueID)
+        } catch {
+            activityType.name = previousName
+            assertionFailure("Unable to rename activity type: \(error)")
+            presentRenameActivityTypeErrorAlert()
+        }
+    }
+
     private func deleteActivity(_ activity: Activity) throws {
         guard let modelContext else {
             return
@@ -277,6 +351,48 @@ final class ActivityHistoryViewController: UIViewController {
         present(alertController, animated: true)
     }
 
+    private func presentRenameActivityTypeErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Rename Activity Type",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
+    private func fetchExistingActivityTypeNames(excluding activityType: ActivityType) -> Set<String> {
+        guard let modelContext else {
+            return []
+        }
+
+        do {
+            let activityTypes = try modelContext.fetch(FetchDescriptor<ActivityType>())
+            return Set(
+                activityTypes
+                    .filter { $0.uniqueID != activityType.uniqueID }
+                    .map { normalizeActivityTypeName($0.name) }
+            )
+        } catch {
+            assertionFailure("Unable to fetch activity type names: \(error)")
+            return []
+        }
+    }
+
+    private func isValidActivityTypeName(
+        _ name: String?,
+        existingNames: Set<String>
+    ) -> Bool {
+        let normalizedName = normalizeActivityTypeName(name)
+        return !normalizedName.isEmpty && !existingNames.contains(normalizedName)
+    }
+
+    private func normalizeActivityTypeName(_ name: String?) -> String {
+        name?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .localizedLowercase ?? ""
+    }
+
     private func updateContent() {
         tableView.reloadData()
         emptyStateLabel.isHidden = !activityRows.isEmpty
@@ -291,6 +407,14 @@ final class ActivityHistoryViewController: UIViewController {
         }
 
         loadActivities()
+    }
+
+    @objc private func activityNameLabelTapped() {
+        guard activityType != nil else {
+            return
+        }
+
+        presentRenameActivityTypeAlert()
     }
 
 }
