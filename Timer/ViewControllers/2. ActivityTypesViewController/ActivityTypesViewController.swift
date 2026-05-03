@@ -5,40 +5,20 @@ final class ActivityTypesViewController: UIViewController {
     private struct ActivityTypeRow {
         let activityType: ActivityType
         let name: String
-        let latestActivityStartTime: Date?
-        let hasRunningOrPausedTimer: Bool
+        let latestActivity: Activity?
+        let latestActivityCompletionTime: Date?
+        let timerState: ActivityTimerState
     }
 
     private final class ActivityTypeCell: UITableViewCell {
         static let reuseIdentifier = "ActivityTypeCell"
 
         var onStartTapped: (() -> Void)?
+        var onTimerStatusTapped: (() -> Void)?
 
         private let nameLabel = UILabel()
         private let latestActivityLabel = UILabel()
-
-        private lazy var startButton: UIButton = {
-            var configuration = UIButton.Configuration.filled()
-            configuration.title = "Record New"
-            configuration.buttonSize = .small
-            configuration.cornerStyle = .fixed
-            configuration.baseBackgroundColor = .systemBlue
-            configuration.baseForegroundColor = .white
-            configuration.contentInsets = NSDirectionalEdgeInsets(top: 7, leading: 14, bottom: 7, trailing: 14)
-
-            let button = UIButton(configuration: configuration)
-            button.layer.cornerRadius = 6
-            button.clipsToBounds = true
-            button.setContentHuggingPriority(.required, for: .horizontal)
-            button.setContentCompressionResistancePriority(.required, for: .horizontal)
-            button.addAction(
-                UIAction { [weak self] _ in
-                    self?.onStartTapped?()
-                },
-                for: .touchUpInside
-            )
-            return button
-        }()
+        private let actionView = ActivityTimerActionView()
 
         override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
             super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -54,15 +34,27 @@ final class ActivityTypesViewController: UIViewController {
             super.prepareForReuse()
 
             onStartTapped = nil
-            startButton.isHidden = false
+            onTimerStatusTapped = nil
+            actionView.prepareForReuse()
         }
 
-        func configure(with row: ActivityTypeRow, dateFormatter: DateFormatter) {
+        func configure(with row: ActivityTypeRow) {
             nameLabel.text = row.name
-            startButton.isHidden = row.hasRunningOrPausedTimer
+            actionView.onRecordTapped = { [weak self] in
+                self?.onStartTapped?()
+            }
+            actionView.onTimerStatusTapped = { [weak self] in
+                self?.onTimerStatusTapped?()
+            }
+            actionView.configure(timerState: row.timerState)
 
-            if let latestActivityStartTime = row.latestActivityStartTime {
-                latestActivityLabel.text = "Latest: \(dateFormatter.string(from: latestActivityStartTime))"
+            if
+                let latestActivity = row.latestActivity,
+                let latestActivityCompletionTime = row.latestActivityCompletionTime {
+                latestActivityLabel.text = makeLatestActivityText(
+                    activity: latestActivity,
+                    completionTime: latestActivityCompletionTime
+                )
             } else {
                 latestActivityLabel.text = "No activity recorded"
             }
@@ -75,7 +67,7 @@ final class ActivityTypesViewController: UIViewController {
 
             latestActivityLabel.font = .systemFont(ofSize: 14, weight: .regular)
             latestActivityLabel.textColor = .secondaryLabel
-            latestActivityLabel.numberOfLines = 1
+            latestActivityLabel.numberOfLines = 2
 
             let labelStackView = UIStackView(arrangedSubviews: [nameLabel, latestActivityLabel])
             labelStackView.axis = .vertical
@@ -83,20 +75,43 @@ final class ActivityTypesViewController: UIViewController {
             labelStackView.spacing = 4
             labelStackView.translatesAutoresizingMaskIntoConstraints = false
 
-            startButton.translatesAutoresizingMaskIntoConstraints = false
+            actionView.translatesAutoresizingMaskIntoConstraints = false
 
             contentView.addSubview(labelStackView)
-            contentView.addSubview(startButton)
+            contentView.addSubview(actionView)
 
             NSLayoutConstraint.activate([
                 labelStackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
                 labelStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
                 labelStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
-                labelStackView.trailingAnchor.constraint(lessThanOrEqualTo: startButton.leadingAnchor, constant: -16),
+                labelStackView.trailingAnchor.constraint(lessThanOrEqualTo: actionView.leadingAnchor, constant: -16),
 
-                startButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-                startButton.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor)
+                actionView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                actionView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor)
             ])
+        }
+
+        private func makeLatestActivityText(
+            activity: Activity,
+            completionTime: Date
+        ) -> String {
+            let dateText = ActivityDisplayFormatter.activityDateWithoutTimeText(for: completionTime)
+            let durationText = ActivityDisplayFormatter.roundedHistoryDurationText(
+                for: activityDuration(for: activity, completionTime: completionTime)
+            )
+            return "\(dateText) : \(durationText)"
+        }
+
+        private func activityDuration(for activity: Activity, completionTime: Date) -> TimeInterval {
+            if let timeTaken = activity.timeTaken {
+                return timeTaken
+            }
+
+            guard let startTime = activity.activityStartTime else {
+                return 0
+            }
+
+            return completionTime.timeIntervalSince(startTime)
         }
     }
 
@@ -107,13 +122,6 @@ final class ActivityTypesViewController: UIViewController {
     private var didPromptForInitialActivityTypeCreation = false
 
     var modelContext: ModelContext?
-
-    private lazy var latestActivityDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter
-    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -250,19 +258,39 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func makeActivityTypeRow(from activityType: ActivityType) -> ActivityTypeRow {
-        ActivityTypeRow(
+        let latestActivity = latestCompletedActivity(for: activityType)
+
+        return ActivityTypeRow(
             activityType: activityType,
             name: activityType.name,
-            latestActivityStartTime: activityType.activities.compactMap(\.activityStartTime).max(),
-            hasRunningOrPausedTimer: TimerViewController.hasRunningOrPausedTimer(for: activityType)
+            latestActivity: latestActivity,
+            latestActivityCompletionTime: latestActivity?.activityCompletionTime,
+            timerState: TimerViewController.timerState(for: activityType)
         )
+    }
+
+    private func latestCompletedActivity(for activityType: ActivityType) -> Activity? {
+        activityType.activities
+            .filter { $0.activityCompletionTime != nil }
+            .sorted { lhs, rhs in
+                guard let lhsCompletionTime = lhs.activityCompletionTime else {
+                    return false
+                }
+
+                guard let rhsCompletionTime = rhs.activityCompletionTime else {
+                    return true
+                }
+
+                return lhsCompletionTime > rhsCompletionTime
+            }
+            .first
     }
 
     private func activityTypeSort(
         _ lhs: ActivityTypeRow,
         _ rhs: ActivityTypeRow
     ) -> Bool {
-        switch (lhs.latestActivityStartTime, rhs.latestActivityStartTime) {
+        switch (lhs.latestActivityCompletionTime, rhs.latestActivityCompletionTime) {
         case let (lhsDate?, rhsDate?) where lhsDate != rhsDate:
             return lhsDate > rhsDate
         case (.some, .none):
@@ -440,9 +468,12 @@ extension ActivityTypesViewController: UITableViewDataSource {
             for: indexPath
         ) as? ActivityTypeCell
         let row = activityTypeRows[indexPath.row]
-        cell?.configure(with: row, dateFormatter: latestActivityDateFormatter)
+        cell?.configure(with: row)
         cell?.onStartTapped = { [weak self] in
             self?.startActivityType(row.activityType)
+        }
+        cell?.onTimerStatusTapped = { [weak self] in
+            self?.showTimerViewController(activityType: row.activityType)
         }
         return cell ?? UITableViewCell()
     }

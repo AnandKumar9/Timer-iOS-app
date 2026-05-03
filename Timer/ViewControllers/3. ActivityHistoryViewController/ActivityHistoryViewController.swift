@@ -5,8 +5,7 @@ final class ActivityHistoryViewController: UIViewController {
     private final class ActivityHistoryCell: UITableViewCell {
         static let reuseIdentifier = "ActivityHistoryCell"
 
-        private let doneTimeLabel = UILabel()
-        private let durationLabel = UILabel()
+        private let activitySummaryLabel = UILabel()
 
         override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
             super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -19,38 +18,51 @@ final class ActivityHistoryViewController: UIViewController {
         }
 
         func configure(with row: ActivityHistoryRow) {
-            doneTimeLabel.text = row.doneTimeText
-            durationLabel.text = row.durationText
+            activitySummaryLabel.attributedText = makeActivitySummaryText(
+                dateText: row.doneTimeText,
+                durationText: row.durationText
+            )
         }
 
         private func configureCell() {
             selectionStyle = .none
 
-            doneTimeLabel.font = .systemFont(ofSize: 16, weight: .regular)
-            doneTimeLabel.textColor = .label
-            doneTimeLabel.numberOfLines = 1
+            activitySummaryLabel.numberOfLines = 1
+            activitySummaryLabel.adjustsFontSizeToFitWidth = true
+            activitySummaryLabel.minimumScaleFactor = 0.75
+            activitySummaryLabel.lineBreakMode = .byClipping
+            activitySummaryLabel.translatesAutoresizingMaskIntoConstraints = false
 
-            durationLabel.font = .systemFont(ofSize: 16, weight: .medium)
-            durationLabel.textColor = .secondaryLabel
-            durationLabel.textAlignment = .right
-            durationLabel.numberOfLines = 1
-            durationLabel.setContentHuggingPriority(.required, for: .horizontal)
-            durationLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-            let stackView = UIStackView(arrangedSubviews: [doneTimeLabel, durationLabel])
-            stackView.axis = .horizontal
-            stackView.alignment = .center
-            stackView.spacing = 12
-            stackView.translatesAutoresizingMaskIntoConstraints = false
-
-            contentView.addSubview(stackView)
+            contentView.addSubview(activitySummaryLabel)
 
             NSLayoutConstraint.activate([
-                stackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-                stackView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-                stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-                stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+                activitySummaryLabel.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+                activitySummaryLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentView.layoutMarginsGuide.trailingAnchor),
+                activitySummaryLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+                activitySummaryLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -14)
             ])
+        }
+
+        private func makeActivitySummaryText(
+            dateText: String,
+            durationText: String
+        ) -> NSAttributedString {
+            let summaryText = "\(dateText) : \(durationText)"
+            let attributedText = NSMutableAttributedString(
+                string: summaryText,
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 14, weight: .regular),
+                    .foregroundColor: UIColor.label
+                ]
+            )
+
+            let durationRange = (summaryText as NSString).range(of: durationText)
+            attributedText.addAttributes(
+                [.font: UIFont.systemFont(ofSize: 20, weight: .semibold)],
+                range: durationRange
+            )
+
+            return attributedText
         }
     }
 
@@ -61,6 +73,7 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private let activityNameLabel = UILabel()
+    private let activityTimerActionView = ActivityTimerActionView()
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
     private let currentTimersButton = UIButton(type: .system)
@@ -68,13 +81,6 @@ final class ActivityHistoryViewController: UIViewController {
 
     var modelContext: ModelContext?
     var activityType: ActivityType?
-
-    private lazy var doneTimeDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter
-    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -99,16 +105,19 @@ final class ActivityHistoryViewController: UIViewController {
         view.backgroundColor = .systemBackground
 
         configureActivityNameLabel()
+        configureActivityTimerActionView()
         configureTableView()
         configureEmptyStateLabel()
         configureCurrentTimersButton()
 
         activityNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        activityTimerActionView.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
         currentTimersButton.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(activityNameLabel)
+        view.addSubview(activityTimerActionView)
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
         view.addSubview(currentTimersButton)
@@ -116,7 +125,10 @@ final class ActivityHistoryViewController: UIViewController {
         NSLayoutConstraint.activate([
             activityNameLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
             activityNameLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            activityNameLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+            activityNameLabel.trailingAnchor.constraint(lessThanOrEqualTo: activityTimerActionView.leadingAnchor, constant: -16),
+
+            activityTimerActionView.centerYAnchor.constraint(equalTo: activityNameLabel.centerYAnchor),
+            activityTimerActionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
 
             tableView.topAnchor.constraint(equalTo: activityNameLabel.bottomAnchor, constant: 24),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -139,14 +151,27 @@ final class ActivityHistoryViewController: UIViewController {
         activityNameLabel.text = activityType?.name ?? "Activity"
         activityNameLabel.font = .systemFont(ofSize: 34, weight: .bold)
         activityNameLabel.textColor = .label
-        activityNameLabel.numberOfLines = 0
+        activityNameLabel.numberOfLines = 1
+        activityNameLabel.adjustsFontSizeToFitWidth = true
+        activityNameLabel.minimumScaleFactor = 0.55
+        activityNameLabel.lineBreakMode = .byClipping
+        activityNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    }
+
+    private func configureActivityTimerActionView() {
+        activityTimerActionView.onRecordTapped = { [weak self] in
+            self?.showTimerViewControllerForCurrentActivityType()
+        }
+        activityTimerActionView.onTimerStatusTapped = { [weak self] in
+            self?.showTimerViewControllerForCurrentActivityType()
+        }
     }
 
     private func configureTableView() {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 56
+        tableView.estimatedRowHeight = 58
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
         tableView.register(ActivityHistoryCell.self, forCellReuseIdentifier: ActivityHistoryCell.reuseIdentifier)
     }
@@ -182,10 +207,23 @@ final class ActivityHistoryViewController: UIViewController {
             name: TimerSessionState.didStartTimerNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(activeTimersDidChange),
+            name: TimerSessionState.didChangeActiveTimersNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(activityDidPersist(_:)),
+            name: TimerSessionState.didPersistActivityNotification,
+            object: nil
+        )
     }
 
     private func loadActivities() {
         activityNameLabel.text = activityType?.name ?? "Activity"
+        updateActivityTimerActionView()
 
         guard let activityType else {
             activityRows = []
@@ -217,36 +255,29 @@ final class ActivityHistoryViewController: UIViewController {
 
         return ActivityHistoryRow(
             activity: activity,
-            doneTimeText: doneTimeDateFormatter.string(from: completionTime),
+            doneTimeText: activityHistoryDateText(for: completionTime),
             durationText: makeDurationText(for: activity, completionTime: completionTime)
         )
     }
 
+    private func activityHistoryDateText(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM dd (EEE)  hh:mm a"
+        return formatter.string(from: date)
+    }
+
     private func makeDurationText(for activity: Activity, completionTime: Date) -> String {
         if let timeTaken = activity.timeTaken {
-            return formattedDuration(seconds: Int(timeTaken))
+            return ActivityDisplayFormatter.roundedHistoryDurationText(for: timeTaken)
         }
 
         guard let startTime = activity.activityStartTime else {
             return "Unavailable"
         }
 
-        return formattedDuration(seconds: Int(completionTime.timeIntervalSince(startTime)))
-    }
-
-    private func formattedDuration(seconds: Int) -> String {
-        let duration = max(0, seconds)
-        let hours = duration / 3_600
-        let minutes = (duration % 3_600) / 60
-        let seconds = duration % 60
-
-        if hours > 0 {
-            return "\(hours) hr \(minutes) min"
-        } else if minutes > 0 {
-            return "\(minutes) min \(seconds) sec"
-        } else {
-            return "\(seconds) sec"
-        }
+        return ActivityDisplayFormatter.roundedHistoryDurationText(
+            for: completionTime.timeIntervalSince(startTime)
+        )
     }
 
     private func updateContent() {
@@ -258,21 +289,45 @@ final class ActivityHistoryViewController: UIViewController {
         updateCurrentTimersButtonVisibility()
     }
 
+    @objc private func activeTimersDidChange() {
+        updateActivityTimerActionView()
+        updateCurrentTimersButtonVisibility()
+    }
+
+    @objc private func activityDidPersist(_ notification: Notification) {
+        guard
+            let activityTypeID = notification.userInfo?[TimerSessionState.activityTypeIDUserInfoKey] as? UUID,
+            activityTypeID == activityType?.uniqueID
+        else {
+            return
+        }
+
+        loadActivities()
+    }
+
     private func updateCurrentTimersButtonVisibility() {
         currentTimersButton.isHidden = !TimerSessionState.hasStartedTimer
     }
 
-    private func showActivityDetails(for activity: Activity) {
-        let activityDetailsViewController = ActivityDetailsViewController(
-            nibName: "ActivityDetailsViewController",
-            bundle: nil
-        )
-        activityDetailsViewController.modelContext = modelContext
-        navigationController?.pushViewController(activityDetailsViewController, animated: true)
+    private func updateActivityTimerActionView() {
+        guard let activityType else {
+            activityTimerActionView.configure(timerState: .none)
+            return
+        }
+
+        activityTimerActionView.configure(timerState: TimerViewController.timerState(for: activityType))
+    }
+
+    private func showTimerViewControllerForCurrentActivityType() {
+        showTimerViewController(activityType: activityType)
     }
 
     private func showTimerViewController() {
         presentTimerViewController(modelContext: modelContext)
+    }
+
+    private func showTimerViewController(activityType: ActivityType?) {
+        presentTimerViewController(modelContext: modelContext, activityType: activityType)
     }
 }
 
@@ -297,7 +352,5 @@ extension ActivityHistoryViewController: UITableViewDataSource {
 extension ActivityHistoryViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-
-        showActivityDetails(for: activityRows[indexPath.row].activity)
     }
 }

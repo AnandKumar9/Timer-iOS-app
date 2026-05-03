@@ -7,4 +7,14 @@ ActivityHistoryViewController
 ActivityDetailsViewController
 
 
-For now just develop TimerViewController. Keep TimerControlsView in a separate file.
+For now just develop TimerViewController. Towards top have a Timer, just underneath it have Start (toggles to Resume when tapped) and Stop buttons
+
+
+Next things - 
+ActivityDetailsVC: UI for all fields + edit persistence + delete persistence
+ActivityTypesVC: Swipe to delete persistence
+ActivityHistoryVC: Swipe to delete UI + persistence
+force quite app - how to continue
+tags for activity types, enabled search or filter
+activityhistoryvc: Better UI when there are plenty of entries, may be year/month sections.
+ask for snappier design suggestion, even try with claude code design

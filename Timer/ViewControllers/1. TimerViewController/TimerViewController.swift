@@ -5,7 +5,10 @@ final class TimerViewController: UIViewController {
     fileprivate static var activeInstance: TimerViewController?
     fileprivate static var activeNavigationController: UINavigationController?
     static func hasRunningOrPausedTimer(for activityType: ActivityType) -> Bool {
-        activeInstance?.hasRunningOrPausedTimer(activityTypeID: activityType.uniqueID) ?? false
+        timerState(for: activityType) != .none
+    }
+    static func timerState(for activityType: ActivityType) -> ActivityTimerState {
+        activeInstance?.timerState(activityTypeID: activityType.uniqueID) ?? .none
     }
 
     private let scrollView = UIScrollView()
@@ -75,11 +78,15 @@ final class TimerViewController: UIViewController {
     }
 
     private func hasRunningOrPausedTimer(activityTypeID: UUID) -> Bool {
+        timerState(activityTypeID: activityTypeID) != .none
+    }
+
+    private func timerState(activityTypeID: UUID) -> ActivityTimerState {
         removeExpiredInactiveTimerControls()
 
-        return timerControlsViews.contains {
-            $0.activityTypeID == activityTypeID && $0.hasActiveTimer
-        }
+        return timerControlsViews.first {
+            $0.activityTypeID == activityTypeID
+        }?.activityTimerState ?? .none
     }
 
     func configure(activityType: ActivityType) {
@@ -304,6 +311,7 @@ final class TimerViewController: UIViewController {
 
         do {
             try modelContext.save()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activity.activityType.uniqueID)
             removeExpiredInactiveTimerControls()
         } catch {
             modelContext.delete(activity)

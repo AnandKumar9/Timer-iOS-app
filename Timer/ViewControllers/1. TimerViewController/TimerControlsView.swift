@@ -3,6 +3,8 @@ import UIKit
 enum TimerSessionState {
     static let didStartTimerNotification = Notification.Name("TimerSessionState.didStartTimerNotification")
     static let didChangeActiveTimersNotification = Notification.Name("TimerSessionState.didChangeActiveTimersNotification")
+    static let didPersistActivityNotification = Notification.Name("TimerSessionState.didPersistActivityNotification")
+    static let activityTypeIDUserInfoKey = "activityTypeID"
     private(set) static var hasStartedTimer = false
 
     static func markTimerStarted() {
@@ -17,6 +19,20 @@ enum TimerSessionState {
     static func notifyActiveTimersChanged() {
         NotificationCenter.default.post(name: didChangeActiveTimersNotification, object: nil)
     }
+
+    static func notifyActivityPersisted(activityTypeID: UUID) {
+        NotificationCenter.default.post(
+            name: didPersistActivityNotification,
+            object: nil,
+            userInfo: [activityTypeIDUserInfoKey: activityTypeID]
+        )
+    }
+}
+
+enum ActivityTimerState {
+    case none
+    case running
+    case paused
 }
 
 final class TimerControlsView: UIView {
@@ -45,6 +61,16 @@ final class TimerControlsView: UIView {
     var onActivityStopped: ((Activity) -> Void)?
     var hasActiveTimer: Bool {
         timerState != .stopped
+    }
+    var activityTimerState: ActivityTimerState {
+        switch timerState {
+        case .running:
+            return .running
+        case .paused:
+            return .paused
+        case .stopped:
+            return .none
+        }
     }
     var activityTypeID: UUID {
         activity.activityType.uniqueID
