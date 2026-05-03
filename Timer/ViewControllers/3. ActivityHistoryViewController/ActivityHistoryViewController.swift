@@ -75,7 +75,6 @@ final class ActivityHistoryViewController: UIViewController {
     private let activityNameLabel = UILabel()
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
-    private let currentTimersButton = UIButton(type: .system)
     private var activityRows: [ActivityHistoryRow] = []
 
     var modelContext: ModelContext?
@@ -92,7 +91,6 @@ final class ActivityHistoryViewController: UIViewController {
         super.viewWillAppear(animated)
 
         loadActivities()
-        updateCurrentTimersButton()
     }
 
     deinit {
@@ -106,17 +104,15 @@ final class ActivityHistoryViewController: UIViewController {
         configureActivityNameLabel()
         configureTableView()
         configureEmptyStateLabel()
-        configureCurrentTimersButton()
+        configureActivityNotifications()
 
         activityNameLabel.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
-        currentTimersButton.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(activityNameLabel)
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
-        view.addSubview(currentTimersButton)
 
         NSLayoutConstraint.activate([
             activityNameLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
@@ -131,12 +127,7 @@ final class ActivityHistoryViewController: UIViewController {
             emptyStateLabel.centerXAnchor.constraint(equalTo: tableView.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: tableView.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
-
-            currentTimersButton.widthAnchor.constraint(equalToConstant: 56),
-            currentTimersButton.heightAnchor.constraint(equalToConstant: 56),
-            currentTimersButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            currentTimersButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
+            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)
         ])
     }
 
@@ -168,45 +159,17 @@ final class ActivityHistoryViewController: UIViewController {
         emptyStateLabel.isHidden = true
     }
 
-    private func configureCurrentTimersButton() {
-        var configuration = UIButton.Configuration.filled()
-        configuration.baseBackgroundColor = .systemBlue
-        configuration.baseForegroundColor = .white
-
-        currentTimersButton.configuration = configuration
-        currentTimersButton.layer.cornerRadius = 18
-        currentTimersButton.layer.cornerCurve = .continuous
-        currentTimersButton.clipsToBounds = true
-        currentTimersButton.addAction(
-            UIAction { [weak self] _ in
-                self?.showTimerViewController()
-            },
-            for: .touchUpInside
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(timerSessionDidStartTimer),
-            name: TimerSessionState.didStartTimerNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(activeTimersDidChange),
-            name: TimerSessionState.didChangeActiveTimersNotification,
-            object: nil
-        )
+    private func configureActivityNotifications() {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(activityDidPersist(_:)),
             name: TimerSessionState.didPersistActivityNotification,
             object: nil
         )
-        updateCurrentTimersButton()
     }
 
     private func loadActivities() {
         activityNameLabel.text = activityType?.name ?? "Activity"
-        updateCurrentTimersButton()
 
         guard let activityType else {
             activityRows = []
@@ -319,14 +282,6 @@ final class ActivityHistoryViewController: UIViewController {
         emptyStateLabel.isHidden = !activityRows.isEmpty
     }
 
-    @objc private func timerSessionDidStartTimer() {
-        updateCurrentTimersButton()
-    }
-
-    @objc private func activeTimersDidChange() {
-        updateCurrentTimersButton()
-    }
-
     @objc private func activityDidPersist(_ notification: Notification) {
         guard
             let activityTypeID = notification.userInfo?[TimerSessionState.activityTypeIDUserInfoKey] as? UUID,
@@ -338,62 +293,6 @@ final class ActivityHistoryViewController: UIViewController {
         loadActivities()
     }
 
-    private func updateCurrentTimersButton() {
-        var configuration = currentTimersButton.configuration ?? UIButton.Configuration.filled()
-        configuration.image = currentTimersButtonImage()
-        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
-        configuration.baseBackgroundColor = currentTimersButtonBackgroundColor()
-        configuration.baseForegroundColor = .white
-        currentTimersButton.configuration = configuration
-        currentTimersButton.accessibilityLabel = currentTimersButtonAccessibilityLabel()
-    }
-
-    private func currentTimersButtonImage() -> UIImage? {
-        guard let activityType else {
-            return UIImage(systemName: "plus.circle.fill")
-        }
-
-        switch TimerViewController.timerState(for: activityType) {
-        case .none:
-            return UIImage(systemName: "plus.circle.fill")
-        case .running:
-            return UIImage(systemName: "timer")
-        case .paused:
-            return UIImage(systemName: "pause.circle.fill")
-        }
-    }
-
-    private func currentTimersButtonBackgroundColor() -> UIColor {
-        guard let activityType else {
-            return .systemBlue
-        }
-
-        switch TimerViewController.timerState(for: activityType) {
-        case .none, .running:
-            return .systemBlue
-        case .paused:
-            return .systemOrange
-        }
-    }
-
-    private func currentTimersButtonAccessibilityLabel() -> String {
-        guard let activityType else {
-            return "Record activity"
-        }
-
-        switch TimerViewController.timerState(for: activityType) {
-        case .none:
-            return "Record activity"
-        case .running:
-            return "Timer running"
-        case .paused:
-            return "Timer paused"
-        }
-    }
-
-    private func showTimerViewController() {
-        presentTimerViewController(modelContext: modelContext, activityType: activityType)
-    }
 }
 
 extension ActivityHistoryViewController: UITableViewDataSource {
@@ -411,6 +310,16 @@ extension ActivityHistoryViewController: UITableViewDataSource {
         ) as? ActivityHistoryCell
         cell?.configure(with: activityRows[indexPath.row])
         return cell ?? UITableViewCell()
+    }
+}
+
+extension ActivityHistoryViewController: FloatingTimerButtonContextProviding {
+    var floatingTimerButtonContext: FloatingTimerButtonContext? {
+        guard let activityType else {
+            return nil
+        }
+
+        return .activityType(activityType)
     }
 }
 

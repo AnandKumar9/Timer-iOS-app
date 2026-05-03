@@ -42,6 +42,14 @@ final class TimerViewController: UIViewController {
         promptForInitialActivityTypeIfNeeded()
     }
 
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+
+        if isBeingDismissed || navigationController?.isBeingDismissed == true {
+            TimerSessionState.notifyTimerViewControllerDismissed()
+        }
+    }
+
     private func configureAppearance() {
         title = "Timers"
         navigationItem.rightBarButtonItem = UIBarButtonItem(

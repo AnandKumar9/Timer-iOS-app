@@ -4,6 +4,7 @@ enum TimerSessionState {
     static let didStartTimerNotification = Notification.Name("TimerSessionState.didStartTimerNotification")
     static let didChangeActiveTimersNotification = Notification.Name("TimerSessionState.didChangeActiveTimersNotification")
     static let didPersistActivityNotification = Notification.Name("TimerSessionState.didPersistActivityNotification")
+    static let didDismissTimerViewControllerNotification = Notification.Name("TimerSessionState.didDismissTimerViewControllerNotification")
     static let activityTypeIDUserInfoKey = "activityTypeID"
     private(set) static var hasStartedTimer = false
 
@@ -18,6 +19,10 @@ enum TimerSessionState {
 
     static func notifyActiveTimersChanged() {
         NotificationCenter.default.post(name: didChangeActiveTimersNotification, object: nil)
+    }
+
+    static func notifyTimerViewControllerDismissed() {
+        NotificationCenter.default.post(name: didDismissTimerViewControllerNotification, object: nil)
     }
 
     static func notifyActivityPersisted(activityTypeID: UUID) {

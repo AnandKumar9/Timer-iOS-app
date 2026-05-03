@@ -4,6 +4,7 @@ import SwiftData
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     private var modelContext: ModelContext?
+    private var floatingTimerButtonController: FloatingTimerButtonController?
 
     func scene(
         _ scene: UIScene,
@@ -16,9 +17,14 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         let modelContext = (UIApplication.shared.delegate as? AppDelegate)?.modelContainer.mainContext
-        window.rootViewController = UINavigationController(
+        let navigationController = UINavigationController(
             rootViewController: makeInitialViewController(modelContext: modelContext)
         )
+        floatingTimerButtonController = FloatingTimerButtonController.install(
+            on: navigationController,
+            modelContext: modelContext
+        )
+        window.rootViewController = navigationController
         window.makeKeyAndVisible()
 
         self.window = window

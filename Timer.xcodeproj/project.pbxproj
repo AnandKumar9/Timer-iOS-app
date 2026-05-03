@@ -17,6 +17,7 @@
 		9A0000010000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000019 /* Assets.xcassets */; };
 		9A000001000000000000000A /* ActivityDisplayFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A000001000000000000001A /* ActivityDisplayFormatter.swift */; };
 		9A000001000000000000000B /* ActivityTimerActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A000001000000000000001B /* ActivityTimerActionView.swift */; };
+		9A000001000000000000000C /* FloatingTimerButtonController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A000001000000000000001C /* FloatingTimerButtonController.swift */; };
 		9A0000010000000000000030 /* ActivityDetailsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000035 /* ActivityDetailsViewController.xib */; };
 		9A0000010000000000000031 /* TimerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000036 /* TimerViewController.xib */; };
 		9A0000010000000000000032 /* ActivityTypesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000037 /* ActivityTypesViewController.xib */; };
@@ -37,6 +38,7 @@
 		9A0000010000000000000019 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9A000001000000000000001A /* ActivityDisplayFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDisplayFormatter.swift; sourceTree = "<group>"; };
 		9A000001000000000000001B /* ActivityTimerActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimerActionView.swift; sourceTree = "<group>"; };
+		9A000001000000000000001C /* FloatingTimerButtonController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingTimerButtonController.swift; sourceTree = "<group>"; };
 		9A0000010000000000000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9A0000010000000000000035 /* ActivityDetailsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ActivityDetailsViewController.xib; sourceTree = "<group>"; };
 		9A0000010000000000000036 /* TimerViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TimerViewController.xib; sourceTree = "<group>"; };
@@ -109,6 +111,7 @@
 				9A0000010000000000000012 /* SceneDelegate.swift */,
 				9A000001000000000000001A /* ActivityDisplayFormatter.swift */,
 				9A000001000000000000001B /* ActivityTimerActionView.swift */,
+				9A000001000000000000001C /* FloatingTimerButtonController.swift */,
 				9A0000010000000000000040 /* ViewControllers */,
 				9A0000010000000000000045 /* Models */,
 				9A0000010000000000000019 /* Assets.xcassets */,
@@ -225,6 +228,7 @@
 				9A0000010000000000000008 /* TimerControlsView.swift in Sources */,
 				9A000001000000000000000A /* ActivityDisplayFormatter.swift in Sources */,
 				9A000001000000000000000B /* ActivityTimerActionView.swift in Sources */,
+				9A000001000000000000000C /* FloatingTimerButtonController.swift in Sources */,
 				9A0000010000000000000005 /* ActivityTypesViewController.swift in Sources */,
 				9A0000010000000000000006 /* ActivityHistoryViewController.swift in Sources */,
 				9A0000010000000000000041 /* ActivityType.swift in Sources */,
