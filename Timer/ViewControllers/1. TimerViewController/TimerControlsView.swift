@@ -358,7 +358,7 @@ final class TimerControlsView: UIView {
 
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MM/dd (hh:mm a)"
+        formatter.dateFormat = "MM/dd (EEE), hh:mm a"
         return formatter.string(from: date)
     }
 

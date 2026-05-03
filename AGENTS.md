@@ -16,7 +16,11 @@ k ActivityTypesVC: Swipe to delete persistence
 k ActivityHistoryVC: Intelligent icons in bottom floating button
 k ActivityHistoryVC: Swipe to delete UI + persistence
 
-force quit app - how to continue
+redesign theme
+settings for dark/light mode
+
 tags for activity types, enabled search or filter
+force quit app - how to continue
+
 activityhistoryvc: Better UI when there are plenty of entries, may be year/month sections.
 ask for snappier design suggestion, even try with claude code design
