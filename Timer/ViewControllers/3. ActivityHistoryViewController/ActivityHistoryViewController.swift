@@ -417,6 +417,7 @@ extension ActivityHistoryViewController: UITableViewDataSource {
 extension ActivityHistoryViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        showActivityDetails(for: activityRows[indexPath.row].activity)
     }
 
     func tableView(
@@ -435,5 +436,15 @@ extension ActivityHistoryViewController: UITableViewDelegate {
         let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
         configuration.performsFirstActionWithFullSwipe = false
         return configuration
+    }
+
+    private func showActivityDetails(for activity: Activity) {
+        let activityDetailsViewController = ActivityDetailsViewController(
+            nibName: "ActivityDetailsViewController",
+            bundle: nil
+        )
+        activityDetailsViewController.modelContext = modelContext
+        activityDetailsViewController.activity = activity
+        navigationController?.pushViewController(activityDetailsViewController, animated: true)
     }
 }

@@ -12,7 +12,7 @@ For now just develop TimerViewController. Towards top have a Timer, just underne
 
 Next things - 
 ActivityDetailsVC: UI for all fields + edit persistence + delete persistence
-ActivityTypesVC: Swipe to delete persistence
+k ActivityTypesVC: Swipe to delete persistence
 k ActivityHistoryVC: Intelligent icons in bottom floating button
 k ActivityHistoryVC: Swipe to delete UI + persistence
 
