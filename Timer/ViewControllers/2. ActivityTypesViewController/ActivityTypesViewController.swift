@@ -355,9 +355,74 @@ final class ActivityTypesViewController: UIViewController {
             return
         }
 
+        TimerViewController.removeTimerControlsView(for: activityType.uniqueID)
         modelContext.delete(activityType)
         try modelContext.save()
         loadActivityTypes()
+    }
+
+    private func presentDeleteActivityTypeAlert(
+        for activityType: ActivityType,
+        completion: @escaping (Bool) -> Void
+    ) {
+        let activityCount = activityType.activities.count
+        let alertController = UIAlertController(
+            title: "Delete Activity Type?",
+            message: deleteActivityTypeAlertMessage(
+                activityType: activityType,
+                activityCount: activityCount,
+                hasActiveTimer: TimerViewController.hasRunningOrPausedTimer(for: activityType)
+            ),
+            preferredStyle: .alert
+        )
+
+        alertController.addAction(
+            UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                completion(false)
+            }
+        )
+        alertController.addAction(
+            UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+                do {
+                    try self?.deleteActivityType(activityType)
+                    completion(true)
+                } catch {
+                    assertionFailure("Unable to delete activity type: \(error)")
+                    self?.presentDeleteActivityTypeErrorAlert()
+                    completion(false)
+                }
+            }
+        )
+
+        present(alertController, animated: true)
+    }
+
+    private func deleteActivityTypeAlertMessage(
+        activityType: ActivityType,
+        activityCount: Int,
+        hasActiveTimer: Bool
+    ) -> String {
+        let activityText = activityCount == 1 ? "activity" : "activities"
+
+        if activityCount == 0 && hasActiveTimer {
+            return "\(activityType.name) has no linked activities, but there is an active timer for this activity. Deleting it will also remove that timer."
+        }
+
+        if hasActiveTimer {
+            return "\(activityType.name) has \(activityCount) linked \(activityText) and an active timer. Deleting it will delete those activities and remove the timer."
+        }
+
+        return "\(activityType.name) has \(activityCount) linked \(activityText). Deleting it will also delete those activities."
+    }
+
+    private func presentDeleteActivityTypeErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Delete Activity Type",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
     }
 
     private func addButtonTapped() {
@@ -488,13 +553,6 @@ extension ActivityTypesViewController: UITableViewDelegate {
 
     func tableView(
         _ tableView: UITableView,
-        leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath
-    ) -> UISwipeActionsConfiguration? {
-        makeDeleteSwipeActionsConfiguration(for: indexPath)
-    }
-
-    func tableView(
-        _ tableView: UITableView,
         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
         makeDeleteSwipeActionsConfiguration(for: indexPath)
@@ -503,15 +561,11 @@ extension ActivityTypesViewController: UITableViewDelegate {
     private func makeDeleteSwipeActionsConfiguration(for indexPath: IndexPath) -> UISwipeActionsConfiguration {
         let row = activityTypeRows[indexPath.row]
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
-            do {
-                try self?.deleteActivityType(row.activityType)
-                completion(true)
-            } catch {
-                assertionFailure("Unable to delete activity type: \(error)")
-                completion(false)
-            }
+            self?.presentDeleteActivityTypeAlert(for: row.activityType, completion: completion)
         }
 
-        return UISwipeActionsConfiguration(actions: [deleteAction])
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
+        configuration.performsFirstActionWithFullSwipe = false
+        return configuration
     }
 }

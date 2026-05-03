@@ -263,6 +263,57 @@ final class ActivityHistoryViewController: UIViewController {
         )
     }
 
+    private func presentDeleteActivityAlert(for row: ActivityHistoryRow, completion: @escaping (Bool) -> Void) {
+        let alertController = UIAlertController(
+            title: "Delete Activity?",
+            message: "Delete \(row.doneTimeText) : \(row.durationText)?",
+            preferredStyle: .alert
+        )
+
+        alertController.addAction(
+            UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                completion(false)
+            }
+        )
+        alertController.addAction(
+            UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+                do {
+                    try self?.deleteActivity(row.activity)
+                    completion(true)
+                } catch {
+                    assertionFailure("Unable to delete activity: \(error)")
+                    self?.presentDeleteActivityErrorAlert()
+                    completion(false)
+                }
+            }
+        )
+
+        present(alertController, animated: true)
+    }
+
+    private func deleteActivity(_ activity: Activity) throws {
+        guard let modelContext else {
+            return
+        }
+
+        let activityTypeID = activity.activityType.uniqueID
+        activity.activityType.activities.removeAll { $0 === activity }
+        modelContext.delete(activity)
+        try modelContext.save()
+        TimerSessionState.notifyActivityPersisted(activityTypeID: activityTypeID)
+        loadActivities()
+    }
+
+    private func presentDeleteActivityErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Delete Activity",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
     private func updateContent() {
         tableView.reloadData()
         emptyStateLabel.isHidden = !activityRows.isEmpty
@@ -366,5 +417,23 @@ extension ActivityHistoryViewController: UITableViewDataSource {
 extension ActivityHistoryViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+    ) -> UISwipeActionsConfiguration? {
+        makeDeleteSwipeActionsConfiguration(for: indexPath)
+    }
+
+    private func makeDeleteSwipeActionsConfiguration(for indexPath: IndexPath) -> UISwipeActionsConfiguration {
+        let row = activityRows[indexPath.row]
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
+            self?.presentDeleteActivityAlert(for: row, completion: completion)
+        }
+
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
+        configuration.performsFirstActionWithFullSwipe = false
+        return configuration
     }
 }

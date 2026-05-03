@@ -10,6 +10,9 @@ final class TimerViewController: UIViewController {
     static func timerState(for activityType: ActivityType) -> ActivityTimerState {
         activeInstance?.timerState(activityTypeID: activityType.uniqueID) ?? .none
     }
+    static func removeTimerControlsView(for activityTypeID: UUID) {
+        activeInstance?.removeTimerControlsView(activityTypeID: activityTypeID)
+    }
 
     private let scrollView = UIScrollView()
     private let timerControlsStackView = UIStackView()
@@ -176,6 +179,17 @@ final class TimerViewController: UIViewController {
         timerControlsViews.removeAll { timerControlsView in
             expiredTimerControlsViews.contains { $0 === timerControlsView }
         }
+    }
+
+    private func removeTimerControlsView(activityTypeID: UUID) {
+        guard let timerControlsView = timerControlsViews.first(where: { $0.activityTypeID == activityTypeID }) else {
+            return
+        }
+
+        timerControlsStackView.removeArrangedSubview(timerControlsView)
+        timerControlsView.removeFromSuperview()
+        timerControlsViews.removeAll { $0 === timerControlsView }
+        TimerSessionState.notifyActiveTimersChanged()
     }
 
     private func promptForInitialActivityTypeIfNeeded() {

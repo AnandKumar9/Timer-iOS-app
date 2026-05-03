@@ -13,8 +13,10 @@ For now just develop TimerViewController. Towards top have a Timer, just underne
 Next things - 
 ActivityDetailsVC: UI for all fields + edit persistence + delete persistence
 ActivityTypesVC: Swipe to delete persistence
-ActivityHistoryVC: Swipe to delete UI + persistence
-force quite app - how to continue
+k ActivityHistoryVC: Intelligent icons in bottom floating button
+k ActivityHistoryVC: Swipe to delete UI + persistence
+
+force quit app - how to continue
 tags for activity types, enabled search or filter
 activityhistoryvc: Better UI when there are plenty of entries, may be year/month sections.
 ask for snappier design suggestion, even try with claude code design
