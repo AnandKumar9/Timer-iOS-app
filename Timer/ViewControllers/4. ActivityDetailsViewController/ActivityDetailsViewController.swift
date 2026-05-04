@@ -62,6 +62,129 @@ final class ActivityDetailsViewController: UIViewController {
         }
     }
 
+    private final class EditableDateRowView: UIView {
+        private let iconView = UIImageView()
+        private let titleLabel = UILabel()
+        let datePicker = UIDatePicker()
+
+        init(iconName: String, title: String, date: Date) {
+            super.init(frame: .zero)
+            configure(iconName: iconName, title: title, date: date)
+        }
+
+        required init?(coder: NSCoder) {
+            super.init(coder: coder)
+            configure(iconName: "calendar", title: "", date: Date())
+        }
+
+        private func configure(iconName: String, title: String, date: Date) {
+            let textStackView = UIStackView()
+
+            iconView.image = UIImage(systemName: iconName)
+            iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            iconView.tintColor = .secondaryLabel
+            iconView.contentMode = .scaleAspectFit
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+
+            titleLabel.text = title
+            titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+            titleLabel.textColor = .secondaryLabel
+
+            datePicker.date = date
+            datePicker.datePickerMode = .dateAndTime
+            datePicker.preferredDatePickerStyle = .compact
+            datePicker.translatesAutoresizingMaskIntoConstraints = false
+
+            textStackView.axis = .vertical
+            textStackView.spacing = 6
+            textStackView.translatesAutoresizingMaskIntoConstraints = false
+            textStackView.addArrangedSubview(titleLabel)
+            textStackView.addArrangedSubview(datePicker)
+
+            addSubview(iconView)
+            addSubview(textStackView)
+
+            NSLayoutConstraint.activate([
+                iconView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                iconView.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+                iconView.widthAnchor.constraint(equalToConstant: 26),
+                iconView.heightAnchor.constraint(equalToConstant: 26),
+
+                textStackView.topAnchor.constraint(equalTo: topAnchor),
+                textStackView.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
+                textStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                textStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+        }
+    }
+
+    private final class EditableActivityTypeRowView: UIView {
+        private let iconView = UIImageView()
+        private let titleLabel = UILabel()
+        let selectionButton = UIButton(type: .system)
+
+        init(iconName: String, title: String, selectedName: String) {
+            super.init(frame: .zero)
+            configure(iconName: iconName, title: title, selectedName: selectedName)
+        }
+
+        required init?(coder: NSCoder) {
+            super.init(coder: coder)
+            configure(iconName: "tag.fill", title: "", selectedName: "")
+        }
+
+        private func configure(iconName: String, title: String, selectedName: String) {
+            let textStackView = UIStackView()
+
+            iconView.image = UIImage(systemName: iconName)
+            iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            iconView.tintColor = .secondaryLabel
+            iconView.contentMode = .scaleAspectFit
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+
+            titleLabel.text = title
+            titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+            titleLabel.textColor = .secondaryLabel
+
+            var configuration = UIButton.Configuration.tinted()
+            configuration.title = selectedName
+            configuration.image = UIImage(systemName: "chevron.up.chevron.down")
+            configuration.imagePlacement = .trailing
+            configuration.imagePadding = 8
+            configuration.baseForegroundColor = .systemBlue
+            selectionButton.configuration = configuration
+            selectionButton.contentHorizontalAlignment = .leading
+            selectionButton.showsMenuAsPrimaryAction = true
+
+            textStackView.axis = .vertical
+            textStackView.spacing = 6
+            textStackView.translatesAutoresizingMaskIntoConstraints = false
+            textStackView.addArrangedSubview(titleLabel)
+            textStackView.addArrangedSubview(selectionButton)
+
+            addSubview(iconView)
+            addSubview(textStackView)
+
+            NSLayoutConstraint.activate([
+                iconView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                iconView.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+                iconView.widthAnchor.constraint(equalToConstant: 26),
+                iconView.heightAnchor.constraint(equalToConstant: 26),
+
+                textStackView.topAnchor.constraint(equalTo: topAnchor),
+                textStackView.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
+                textStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                textStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+        }
+
+        func updateSelectedName(_ selectedName: String) {
+            var configuration = selectionButton.configuration ?? UIButton.Configuration.tinted()
+            configuration.title = selectedName
+            selectionButton.configuration = configuration
+        }
+    }
+
     private let scrollView = UIScrollView()
     private let contentStackView = UIStackView()
     private let activityNameLabel = UILabel()
@@ -69,6 +192,15 @@ final class ActivityDetailsViewController: UIViewController {
     private let durationValueLabel = UILabel()
     private let detailsContainerView = UIView()
     private let detailsStackView = UIStackView()
+    private let editSaveButton = UIButton(type: .system)
+    private var startDatePicker: UIDatePicker?
+    private var completionDatePicker: UIDatePicker?
+    private var isEditingActivityDetails = false
+    private var originalStartTime: Date?
+    private var originalCompletionTime: Date?
+    private var originalActivityTypeID: UUID?
+    private var availableActivityTypes: [ActivityType] = []
+    private var selectedActivityType: ActivityType?
 
     var modelContext: ModelContext?
     var activity: Activity?
@@ -89,9 +221,11 @@ final class ActivityDetailsViewController: UIViewController {
         configureHeader()
         configureSummaryCard()
         configureDetailsContainer()
+        configureEditSaveButton()
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentStackView)
+        view.addSubview(editSaveButton)
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -103,12 +237,19 @@ final class ActivityDetailsViewController: UIViewController {
             contentStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),
             contentStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -20),
             contentStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -32),
-            contentStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -40)
+            contentStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -40),
+
+            editSaveButton.widthAnchor.constraint(equalToConstant: 56),
+            editSaveButton.heightAnchor.constraint(equalToConstant: 56),
+            editSaveButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            editSaveButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
 
     private func configureScrollView() {
         scrollView.alwaysBounceVertical = true
+        scrollView.contentInset.bottom = 88
+        scrollView.verticalScrollIndicatorInsets.bottom = 88
         scrollView.translatesAutoresizingMaskIntoConstraints = false
     }
 
@@ -202,7 +343,7 @@ final class ActivityDetailsViewController: UIViewController {
 
     private func configureDetailsContainer() {
         let sectionTitleLabel = UILabel()
-        sectionTitleLabel.text = "Stored Fields"
+        sectionTitleLabel.text = "Activity Info"
         sectionTitleLabel.font = .systemFont(ofSize: 20, weight: .bold)
         sectionTitleLabel.textColor = .label
 
@@ -232,6 +373,31 @@ final class ActivityDetailsViewController: UIViewController {
         ])
     }
 
+    private func configureEditSaveButton() {
+        var configuration = UIButton.Configuration.filled()
+        configuration.baseBackgroundColor = .systemBlue
+        configuration.baseForegroundColor = .white
+        configuration.image = UIImage(systemName: "pencil")
+        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+
+        editSaveButton.configuration = configuration
+        editSaveButton.layer.cornerRadius = 18
+        editSaveButton.layer.cornerCurve = .continuous
+        editSaveButton.clipsToBounds = true
+        editSaveButton.layer.shadowColor = UIColor.black.cgColor
+        editSaveButton.layer.shadowOpacity = 0.18
+        editSaveButton.layer.shadowRadius = 10
+        editSaveButton.layer.shadowOffset = CGSize(width: 0, height: 4)
+        editSaveButton.translatesAutoresizingMaskIntoConstraints = false
+        editSaveButton.accessibilityLabel = "Edit activity"
+        editSaveButton.addAction(
+            UIAction { [weak self] _ in
+                self?.editSaveButtonTapped()
+            },
+            for: .touchUpInside
+        )
+    }
+
     private func populateActivityDetails() {
         guard let activity else {
             activityNameLabel.text = "Activity"
@@ -254,15 +420,41 @@ final class ActivityDetailsViewController: UIViewController {
         )
         durationValueLabel.text = formattedDuration(duration)
 
+        if isEditingActivityDetails {
+            let activityTypeRow = makeEditableActivityTypeRow(selectedActivityType: selectedActivityType ?? activity.activityType)
+            let startDateRow = EditableDateRowView(
+                iconName: "calendar.badge.plus",
+                title: "Activity Start Time",
+                date: activity.activityStartTime ?? Date()
+            )
+            let completionDateRow = EditableDateRowView(
+                iconName: "checkmark.circle.fill",
+                title: "Activity Completion Time",
+                date: activity.activityCompletionTime ?? Date()
+            )
+            startDatePicker = startDateRow.datePicker
+            completionDatePicker = completionDateRow.datePicker
+
+            setDetailRows([
+                activityTypeRow,
+                startDateRow,
+                completionDateRow,
+                makeDeleteActivityButton()
+            ])
+            return
+        }
+
+        startDatePicker = nil
+        completionDatePicker = nil
+        selectedActivityType = nil
         setDetailRows([
             DetailRowView(iconName: "tag.fill", title: "Activity Type Name", value: activity.activityType.name),
-            DetailRowView(iconName: "timer", title: "Time Taken", value: formattedDuration(activity.timeTaken)),
             DetailRowView(iconName: "calendar.badge.plus", title: "Activity Start Time", value: startTimeText),
-            DetailRowView(iconName: "checkmark.circle.fill", title: "Activity Completion Time", value: completionTimeText),
+            DetailRowView(iconName: "checkmark.circle.fill", title: "Activity Completion Time", value: completionTimeText)
         ])
     }
 
-    private func setDetailRows(_ rows: [DetailRowView]) {
+    private func setDetailRows(_ rows: [UIView]) {
         detailsStackView.arrangedSubviews.forEach { view in
             detailsStackView.removeArrangedSubview(view)
             view.removeFromSuperview()
@@ -284,10 +476,270 @@ final class ActivityDetailsViewController: UIViewController {
         return dividerView
     }
 
+    private func makeEditableActivityTypeRow(selectedActivityType: ActivityType) -> EditableActivityTypeRowView {
+        let row = EditableActivityTypeRowView(
+            iconName: "tag.fill",
+            title: "Activity Type Name",
+            selectedName: selectedActivityType.name
+        )
+        row.selectionButton.menu = UIMenu(
+            children: availableActivityTypes.map { activityType in
+                UIAction(
+                    title: activityType.name,
+                    state: activityType.uniqueID == selectedActivityType.uniqueID ? .on : .off
+                ) { [weak self, weak row] _ in
+                    self?.selectedActivityType = activityType
+                    row?.updateSelectedName(activityType.name)
+                }
+            }
+        )
+        return row
+    }
+
+    private func makeDeleteActivityButton() -> UIButton {
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = "Delete Activity"
+        configuration.image = UIImage(systemName: "trash")
+        configuration.imagePadding = 8
+        configuration.baseBackgroundColor = .systemRed.withAlphaComponent(0.12)
+        configuration.baseForegroundColor = .systemRed
+        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+
+        let button = UIButton(type: .system)
+        button.configuration = configuration
+        button.layer.cornerRadius = 8
+        button.layer.cornerCurve = .continuous
+        button.clipsToBounds = true
+        button.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        button.addAction(
+            UIAction { [weak self] _ in
+                self?.presentDeleteActivityConfirmationAlert()
+            },
+            for: .touchUpInside
+        )
+        return button
+    }
+
     private func configureStatusCapsule(text: String, color: UIColor) {
         statusCapsuleLabel.text = "  \(text)  "
         statusCapsuleLabel.textColor = color
         statusCapsuleLabel.backgroundColor = color.withAlphaComponent(0.14)
+    }
+
+    private func editSaveButtonTapped() {
+        if isEditingActivityDetails {
+            if hasEditedActivityDetails {
+                presentSaveConfirmationAlert()
+            } else {
+                setEditingActivityDetails(false)
+            }
+        } else {
+            setEditingActivityDetails(true)
+        }
+    }
+
+    private func setEditingActivityDetails(_ isEditing: Bool) {
+        if isEditing {
+            availableActivityTypes = fetchActivityTypes()
+            originalStartTime = activity?.activityStartTime
+            originalCompletionTime = activity?.activityCompletionTime
+            originalActivityTypeID = activity?.activityType.uniqueID
+            selectedActivityType = activity?.activityType
+        } else {
+            availableActivityTypes = []
+            originalStartTime = nil
+            originalCompletionTime = nil
+            originalActivityTypeID = nil
+            selectedActivityType = nil
+        }
+
+        isEditingActivityDetails = isEditing
+        updateEditSaveButtonAppearance()
+        populateActivityDetails()
+    }
+
+    private func updateEditSaveButtonAppearance() {
+        var configuration = editSaveButton.configuration ?? UIButton.Configuration.filled()
+        configuration.image = UIImage(systemName: isEditingActivityDetails ? "checkmark" : "pencil")
+        configuration.baseBackgroundColor = isEditingActivityDetails ? .systemGreen : .systemBlue
+        editSaveButton.configuration = configuration
+        editSaveButton.accessibilityLabel = isEditingActivityDetails ? "Save activity" : "Edit activity"
+    }
+
+    private func saveActivityDetails() {
+        guard
+            let activity,
+            let modelContext,
+            let startDate = startDatePicker?.date,
+            let completionDate = completionDatePicker?.date,
+            let selectedActivityType
+        else {
+            setEditingActivityDetails(false)
+            return
+        }
+
+        guard completionDate >= startDate else {
+            presentInvalidDateRangeAlert()
+            return
+        }
+
+        let previousActivityType = activity.activityType
+        let previousActivityTypeID = previousActivityType.uniqueID
+
+        if previousActivityType.uniqueID != selectedActivityType.uniqueID {
+            previousActivityType.activities.removeAll { $0 === activity }
+            activity.activityType = selectedActivityType
+            if !selectedActivityType.activities.contains(where: { $0 === activity }) {
+                selectedActivityType.activities.append(activity)
+            }
+        }
+
+        activity.activityStartTime = startDate
+        activity.activityCompletionTime = completionDate
+        activity.timeTaken = completionDate.timeIntervalSince(startDate)
+
+        do {
+            try modelContext.save()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: previousActivityTypeID)
+            TimerSessionState.notifyActivityPersisted(activityTypeID: selectedActivityType.uniqueID)
+            setEditingActivityDetails(false)
+        } catch {
+            assertionFailure("Unable to save activity details: \(error)")
+            presentSaveActivityDetailsErrorAlert()
+        }
+    }
+
+    private func presentSaveConfirmationAlert() {
+        let alertController = UIAlertController(
+            title: "Save Changes?",
+            message: "Save the edited activity times or discard your changes.",
+            preferredStyle: .alert
+        )
+
+        alertController.addAction(
+            UIAlertAction(title: "Discard", style: .destructive) { [weak self] _ in
+                self?.setEditingActivityDetails(false)
+            }
+        )
+        alertController.addAction(
+            UIAlertAction(title: "Save", style: .default) { [weak self] _ in
+                self?.saveActivityDetails()
+            }
+        )
+
+        present(alertController, animated: true)
+    }
+
+    private func presentDeleteActivityConfirmationAlert() {
+        let alertController = UIAlertController(
+            title: "Delete Activity?",
+            message: "This activity will be permanently deleted.",
+            preferredStyle: .alert
+        )
+
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alertController.addAction(
+            UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+                self?.deleteActivity()
+            }
+        )
+
+        present(alertController, animated: true)
+    }
+
+    private func deleteActivity() {
+        guard let activity, let modelContext else {
+            navigationController?.popViewController(animated: true)
+            return
+        }
+
+        let activityType = activity.activityType
+        let activityTypeID = activityType.uniqueID
+        activityType.activities.removeAll { $0 === activity }
+        modelContext.delete(activity)
+
+        do {
+            try modelContext.save()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activityTypeID)
+            navigationController?.popViewController(animated: true)
+        } catch {
+            assertionFailure("Unable to delete activity: \(error)")
+            presentDeleteActivityErrorAlert()
+        }
+    }
+
+    private var hasEditedActivityDetails: Bool {
+        guard
+            let startDate = startDatePicker?.date,
+            let completionDate = completionDatePicker?.date
+        else {
+            return false
+        }
+
+        return !areDatesEqual(startDate, originalStartTime)
+            || !areDatesEqual(completionDate, originalCompletionTime)
+            || selectedActivityType?.uniqueID != originalActivityTypeID
+    }
+
+    private func fetchActivityTypes() -> [ActivityType] {
+        guard let modelContext else {
+            return activity.map { [$0.activityType] } ?? []
+        }
+
+        do {
+            let descriptor = FetchDescriptor<ActivityType>(
+                sortBy: [SortDescriptor(\.name)]
+            )
+            let activityTypes = try modelContext.fetch(descriptor)
+            if activityTypes.isEmpty, let activity {
+                return [activity.activityType]
+            }
+            return activityTypes
+        } catch {
+            assertionFailure("Unable to fetch activity types: \(error)")
+            return activity.map { [$0.activityType] } ?? []
+        }
+    }
+
+    private func areDatesEqual(_ lhs: Date?, _ rhs: Date?) -> Bool {
+        switch (lhs, rhs) {
+        case let (.some(lhs), .some(rhs)):
+            return abs(lhs.timeIntervalSince(rhs)) < 0.001
+        case (.none, .none):
+            return true
+        case (.some, .none), (.none, .some):
+            return false
+        }
+    }
+
+    private func presentInvalidDateRangeAlert() {
+        let alertController = UIAlertController(
+            title: "Invalid Time Range",
+            message: "Completion time must be after start time.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
+    private func presentSaveActivityDetailsErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Save Activity",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
+    private func presentDeleteActivityErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Delete Activity",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
     }
 
     private func statusText(for activity: Activity) -> String {
@@ -360,14 +812,4 @@ final class ActivityDetailsViewController: UIViewController {
         return formatter.string(from: date)
     }
 
-}
-
-extension ActivityDetailsViewController: FloatingTimerButtonContextProviding {
-    var floatingTimerButtonContext: FloatingTimerButtonContext? {
-        guard let activityType = activity?.activityType else {
-            return nil
-        }
-
-        return .activityType(activityType)
-    }
 }
