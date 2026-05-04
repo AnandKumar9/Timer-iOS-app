@@ -24,6 +24,7 @@
 		9A0000010000000000000033 /* ActivityHistoryViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000038 /* ActivityHistoryViewController.xib */; };
 		9A0000010000000000000041 /* ActivityType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000043 /* ActivityType.swift */; };
 		9A0000010000000000000042 /* Activity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000044 /* Activity.swift */; };
+		9A0000010000000000000046 /* ActivityTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000047 /* ActivityTag.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +47,7 @@
 		9A0000010000000000000038 /* ActivityHistoryViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ActivityHistoryViewController.xib; sourceTree = "<group>"; };
 		9A0000010000000000000043 /* ActivityType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityType.swift; sourceTree = "<group>"; };
 		9A0000010000000000000044 /* Activity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activity.swift; sourceTree = "<group>"; };
+		9A0000010000000000000047 /* ActivityTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTag.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +146,7 @@
 			children = (
 				9A0000010000000000000043 /* ActivityType.swift */,
 				9A0000010000000000000044 /* Activity.swift */,
+				9A0000010000000000000047 /* ActivityTag.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -233,6 +236,7 @@
 				9A0000010000000000000006 /* ActivityHistoryViewController.swift in Sources */,
 				9A0000010000000000000041 /* ActivityType.swift in Sources */,
 				9A0000010000000000000042 /* Activity.swift in Sources */,
+				9A0000010000000000000046 /* ActivityTag.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

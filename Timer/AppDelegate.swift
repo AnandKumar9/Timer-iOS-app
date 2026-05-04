@@ -5,7 +5,7 @@ import SwiftData
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     lazy var modelContainer: ModelContainer = {
         do {
-            return try ModelContainer(for: ActivityType.self, Activity.self)
+            return try ModelContainer(for: ActivityType.self, Activity.self, ActivityTag.self)
         } catch {
             fatalError("Unable to create SwiftData model container: \(error)")
         }
