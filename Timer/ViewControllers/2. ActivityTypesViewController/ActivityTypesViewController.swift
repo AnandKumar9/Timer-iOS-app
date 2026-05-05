@@ -8,17 +8,37 @@ final class ActivityTypesViewController: UIViewController {
         let latestActivity: Activity?
         let latestActivityCompletionTime: Date?
         let timerState: ActivityTimerState
+        let tagPreviewTexts: [String]
     }
 
     private final class ActivityTypeCell: UITableViewCell {
         static let reuseIdentifier = "ActivityTypeCell"
+
+        private final class PillLabel: UILabel {
+            private let contentInsets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
+
+            override var intrinsicContentSize: CGSize {
+                let size = super.intrinsicContentSize
+                return CGSize(
+                    width: size.width + contentInsets.left + contentInsets.right,
+                    height: size.height + contentInsets.top + contentInsets.bottom
+                )
+            }
+
+            override func drawText(in rect: CGRect) {
+                super.drawText(in: rect.inset(by: contentInsets))
+            }
+        }
 
         var onStartTapped: (() -> Void)?
         var onTimerStatusTapped: (() -> Void)?
 
         private let nameLabel = UILabel()
         private let latestActivityLabel = UILabel()
+        private let tagPreviewContainerView = UIView()
+        private let tagPreviewStackView = UIStackView()
         private let actionView = ActivityTimerActionView()
+        private let maximumVisibleTagCount = 4
 
         override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
             super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -40,6 +60,7 @@ final class ActivityTypesViewController: UIViewController {
 
         func configure(with row: ActivityTypeRow) {
             nameLabel.text = row.name
+            configureTagPreviews(row.tagPreviewTexts)
             actionView.onRecordTapped = { [weak self] in
                 self?.onStartTapped?()
             }
@@ -67,9 +88,21 @@ final class ActivityTypesViewController: UIViewController {
 
             latestActivityLabel.font = .systemFont(ofSize: 14, weight: .regular)
             latestActivityLabel.textColor = .secondaryLabel
-            latestActivityLabel.numberOfLines = 2
+            latestActivityLabel.numberOfLines = 1
 
-            let labelStackView = UIStackView(arrangedSubviews: [nameLabel, latestActivityLabel])
+            tagPreviewStackView.axis = .horizontal
+            tagPreviewStackView.alignment = .center
+            tagPreviewStackView.spacing = 6
+            tagPreviewStackView.translatesAutoresizingMaskIntoConstraints = false
+
+            tagPreviewContainerView.addSubview(tagPreviewStackView)
+
+            let activityMetadataStackView = UIStackView(arrangedSubviews: [latestActivityLabel, tagPreviewContainerView])
+            activityMetadataStackView.axis = .vertical
+            activityMetadataStackView.alignment = .fill
+            activityMetadataStackView.spacing = 5
+
+            let labelStackView = UIStackView(arrangedSubviews: [nameLabel, activityMetadataStackView])
             labelStackView.axis = .vertical
             labelStackView.alignment = .fill
             labelStackView.spacing = 4
@@ -84,11 +117,74 @@ final class ActivityTypesViewController: UIViewController {
                 labelStackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
                 labelStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
                 labelStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
-                labelStackView.trailingAnchor.constraint(lessThanOrEqualTo: actionView.leadingAnchor, constant: -16),
+                labelStackView.trailingAnchor.constraint(equalTo: actionView.leadingAnchor, constant: -16),
+                tagPreviewStackView.leadingAnchor.constraint(equalTo: tagPreviewContainerView.leadingAnchor),
+                tagPreviewStackView.topAnchor.constraint(equalTo: tagPreviewContainerView.topAnchor),
+                tagPreviewStackView.bottomAnchor.constraint(equalTo: tagPreviewContainerView.bottomAnchor),
+                tagPreviewStackView.trailingAnchor.constraint(equalTo: tagPreviewContainerView.trailingAnchor),
+                tagPreviewStackView.trailingAnchor.constraint(lessThanOrEqualTo: actionView.leadingAnchor, constant: -16),
 
                 actionView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
                 actionView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor)
             ])
+        }
+
+        private func configureTagPreviews(_ tags: [String]) {
+            tagPreviewStackView.arrangedSubviews.forEach { view in
+                tagPreviewStackView.removeArrangedSubview(view)
+                view.removeFromSuperview()
+            }
+
+            tagPreviewContainerView.isHidden = tags.isEmpty
+
+            let visibleTags = Array(tags.prefix(maximumVisibleTagCount))
+            let shouldShowOverflowPill = tags.count > visibleTags.count
+            let shrinkableTagIndex = visibleTags.indices.last
+
+            visibleTags.enumerated().forEach { index, tag in
+                let compressionResistancePriority: UILayoutPriority = index == shrinkableTagIndex
+                    ? .defaultLow
+                    : .required
+                tagPreviewStackView.addArrangedSubview(
+                    makeTagPill(
+                        text: tag,
+                        horizontalCompressionResistancePriority: compressionResistancePriority
+                    )
+                )
+            }
+
+            if shouldShowOverflowPill {
+                let hiddenTagCount = tags.count - visibleTags.count
+                tagPreviewStackView.addArrangedSubview(
+                    makeTagPill(
+                        text: "+\(hiddenTagCount)",
+                        horizontalCompressionResistancePriority: .required
+                    )
+                )
+            }
+
+            let spacerView = UIView()
+            spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            spacerView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            tagPreviewStackView.addArrangedSubview(spacerView)
+        }
+
+        private func makeTagPill(
+            text: String,
+            horizontalCompressionResistancePriority: UILayoutPriority
+        ) -> PillLabel {
+            let label = PillLabel()
+            label.text = text
+            label.font = .systemFont(ofSize: 12, weight: .medium)
+            label.textColor = .secondaryLabel
+            label.backgroundColor = .tertiarySystemFill
+            label.layer.cornerRadius = 9
+            label.layer.masksToBounds = true
+            label.lineBreakMode = .byTruncatingTail
+            label.numberOfLines = 1
+            label.setContentCompressionResistancePriority(horizontalCompressionResistancePriority, for: .horizontal)
+            label.widthAnchor.constraint(lessThanOrEqualToConstant: 120).isActive = true
+            return label
         }
 
         private func makeLatestActivityText(
@@ -229,8 +325,15 @@ final class ActivityTypesViewController: UIViewController {
             name: activityType.name,
             latestActivity: latestActivity,
             latestActivityCompletionTime: latestActivity?.activityCompletionTime,
-            timerState: TimerViewController.timerState(for: activityType)
+            timerState: TimerViewController.timerState(for: activityType),
+            tagPreviewTexts: tagPreviewTexts(for: activityType)
         )
+    }
+
+    private func tagPreviewTexts(for activityType: ActivityType) -> [String] {
+        activityType.tags?
+            .map(\.name)
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending } ?? []
     }
 
     private func latestCompletedActivity(for activityType: ActivityType) -> Activity? {
