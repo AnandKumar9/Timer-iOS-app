@@ -25,6 +25,7 @@
 		9A0000010000000000000041 /* ActivityType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000043 /* ActivityType.swift */; };
 		9A0000010000000000000042 /* Activity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000044 /* Activity.swift */; };
 		9A0000010000000000000046 /* ActivityTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000047 /* ActivityTag.swift */; };
+		9A0000010000000000000048 /* TagsManagementViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000049 /* TagsManagementViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +49,7 @@
 		9A0000010000000000000043 /* ActivityType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityType.swift; sourceTree = "<group>"; };
 		9A0000010000000000000044 /* Activity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activity.swift; sourceTree = "<group>"; };
 		9A0000010000000000000047 /* ActivityTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTag.swift; sourceTree = "<group>"; };
+		9A0000010000000000000049 /* TagsManagementViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsManagementViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +63,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		440DE4952FAABA0800910C7F /* 5. TagsManagementViewController */ = {
+			isa = PBXGroup;
+			children = (
+				9A0000010000000000000049 /* TagsManagementViewController.swift */,
+			);
+			path = "5. TagsManagementViewController";
+			sourceTree = "<group>";
+		};
 		4413A30D2FA432020005EE3C /* 4. ActivityDetailsViewController */ = {
 			isa = PBXGroup;
 			children = (
@@ -137,6 +147,7 @@
 				4413A30F2FA432240005EE3C /* 2. ActivityTypesViewController */,
 				4413A3102FA4322D0005EE3C /* 3. ActivityHistoryViewController */,
 				4413A30D2FA432020005EE3C /* 4. ActivityDetailsViewController */,
+				440DE4952FAABA0800910C7F /* 5. TagsManagementViewController */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -237,6 +248,7 @@
 				9A0000010000000000000041 /* ActivityType.swift in Sources */,
 				9A0000010000000000000042 /* Activity.swift in Sources */,
 				9A0000010000000000000046 /* ActivityTag.swift in Sources */,
+				9A0000010000000000000048 /* TagsManagementViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -5,7 +5,7 @@ import SwiftData
 final class ActivityTag {
     @Attribute(.unique) var uniqueID: UUID
     var name: String
-    @Relationship(inverse: \ActivityType.tags) var activityTypes: [ActivityType]
+    @Relationship(deleteRule: .nullify, inverse: \ActivityType.tags) var activityTypes: [ActivityType]
 
     init(
         uniqueID: UUID = UUID(),

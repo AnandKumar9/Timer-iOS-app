@@ -2,6 +2,22 @@ import UIKit
 import SwiftData
 
 final class ActivityHistoryViewController: UIViewController {
+    private final class PillLabel: UILabel {
+        private let contentInsets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
+
+        override var intrinsicContentSize: CGSize {
+            let size = super.intrinsicContentSize
+            return CGSize(
+                width: size.width + contentInsets.left + contentInsets.right,
+                height: size.height + contentInsets.top + contentInsets.bottom
+            )
+        }
+
+        override func drawText(in rect: CGRect) {
+            super.drawText(in: rect.inset(by: contentInsets))
+        }
+    }
+
     private final class ActivityHistoryCell: UITableViewCell {
         static let reuseIdentifier = "ActivityHistoryCell"
 
@@ -72,10 +88,14 @@ final class ActivityHistoryViewController: UIViewController {
         let durationText: String
     }
 
+    private let headerStackView = UIStackView()
     private let activityNameLabel = UILabel()
+    private let tagPreviewContainerView = UIView()
+    private let tagPreviewStackView = UIStackView()
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
     private var activityRows: [ActivityHistoryRow] = []
+    private let maximumVisibleTagCount = 4
 
     var modelContext: ModelContext?
     var activityType: ActivityType?
@@ -99,27 +119,43 @@ final class ActivityHistoryViewController: UIViewController {
 
     private func configureAppearance() {
         title = "Activity History"
+        let tagsButton = UIBarButtonItem(
+            image: UIImage(systemName: "tag"),
+            primaryAction: UIAction { [weak self] _ in
+                self?.presentTagsSheet()
+            }
+        )
+        tagsButton.accessibilityLabel = "Edit Tags"
+        navigationItem.rightBarButtonItem = tagsButton
+
         view.backgroundColor = .systemBackground
 
         configureActivityNameLabel()
+        configureTagPreviewStackView()
         configureTableView()
         configureEmptyStateLabel()
         configureActivityNotifications()
 
-        activityNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        headerStackView.axis = .vertical
+        headerStackView.alignment = .fill
+        headerStackView.spacing = 8
+        headerStackView.translatesAutoresizingMaskIntoConstraints = false
+        headerStackView.addArrangedSubview(activityNameLabel)
+        headerStackView.addArrangedSubview(tagPreviewContainerView)
+
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        view.addSubview(activityNameLabel)
+        view.addSubview(headerStackView)
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
 
         NSLayoutConstraint.activate([
-            activityNameLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
-            activityNameLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            activityNameLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+            headerStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
+            headerStackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
+            headerStackView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
 
-            tableView.topAnchor.constraint(equalTo: activityNameLabel.bottomAnchor, constant: 24),
+            tableView.topAnchor.constraint(equalTo: headerStackView.bottomAnchor, constant: 24),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -144,6 +180,24 @@ final class ActivityHistoryViewController: UIViewController {
         activityNameLabel.addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(activityNameLabelTapped))
         )
+    }
+
+    private func configureTagPreviewStackView() {
+        tagPreviewStackView.axis = .horizontal
+        tagPreviewStackView.alignment = .center
+        tagPreviewStackView.spacing = 6
+        tagPreviewStackView.translatesAutoresizingMaskIntoConstraints = false
+
+        tagPreviewContainerView.addSubview(tagPreviewStackView)
+        tagPreviewContainerView.isHidden = true
+        tagPreviewContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            tagPreviewStackView.leadingAnchor.constraint(equalTo: tagPreviewContainerView.leadingAnchor),
+            tagPreviewStackView.topAnchor.constraint(equalTo: tagPreviewContainerView.topAnchor),
+            tagPreviewStackView.bottomAnchor.constraint(equalTo: tagPreviewContainerView.bottomAnchor),
+            tagPreviewStackView.trailingAnchor.constraint(equalTo: tagPreviewContainerView.trailingAnchor)
+        ])
     }
 
     private func configureTableView() {
@@ -177,10 +231,12 @@ final class ActivityHistoryViewController: UIViewController {
 
         guard let activityType else {
             activityRows = []
+            configureTagPreviews([])
             updateContent()
             return
         }
 
+        configureTagPreviews(tagPreviewTexts(for: activityType))
         activityRows = activityType.activities
             .filter { $0.activityCompletionTime != nil }
             .sorted { lhs, rhs in
@@ -196,6 +252,74 @@ final class ActivityHistoryViewController: UIViewController {
             }
             .compactMap(makeActivityHistoryRow)
         updateContent()
+    }
+
+    private func tagPreviewTexts(for activityType: ActivityType) -> [String] {
+        activityType.tags?
+            .map(\.name)
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending } ?? []
+    }
+
+    private func configureTagPreviews(_ tags: [String]) {
+        tagPreviewStackView.arrangedSubviews.forEach { view in
+            tagPreviewStackView.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+
+        tagPreviewContainerView.isHidden = tags.isEmpty
+
+        let visibleTags = Array(tags.prefix(maximumVisibleTagCount))
+        let shouldShowOverflowPill = tags.count > visibleTags.count
+        let shrinkableTagIndex = visibleTags.indices.last
+
+        visibleTags.enumerated().forEach { index, tag in
+            let compressionResistancePriority: UILayoutPriority = index == shrinkableTagIndex
+                ? .defaultLow
+                : .required
+            tagPreviewStackView.addArrangedSubview(
+                makeTagPill(
+                    text: tag,
+                    horizontalCompressionResistancePriority: compressionResistancePriority
+                )
+            )
+        }
+
+        if shouldShowOverflowPill {
+            let hiddenTagCount = tags.count - visibleTags.count
+            tagPreviewStackView.addArrangedSubview(
+                makeTagPill(
+                    text: "+\(hiddenTagCount)",
+                    horizontalCompressionResistancePriority: .required
+                )
+            )
+        }
+
+        let spacerView = UIView()
+        spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        spacerView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        tagPreviewStackView.addArrangedSubview(spacerView)
+    }
+
+    private func makeTagPill(
+        text: String,
+        horizontalCompressionResistancePriority: UILayoutPriority
+    ) -> PillLabel {
+        let label = PillLabel()
+        label.text = text
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .secondaryLabel
+        label.backgroundColor = .tertiarySystemFill
+        label.layer.cornerRadius = 9
+        label.layer.masksToBounds = true
+        label.lineBreakMode = .byTruncatingTail
+        label.numberOfLines = 1
+        label.setContentCompressionResistancePriority(horizontalCompressionResistancePriority, for: .horizontal)
+        label.widthAnchor.constraint(lessThanOrEqualToConstant: 120).isActive = true
+        label.isUserInteractionEnabled = true
+        label.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(tagPreviewTapped))
+        )
+        return label
     }
 
     private func makeActivityHistoryRow(from activity: Activity) -> ActivityHistoryRow? {
@@ -300,6 +424,102 @@ final class ActivityHistoryViewController: UIViewController {
         present(alertController, animated: true)
     }
 
+    private func presentTagsSheet() {
+        guard let activityType else {
+            return
+        }
+
+        let hasTags = hasExistingTags()
+        let tagsViewController = TagsManagementViewController()
+        tagsViewController.modelContext = modelContext
+        tagsViewController.sheetTitle = "Tags for \(activityType.name)"
+        tagsViewController.emptyStateMessage = TagsManagementViewController.activityTypeEmptyStateMessage
+        tagsViewController.selectedTagIDs = Set(activityType.tags?.map(\.uniqueID) ?? [])
+        tagsViewController.primaryActionMode = hasTags ? .saveSelection : .createTag
+        tagsViewController.groupsSelectedTagsFirst = hasTags
+        tagsViewController.commitsSelectionImmediately = !hasTags
+        tagsViewController.allowsTagManagement = !hasTags
+        tagsViewController.selectsCreatedTags = !hasTags
+        tagsViewController.switchesToSaveSelectionAfterCreatingTag = !hasTags
+        tagsViewController.onTagCreate = { [weak self] tag in
+            self?.attachCreatedTag(tag)
+        }
+        tagsViewController.onSaveSelection = { [weak self] selectedTagIDs in
+            self?.saveTags(selectedTagIDs)
+        }
+        tagsViewController.modalPresentationStyle = .pageSheet
+
+        if let sheetPresentationController = tagsViewController.sheetPresentationController {
+            let compactDetentIdentifier = UISheetPresentationController.Detent.Identifier("compactTags")
+            sheetPresentationController.detents = [
+                .custom(identifier: compactDetentIdentifier) { _ in 320 },
+                .large()
+            ]
+            sheetPresentationController.selectedDetentIdentifier = compactDetentIdentifier
+            sheetPresentationController.prefersGrabberVisible = true
+            sheetPresentationController.preferredCornerRadius = 18
+        }
+
+        present(tagsViewController, animated: true)
+    }
+
+    private func hasExistingTags() -> Bool {
+        guard let modelContext else {
+            return false
+        }
+
+        do {
+            return try !modelContext.fetch(FetchDescriptor<ActivityTag>()).isEmpty
+        } catch {
+            assertionFailure("Unable to fetch tags: \(error)")
+            return false
+        }
+    }
+
+    private func attachCreatedTag(_ tag: ActivityTag) {
+        guard let modelContext, let activityType else {
+            return
+        }
+
+        if activityType.tags == nil {
+            activityType.tags = []
+        }
+
+        guard activityType.tags?.contains(where: { $0.uniqueID == tag.uniqueID }) == false else {
+            return
+        }
+
+        activityType.tags?.append(tag)
+        activityType.tags?.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+
+        do {
+            try modelContext.save()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activityType.uniqueID)
+        } catch {
+            assertionFailure("Unable to attach created tag: \(error)")
+            presentSaveTagsErrorAlert()
+        }
+    }
+
+    private func saveTags(_ selectedTagIDs: Set<UUID>) {
+        guard let modelContext, let activityType else {
+            return
+        }
+
+        do {
+            let tags = try modelContext.fetch(FetchDescriptor<ActivityTag>())
+            activityType.tags = tags
+                .filter { selectedTagIDs.contains($0.uniqueID) }
+                .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+
+            try modelContext.save()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activityType.uniqueID)
+        } catch {
+            assertionFailure("Unable to save activity type tags: \(error)")
+            presentSaveTagsErrorAlert()
+        }
+    }
+
     private func renameActivityType(to name: String) {
         guard let modelContext, let activityType else {
             return
@@ -361,6 +581,16 @@ final class ActivityHistoryViewController: UIViewController {
         present(alertController, animated: true)
     }
 
+    private func presentSaveTagsErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Save Tags",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
     private func fetchExistingActivityTypeNames(excluding activityType: ActivityType) -> Set<String> {
         guard let modelContext else {
             return []
@@ -415,6 +645,14 @@ final class ActivityHistoryViewController: UIViewController {
         }
 
         presentRenameActivityTypeAlert()
+    }
+
+    @objc private func tagPreviewTapped() {
+        guard activityType != nil else {
+            return
+        }
+
+        presentTagsSheet()
     }
 
 }

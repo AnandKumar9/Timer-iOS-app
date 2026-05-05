@@ -17,11 +17,11 @@ k ActivityHistoryVC: Intelligent icons in bottom floating button
 k ActivityHistoryVC: Swipe to delete UI + persistence
 
 k tags - show in activitytypesvc rows
-tags - a way to filter using tags, add/edit too
-tags - show in activityhistoryvc too
-tags for activity types - create tags, edit tags (rename/delete)
-tags - attach tags to a type at creation, edit tags for an existing type
-tags - filter using tags in activityttpesvc
+k tags - a way to filter using tags, add/rename/remove too
+k tags - show in activityhistoryvc too
+tags - empty state in both activitytypesvc and activityhistoryvc
+k tags- edit tags for an existing type
+k tags - filter using tags in activityttpesvc
 force quit app - how to continue
 
 

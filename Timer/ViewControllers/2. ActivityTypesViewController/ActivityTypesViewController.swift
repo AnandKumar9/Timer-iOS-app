@@ -214,6 +214,7 @@ final class ActivityTypesViewController: UIViewController {
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
     private var activityTypeRows: [ActivityTypeRow] = []
+    private var selectedTagIDs: Set<UUID> = []
     private var didPromptForInitialActivityTypeCreation = false
 
     var modelContext: ModelContext?
@@ -244,12 +245,20 @@ final class ActivityTypesViewController: UIViewController {
 
     private func configureAppearance() {
         title = "Activity Types"
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
+        let addActivityTypeButton = UIBarButtonItem(
             systemItem: .add,
             primaryAction: UIAction { [weak self] _ in
                 self?.addButtonTapped()
             }
         )
+        let tagsButton = UIBarButtonItem(
+            image: UIImage(systemName: "tag"),
+            primaryAction: UIAction { [weak self] _ in
+                self?.presentTagsManagementSheet()
+            }
+        )
+        tagsButton.accessibilityLabel = "Manage Tags"
+        navigationItem.rightBarButtonItems = [addActivityTypeButton, tagsButton]
 
         view.backgroundColor = .systemBackground
 
@@ -309,6 +318,7 @@ final class ActivityTypesViewController: UIViewController {
         do {
             let activityTypes = try modelContext.fetch(FetchDescriptor<ActivityType>())
             activityTypeRows = activityTypes
+                .filter(matchesSelectedTags)
                 .map(makeActivityTypeRow)
                 .sorted(by: activityTypeSort)
             updateContent()
@@ -333,7 +343,16 @@ final class ActivityTypesViewController: UIViewController {
     private func tagPreviewTexts(for activityType: ActivityType) -> [String] {
         activityType.tags?
             .map(\.name)
-            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending } ?? []
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending } ?? []
+    }
+
+    private func matchesSelectedTags(_ activityType: ActivityType) -> Bool {
+        guard !selectedTagIDs.isEmpty else {
+            return true
+        }
+
+        let activityTypeTagIDs = Set(activityType.tags?.map(\.uniqueID) ?? [])
+        return selectedTagIDs.allSatisfy { activityTypeTagIDs.contains($0) }
     }
 
     private func latestCompletedActivity(for activityType: ActivityType) -> Activity? {
@@ -371,6 +390,7 @@ final class ActivityTypesViewController: UIViewController {
 
     private func updateContent() {
         tableView.reloadData()
+        emptyStateLabel.text = selectedTagIDs.isEmpty ? "No activity types" : "No activity types match the selected tags"
         emptyStateLabel.isHidden = !activityTypeRows.isEmpty
     }
 
@@ -486,6 +506,34 @@ final class ActivityTypesViewController: UIViewController {
 
     private func addButtonTapped() {
         presentCreateActivityTypeAlert()
+    }
+
+    private func presentTagsManagementSheet() {
+        let tagsManagementViewController = TagsManagementViewController()
+        tagsManagementViewController.modelContext = modelContext
+        tagsManagementViewController.emptyStateMessage = TagsManagementViewController.activityTypeEmptyStateMessage
+        tagsManagementViewController.selectedTagIDs = selectedTagIDs
+        tagsManagementViewController.onSelectionChange = { [weak self] selectedTagIDs in
+            self?.selectedTagIDs = selectedTagIDs
+            self?.loadActivityTypes()
+        }
+        tagsManagementViewController.onTagsChange = { [weak self] in
+            self?.loadActivityTypes()
+        }
+        tagsManagementViewController.modalPresentationStyle = .pageSheet
+
+        if let sheetPresentationController = tagsManagementViewController.sheetPresentationController {
+            let compactDetentIdentifier = UISheetPresentationController.Detent.Identifier("compactTags")
+            sheetPresentationController.detents = [
+                .custom(identifier: compactDetentIdentifier) { _ in 320 },
+                .large()
+            ]
+            sheetPresentationController.selectedDetentIdentifier = compactDetentIdentifier
+            sheetPresentationController.prefersGrabberVisible = true
+            sheetPresentationController.preferredCornerRadius = 18
+        }
+
+        present(tagsManagementViewController, animated: true)
     }
 
     private func presentCreateActivityTypeAlert() {
