@@ -628,7 +628,7 @@ final class ActivityTypesViewController: UIViewController {
 
 extension ActivityTypesViewController: FloatingTimerButtonContextProviding {
     var floatingTimerButtonContext: FloatingTimerButtonContext? {
-        .globalTimers
+        TimerViewController.hasActiveOrRecentTimerControls() ? .globalTimers : nil
     }
 }
 

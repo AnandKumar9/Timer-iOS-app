@@ -15,6 +15,7 @@ final class FloatingTimerButtonController: NSObject {
     private let currentTimersButton = UIButton(type: .system)
     private weak var navigationController: UINavigationController?
     private var modelContext: ModelContext?
+    private var currentTimersButtonRefreshTimer: Timer?
 
     static func install(
         on navigationController: UINavigationController,
@@ -28,6 +29,7 @@ final class FloatingTimerButtonController: NSObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        currentTimersButtonRefreshTimer?.invalidate()
     }
 
     private func attach(to navigationController: UINavigationController) {
@@ -130,9 +132,9 @@ final class FloatingTimerButtonController: NSObject {
 
     private func updateCurrentTimersButton(hideWhenNoContext: Bool = true) {
         guard let context = currentContext() else {
-            if hideWhenNoContext {
-                containerView.isHidden = true
-            }
+            currentTimersButtonRefreshTimer?.invalidate()
+            currentTimersButtonRefreshTimer = nil
+            containerView.isHidden = true
             return
         }
 
@@ -146,6 +148,27 @@ final class FloatingTimerButtonController: NSObject {
         configuration.baseForegroundColor = .white
         currentTimersButton.configuration = configuration
         currentTimersButton.accessibilityLabel = currentTimersButtonAccessibilityLabel(for: context)
+
+        scheduleCurrentTimersButtonRefresh(for: context)
+    }
+
+    private func scheduleCurrentTimersButtonRefresh(for context: FloatingTimerButtonContext) {
+        currentTimersButtonRefreshTimer?.invalidate()
+        currentTimersButtonRefreshTimer = nil
+
+        guard
+            case .globalTimers = context,
+            let interval = TimerViewController.secondsUntilNextInactiveTimerControlsExpiration()
+        else {
+            return
+        }
+
+        let refreshTimer = Timer(timeInterval: max(interval, 0.1), repeats: false) { [weak self] _ in
+            self?.updateCurrentTimersButton(hideWhenNoContext: false)
+        }
+        refreshTimer.tolerance = 1
+        RunLoop.main.add(refreshTimer, forMode: .common)
+        currentTimersButtonRefreshTimer = refreshTimer
     }
 
     private func currentContext() -> FloatingTimerButtonContext? {

@@ -30,3 +30,6 @@ settings for dark/light mode
 
 
 activityhistoryvc: Better UI when there are plenty of entries, may be year/month sections.
+Anytime 
+
+activityTypeID

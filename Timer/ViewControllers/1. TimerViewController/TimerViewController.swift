@@ -4,8 +4,16 @@ import SwiftData
 final class TimerViewController: UIViewController {
     fileprivate static var activeInstance: TimerViewController?
     fileprivate static var activeNavigationController: UINavigationController?
+    private static let inactiveTimerControlsRetentionInterval: TimeInterval = 5
+
     static func hasRunningOrPausedTimer(for activityType: ActivityType) -> Bool {
         timerState(for: activityType) != .none
+    }
+    static func hasActiveOrRecentTimerControls() -> Bool {
+        activeInstance?.hasActiveOrRecentTimerControls() ?? false
+    }
+    static func secondsUntilNextInactiveTimerControlsExpiration() -> TimeInterval? {
+        activeInstance?.secondsUntilNextInactiveTimerControlsExpiration()
     }
     static func timerState(for activityType: ActivityType) -> ActivityTimerState {
         activeInstance?.timerState(activityTypeID: activityType.uniqueID) ?? .none
@@ -92,6 +100,25 @@ final class TimerViewController: UIViewController {
         timerState(activityTypeID: activityTypeID) != .none
     }
 
+    private func hasActiveOrRecentTimerControls() -> Bool {
+        removeExpiredInactiveTimerControls()
+        return !timerControlsViews.isEmpty
+    }
+
+    private func secondsUntilNextInactiveTimerControlsExpiration() -> TimeInterval? {
+        removeExpiredInactiveTimerControls()
+
+        let nextExpirationDate = timerControlsViews
+            .filter { !$0.hasActiveTimer }
+            .compactMap { timerControlsView in
+                timerControlsView.latestCurrentSessionCompletionDate?
+                    .addingTimeInterval(Self.inactiveTimerControlsRetentionInterval)
+            }
+            .min()
+
+        return nextExpirationDate.map { max($0.timeIntervalSinceNow, 0) }
+    }
+
     private func timerState(activityTypeID: UUID) -> ActivityTimerState {
         removeExpiredInactiveTimerControls()
 
@@ -167,7 +194,7 @@ final class TimerViewController: UIViewController {
     }
 
     private func removeExpiredInactiveTimerControls() {
-        let cutoffDate = Date().addingTimeInterval(-300)
+        let cutoffDate = Date().addingTimeInterval(-Self.inactiveTimerControlsRetentionInterval)
         let expiredTimerControlsViews = timerControlsViews.filter { timerControlsView in
             guard
                 !timerControlsView.hasActiveTimer,
