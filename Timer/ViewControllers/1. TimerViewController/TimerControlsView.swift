@@ -40,6 +40,13 @@ enum ActivityTimerState {
     case paused
 }
 
+struct RestoredTimerControlsState {
+    let startTime: Date
+    let timeElapsed: TimeInterval
+    let isRunning: Bool
+    let lastUpdateTime: Date
+}
+
 final class TimerControlsView: UIView {
     private enum TimerState {
         case running
@@ -64,6 +71,9 @@ final class TimerControlsView: UIView {
     private var timerState = TimerState.stopped
     private var latestCurrentSessionCompletionTime: Date?
     var onActivityStopped: ((Activity) -> Void)?
+    var onTimerStarted: ((TimerControlsView) -> Void)?
+    var onTimerResumed: ((TimerControlsView) -> Void)?
+    var onTimerPaused: ((TimerControlsView) -> Void)?
     var hasActiveTimer: Bool {
         timerState != .stopped
     }
@@ -86,11 +96,21 @@ final class TimerControlsView: UIView {
     var latestCurrentSessionCompletionDate: Date? {
         latestCurrentSessionCompletionTime
     }
+    var activityStartTime: Date? {
+        activity.activityStartTime
+    }
+    var activeElapsedTime: TimeInterval {
+        activeTimeTaken
+    }
 
-    init(activity: Activity) {
+    init(activity: Activity, restoredState: RestoredTimerControlsState? = nil) {
         self.activity = activity
         super.init(frame: .zero)
         configureView()
+
+        if let restoredState {
+            restoreTimerState(restoredState)
+        }
     }
 
     @available(*, unavailable, message: "Use init(activity:) instead.")
@@ -229,6 +249,34 @@ final class TimerControlsView: UIView {
         ])
     }
 
+    private func restoreTimerState(_ restoredState: RestoredTimerControlsState) {
+        let restoredElapsedTime: TimeInterval
+        if restoredState.isRunning {
+            restoredElapsedTime = restoredState.timeElapsed + Date().timeIntervalSince(restoredState.lastUpdateTime)
+        } else {
+            restoredElapsedTime = restoredState.timeElapsed
+        }
+
+        activeTimeTaken = max(0, restoredElapsedTime)
+        elapsedSeconds = Int(activeTimeTaken)
+        activity.activityStartTime = restoredState.startTime
+        activity.activityCompletionTime = nil
+        activity.timeTaken = nil
+        timerState = restoredState.isRunning ? .running : .paused
+
+        updateStartButtonTitle()
+        updateTimerLabel()
+
+        guard restoredState.isRunning else {
+            return
+        }
+
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            self?.tick()
+        }
+    }
+
     @objc private func startButtonTapped() {
         switch timerState {
         case .running:
@@ -259,6 +307,8 @@ final class TimerControlsView: UIView {
     private func startTimer() {
         TimerSessionState.markTimerStarted()
 
+        let wasStopped = timerState == .stopped
+
         if timerState == .stopped {
             activeTimeTaken = 0
             elapsedSeconds = 0
@@ -269,6 +319,11 @@ final class TimerControlsView: UIView {
 
         timerState = .running
         updateStartButtonTitle()
+        if wasStopped {
+            onTimerStarted?(self)
+        } else {
+            onTimerResumed?(self)
+        }
         TimerSessionState.notifyActiveTimersChanged()
 
         timer?.invalidate()
@@ -282,6 +337,7 @@ final class TimerControlsView: UIView {
         timer = nil
         timerState = .paused
         updateStartButtonTitle()
+        onTimerPaused?(self)
         TimerSessionState.notifyActiveTimersChanged()
     }
 

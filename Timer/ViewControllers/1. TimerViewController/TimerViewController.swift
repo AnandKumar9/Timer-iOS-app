@@ -5,6 +5,8 @@ final class TimerViewController: UIViewController {
     fileprivate static var activeInstance: TimerViewController?
     fileprivate static var activeNavigationController: UINavigationController?
     private static let inactiveTimerControlsRetentionInterval: TimeInterval = 5
+    private static let timerCacheCheckpointInterval: TimeInterval = 300
+    private static let timerCacheRestoreWindow: TimeInterval = 8 * 60 * 60
 
     static func hasRunningOrPausedTimer(for activityType: ActivityType) -> Bool {
         timerState(for: activityType) != .none
@@ -21,14 +23,49 @@ final class TimerViewController: UIViewController {
     static func removeTimerControlsView(for activityTypeID: UUID) {
         activeInstance?.removeTimerControlsView(activityTypeID: activityTypeID)
     }
+    static func restoreCachedTimersIfNeeded(modelContext: ModelContext?) {
+        guard activeInstance == nil else {
+            activeInstance?.modelContext = modelContext
+            return
+        }
+
+        guard
+            let modelContext,
+            (try? modelContext.fetch(FetchDescriptor<ActivityTimerCache>()).isEmpty) == false
+        else {
+            return
+        }
+
+        let timerViewController = TimerViewController(nibName: "TimerViewController", bundle: nil)
+        timerViewController.modelContext = modelContext
+        let navigationController = UINavigationController(rootViewController: timerViewController)
+        navigationController.modalPresentationStyle = .pageSheet
+        activeInstance = timerViewController
+        activeNavigationController = navigationController
+        timerViewController.loadViewIfNeeded()
+    }
 
     private let scrollView = UIScrollView()
     private let timerControlsStackView = UIStackView()
     private var timerControlsViews: [TimerControlsView] = []
     private var didPromptForInitialActivityType = false
     private var initialActivityType: ActivityType?
+    private var didRestoreTimerCaches = false
+    private var timerCacheCheckpointTimer: Timer?
 
-    var modelContext: ModelContext?
+    var modelContext: ModelContext? {
+        didSet {
+            guard isViewLoaded else {
+                return
+            }
+
+            configureTimerPersistence()
+        }
+    }
+
+    deinit {
+        timerCacheCheckpointTimer?.invalidate()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -94,6 +131,8 @@ final class TimerViewController: UIViewController {
     }
 
     private func configureTimerPersistence() {
+        restoreTimerControlsFromCacheIfNeeded()
+        scheduleTimerCacheCheckpoint()
     }
 
     private func hasRunningOrPausedTimer(activityTypeID: UUID) -> Bool {
@@ -167,15 +206,55 @@ final class TimerViewController: UIViewController {
         removeExpiredInactiveTimerControls()
 
         let activity = makeTimerActivity(activityType: activityType)
-        let timerControlsView = TimerControlsView(activity: activity)
-        timerControlsView.translatesAutoresizingMaskIntoConstraints = false
-        timerControlsView.onActivityStopped = { [weak self] activity in
-            self?.saveTimerActivity(activity)
-        }
+        let timerControlsView = makeTimerControlsView(activity: activity)
 
         timerControlsStackView.insertArrangedSubview(timerControlsView, at: 0)
         timerControlsViews.insert(timerControlsView, at: 0)
         scrollToTimerControlsView(timerControlsView)
+    }
+
+    private func appendRestoredTimerControlsView(
+        activityType: ActivityType,
+        cache: ActivityTimerCache
+    ) {
+        let restoredState = RestoredTimerControlsState(
+            startTime: cache.startTime,
+            timeElapsed: cache.timeElapsed,
+            isRunning: cache.isRunning,
+            lastUpdateTime: cache.lastUpdateTime
+        )
+        let activity = makeTimerActivity(activityType: activityType)
+        let timerControlsView = makeTimerControlsView(
+            activity: activity,
+            restoredState: restoredState
+        )
+
+        timerControlsStackView.insertArrangedSubview(timerControlsView, at: 0)
+        timerControlsViews.insert(timerControlsView, at: 0)
+        updateTimerCache(from: timerControlsView, isRunning: cache.isRunning)
+    }
+
+    private func makeTimerControlsView(
+        activity: Activity,
+        restoredState: RestoredTimerControlsState? = nil
+    ) -> TimerControlsView {
+        let timerControlsView = TimerControlsView(activity: activity, restoredState: restoredState)
+        timerControlsView.translatesAutoresizingMaskIntoConstraints = false
+        timerControlsView.onActivityStopped = { [weak self] activity in
+            self?.applyFinalElapsedTime(to: activity)
+            self?.deleteTimerCache(activityTypeID: activity.activityType.uniqueID)
+            self?.saveTimerActivity(activity)
+        }
+        timerControlsView.onTimerStarted = { [weak self] timerControlsView in
+            self?.createOrReplaceTimerCache(from: timerControlsView)
+        }
+        timerControlsView.onTimerResumed = { [weak self] timerControlsView in
+            self?.updateTimerCache(from: timerControlsView, isRunning: true)
+        }
+        timerControlsView.onTimerPaused = { [weak self] timerControlsView in
+            self?.updateTimerCache(from: timerControlsView, isRunning: false)
+        }
+        return timerControlsView
     }
 
     private func reusableTimerControlsView(activityType: ActivityType) -> TimerControlsView? {
@@ -224,6 +303,7 @@ final class TimerViewController: UIViewController {
         timerControlsStackView.removeArrangedSubview(timerControlsView)
         timerControlsView.removeFromSuperview()
         timerControlsViews.removeAll { $0 === timerControlsView }
+        deleteTimerCache(activityTypeID: activityTypeID)
         TimerSessionState.notifyActiveTimersChanged()
     }
 
@@ -341,6 +421,212 @@ final class TimerViewController: UIViewController {
         name?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .localizedLowercase ?? ""
+    }
+
+    private func restoreTimerControlsFromCacheIfNeeded() {
+        guard !didRestoreTimerCaches else {
+            return
+        }
+
+        didRestoreTimerCaches = true
+
+        guard let modelContext else {
+            return
+        }
+
+        do {
+            let activityTypes = try modelContext.fetch(FetchDescriptor<ActivityType>())
+            let activityTypesByID = Dictionary(
+                uniqueKeysWithValues: activityTypes.map { ($0.uniqueID, $0) }
+            )
+            let caches = try modelContext.fetch(FetchDescriptor<ActivityTimerCache>())
+                .sorted { lhs, rhs in
+                    lhs.lastUpdateTime > rhs.lastUpdateTime
+                }
+            var didMutateCaches = false
+            let restoreCutoffDate = Date().addingTimeInterval(-Self.timerCacheRestoreWindow)
+
+            for cache in caches {
+                guard cache.lastUpdateTime >= restoreCutoffDate else {
+                    modelContext.delete(cache)
+                    didMutateCaches = true
+                    continue
+                }
+
+                guard let activityType = activityTypesByID[cache.activityTypeUniqueID] else {
+                    modelContext.delete(cache)
+                    didMutateCaches = true
+                    continue
+                }
+
+                guard reusableTimerControlsView(activityType: activityType) == nil else {
+                    continue
+                }
+
+                appendRestoredTimerControlsView(activityType: activityType, cache: cache)
+                didMutateCaches = true
+            }
+
+            if didMutateCaches {
+                try modelContext.save()
+                TimerSessionState.markTimerStarted()
+                TimerSessionState.notifyActiveTimersChanged()
+            }
+        } catch {
+            assertionFailure("Unable to restore cached timers: \(error)")
+        }
+    }
+
+    private func scheduleTimerCacheCheckpoint() {
+        timerCacheCheckpointTimer?.invalidate()
+        timerCacheCheckpointTimer = Timer.scheduledTimer(
+            withTimeInterval: Self.timerCacheCheckpointInterval,
+            repeats: true
+        ) { [weak self] _ in
+            self?.checkpointTimerCaches()
+        }
+        timerCacheCheckpointTimer?.tolerance = 10
+    }
+
+    private func checkpointTimerCaches() {
+        for timerControlsView in timerControlsViews where timerControlsView.hasActiveTimer {
+            updateTimerCache(
+                from: timerControlsView,
+                isRunning: timerControlsView.activityTimerState == .running
+            )
+        }
+    }
+
+    private func createOrReplaceTimerCache(from timerControlsView: TimerControlsView) {
+        guard
+            let modelContext,
+            let startTime = timerControlsView.activityStartTime
+        else {
+            return
+        }
+
+        deleteTimerCache(activityTypeID: timerControlsView.activityTypeID, shouldSave: false)
+
+        let now = Date()
+        let cache = ActivityTimerCache(
+            activityTypeUniqueID: timerControlsView.activityTypeID,
+            startTime: startTime,
+            timeElapsed: 0,
+            isRunning: true,
+            lastUpdateTime: now
+        )
+        modelContext.insert(cache)
+        saveTimerCacheChanges()
+    }
+
+    private func updateTimerCache(from timerControlsView: TimerControlsView, isRunning: Bool) {
+        guard
+            let modelContext,
+            let startTime = timerControlsView.activityStartTime
+        else {
+            return
+        }
+
+        let now = Date()
+        let existingCache = timerCache(activityTypeID: timerControlsView.activityTypeID)
+        let elapsedTime = elapsedTime(
+            for: timerControlsView,
+            existingCache: existingCache,
+            now: now
+        )
+        let cache = existingCache ?? ActivityTimerCache(
+            activityTypeUniqueID: timerControlsView.activityTypeID,
+            startTime: startTime,
+            timeElapsed: elapsedTime,
+            isRunning: isRunning,
+            lastUpdateTime: now
+        )
+
+        if existingCache == nil {
+            modelContext.insert(cache)
+        }
+
+        cache.startTime = startTime
+        cache.timeElapsed = elapsedTime
+        cache.isRunning = isRunning
+        cache.lastUpdateTime = now
+        saveTimerCacheChanges()
+    }
+
+    private func elapsedTime(
+        for timerControlsView: TimerControlsView,
+        existingCache: ActivityTimerCache?,
+        now: Date
+    ) -> TimeInterval {
+        guard let existingCache else {
+            return timerControlsView.activeElapsedTime
+        }
+
+        guard existingCache.isRunning else {
+            return existingCache.timeElapsed
+        }
+
+        return existingCache.timeElapsed + now.timeIntervalSince(existingCache.lastUpdateTime)
+    }
+
+    private func applyFinalElapsedTime(to activity: Activity) {
+        guard let cache = timerCache(activityTypeID: activity.activityType.uniqueID) else {
+            return
+        }
+
+        if cache.isRunning {
+            activity.timeTaken = cache.timeElapsed + Date().timeIntervalSince(cache.lastUpdateTime)
+        } else {
+            activity.timeTaken = cache.timeElapsed
+        }
+
+        activity.activityStartTime = cache.startTime
+    }
+
+    private func deleteTimerCache(activityTypeID: UUID, shouldSave: Bool = true) {
+        guard let modelContext else {
+            return
+        }
+
+        let matchingCaches = timerCaches(activityTypeID: activityTypeID)
+        for cache in matchingCaches {
+            modelContext.delete(cache)
+        }
+
+        if shouldSave {
+            saveTimerCacheChanges()
+        }
+    }
+
+    private func timerCache(activityTypeID: UUID) -> ActivityTimerCache? {
+        timerCaches(activityTypeID: activityTypeID).first
+    }
+
+    private func timerCaches(activityTypeID: UUID) -> [ActivityTimerCache] {
+        guard let modelContext else {
+            return []
+        }
+
+        do {
+            return try modelContext.fetch(FetchDescriptor<ActivityTimerCache>())
+                .filter { $0.activityTypeUniqueID == activityTypeID }
+        } catch {
+            assertionFailure("Unable to fetch timer cache: \(error)")
+            return []
+        }
+    }
+
+    private func saveTimerCacheChanges() {
+        guard let modelContext else {
+            return
+        }
+
+        do {
+            try modelContext.save()
+            TimerSessionState.notifyActiveTimersChanged()
+        } catch {
+            assertionFailure("Unable to save timer cache: \(error)")
+        }
     }
 
     private func saveTimerActivity(_ activity: Activity) {

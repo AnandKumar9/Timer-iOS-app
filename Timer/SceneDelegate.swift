@@ -17,6 +17,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         let modelContext = (UIApplication.shared.delegate as? AppDelegate)?.modelContainer.mainContext
+        TimerViewController.restoreCachedTimersIfNeeded(modelContext: modelContext)
         let navigationController = UINavigationController(
             rootViewController: makeInitialViewController(modelContext: modelContext)
         )

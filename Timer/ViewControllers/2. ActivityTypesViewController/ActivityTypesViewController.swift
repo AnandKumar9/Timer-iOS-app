@@ -435,9 +435,24 @@ final class ActivityTypesViewController: UIViewController {
         }
 
         TimerViewController.removeTimerControlsView(for: activityType.uniqueID)
+        deleteTimerCaches(activityTypeID: activityType.uniqueID)
         modelContext.delete(activityType)
         try modelContext.save()
         loadActivityTypes()
+    }
+
+    private func deleteTimerCaches(activityTypeID: UUID) {
+        guard let modelContext else {
+            return
+        }
+
+        do {
+            let matchingCaches = try modelContext.fetch(FetchDescriptor<ActivityTimerCache>())
+                .filter { $0.activityTypeUniqueID == activityTypeID }
+            matchingCaches.forEach(modelContext.delete)
+        } catch {
+            assertionFailure("Unable to delete activity timer cache: \(error)")
+        }
     }
 
     private func presentDeleteActivityTypeAlert(

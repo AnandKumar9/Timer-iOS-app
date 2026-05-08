@@ -26,6 +26,7 @@
 		9A0000010000000000000042 /* Activity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000044 /* Activity.swift */; };
 		9A0000010000000000000046 /* ActivityTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000047 /* ActivityTag.swift */; };
 		9A0000010000000000000048 /* TagsManagementViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000049 /* TagsManagementViewController.swift */; };
+		9A000001000000000000004A /* ActivityTimerCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A000001000000000000004B /* ActivityTimerCache.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 		9A0000010000000000000044 /* Activity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activity.swift; sourceTree = "<group>"; };
 		9A0000010000000000000047 /* ActivityTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTag.swift; sourceTree = "<group>"; };
 		9A0000010000000000000049 /* TagsManagementViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsManagementViewController.swift; sourceTree = "<group>"; };
+		9A000001000000000000004B /* ActivityTimerCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimerCache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -158,6 +160,7 @@
 				9A0000010000000000000043 /* ActivityType.swift */,
 				9A0000010000000000000044 /* Activity.swift */,
 				9A0000010000000000000047 /* ActivityTag.swift */,
+				9A000001000000000000004B /* ActivityTimerCache.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -249,6 +252,7 @@
 				9A0000010000000000000042 /* Activity.swift in Sources */,
 				9A0000010000000000000046 /* ActivityTag.swift in Sources */,
 				9A0000010000000000000048 /* TagsManagementViewController.swift in Sources */,
+				9A000001000000000000004A /* ActivityTimerCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
