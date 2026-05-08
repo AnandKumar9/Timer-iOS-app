@@ -213,6 +213,12 @@ final class ActivityTypesViewController: UIViewController {
 
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
+    private lazy var appearanceButton = UIBarButtonItem(
+        image: appearanceButtonImage(),
+        primaryAction: UIAction { [weak self] _ in
+            self?.appearanceButtonTapped()
+        }
+    )
     private var activityTypeRows: [ActivityTypeRow] = []
     private var selectedTagIDs: Set<UUID> = []
     private var didPromptForInitialActivityTypeCreation = false
@@ -230,6 +236,7 @@ final class ActivityTypesViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        updateAppearanceButton()
         loadActivityTypes()
     }
 
@@ -258,7 +265,8 @@ final class ActivityTypesViewController: UIViewController {
             }
         )
         tagsButton.accessibilityLabel = "Manage Tags"
-        navigationItem.rightBarButtonItems = [addActivityTypeButton, tagsButton]
+        appearanceButton.accessibilityLabel = appearanceButtonAccessibilityLabel()
+        navigationItem.rightBarButtonItems = [addActivityTypeButton, tagsButton, appearanceButton]
 
         view.backgroundColor = .systemBackground
 
@@ -409,6 +417,29 @@ final class ActivityTypesViewController: UIViewController {
 
     @objc private func activeTimersDidChange() {
         loadActivityTypes()
+    }
+
+    private func appearanceButtonTapped() {
+        AppAppearanceController.toggleAppearance(from: traitCollection.userInterfaceStyle)
+        updateAppearanceButton()
+    }
+
+    private func updateAppearanceButton() {
+        appearanceButton.image = appearanceButtonImage()
+        appearanceButton.accessibilityLabel = appearanceButtonAccessibilityLabel()
+    }
+
+    private func appearanceButtonImage() -> UIImage? {
+        UIImage(systemName: currentAppearanceStyle == .dark ? "moon" : "sun.max")
+    }
+
+    private func appearanceButtonAccessibilityLabel() -> String {
+        currentAppearanceStyle == .dark ? "Switch to Light Mode" : "Switch to Dark Mode"
+    }
+
+    private var currentAppearanceStyle: UIUserInterfaceStyle {
+        let savedStyle = AppAppearanceController.savedUserInterfaceStyle
+        return savedStyle == .unspecified ? traitCollection.userInterfaceStyle : savedStyle
     }
 
     private func startActivityType(_ activityType: ActivityType) {

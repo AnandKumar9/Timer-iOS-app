@@ -38,8 +38,8 @@ k tags - show in activityhistoryvc too
 k tags - empty state in both activitytypesvc and activityhistoryvc
 k tags- edit tags for an existing type
 k tags - filter using tags in activityttpesvc
-force quit app - how to continue
-if a type is deleted, both the activies and its cache should be cleared
+k force quit app - how to continue
+k if a type is deleted, both the activies and its cache should be cleared
 
 redesign theme, explore mode designs
 settings for dark/light mode
@@ -49,3 +49,4 @@ activityhistoryvc: Better UI when there are plenty of entries, may be year/month
 watchOS app
 widgets/intents
 insights
+background app 

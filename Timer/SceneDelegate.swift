@@ -26,6 +26,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             modelContext: modelContext
         )
         window.rootViewController = navigationController
+        AppAppearanceController.applySavedAppearance(to: window)
         window.makeKeyAndVisible()
 
         self.window = window
