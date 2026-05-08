@@ -17,7 +17,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         let modelContext = (UIApplication.shared.delegate as? AppDelegate)?.modelContainer.mainContext
-        TimerViewController.restoreCachedTimersIfNeeded(modelContext: modelContext)
+        let restoredTimerCount = TimerViewController.restoreCachedTimersIfNeeded(modelContext: modelContext)
         let navigationController = UINavigationController(
             rootViewController: makeInitialViewController(modelContext: modelContext)
         )
@@ -31,6 +31,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         self.window = window
         self.modelContext = modelContext
+
+        presentRestoredTimersAlertIfNeeded(
+            restoredTimerCount: restoredTimerCount,
+            on: navigationController
+        )
     }
 
     private func makeInitialViewController(modelContext: ModelContext?) -> UIViewController {
@@ -40,5 +45,26 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         )
         activityTypesViewController.modelContext = modelContext
         return activityTypesViewController
+    }
+
+    private func presentRestoredTimersAlertIfNeeded(
+        restoredTimerCount: Int,
+        on navigationController: UINavigationController
+    ) {
+        guard restoredTimerCount > 0 else {
+            return
+        }
+
+        let timerText = restoredTimerCount == 1 ? "timer" : "timers"
+        let alertController = UIAlertController(
+            title: "Timers Restored",
+            message: "We restored \(restoredTimerCount) \(timerText) from your last session.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+
+        DispatchQueue.main.async {
+            navigationController.present(alertController, animated: true)
+        }
     }
 }

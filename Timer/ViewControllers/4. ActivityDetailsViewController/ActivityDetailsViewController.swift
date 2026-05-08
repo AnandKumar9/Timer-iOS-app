@@ -633,7 +633,7 @@ final class ActivityDetailsViewController: UIViewController {
     private func presentDeleteActivityConfirmationAlert() {
         let alertController = UIAlertController(
             title: "Delete Activity?",
-            message: "This activity will be permanently deleted.",
+            message: "This cannot be undone.",
             preferredStyle: .alert
         )
 

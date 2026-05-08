@@ -23,17 +23,18 @@ final class TimerViewController: UIViewController {
     static func removeTimerControlsView(for activityTypeID: UUID) {
         activeInstance?.removeTimerControlsView(activityTypeID: activityTypeID)
     }
-    static func restoreCachedTimersIfNeeded(modelContext: ModelContext?) {
+    @discardableResult
+    static func restoreCachedTimersIfNeeded(modelContext: ModelContext?) -> Int {
         guard activeInstance == nil else {
             activeInstance?.modelContext = modelContext
-            return
+            return 0
         }
 
         guard
             let modelContext,
             (try? modelContext.fetch(FetchDescriptor<ActivityTimerCache>()).isEmpty) == false
         else {
-            return
+            return 0
         }
 
         let timerViewController = TimerViewController(nibName: "TimerViewController", bundle: nil)
@@ -43,6 +44,7 @@ final class TimerViewController: UIViewController {
         activeInstance = timerViewController
         activeNavigationController = navigationController
         timerViewController.loadViewIfNeeded()
+        return timerViewController.restoredTimerCacheCount
     }
 
     private let scrollView = UIScrollView()
@@ -51,6 +53,7 @@ final class TimerViewController: UIViewController {
     private var didPromptForInitialActivityType = false
     private var initialActivityType: ActivityType?
     private var didRestoreTimerCaches = false
+    private var restoredTimerCacheCount = 0
     private var timerCacheCheckpointTimer: Timer?
 
     var modelContext: ModelContext? {
@@ -442,8 +445,9 @@ final class TimerViewController: UIViewController {
             let caches = try modelContext.fetch(FetchDescriptor<ActivityTimerCache>())
                 .sorted { lhs, rhs in
                     lhs.lastUpdateTime > rhs.lastUpdateTime
-                }
+            }
             var didMutateCaches = false
+            var restoredCount = 0
             let restoreCutoffDate = Date().addingTimeInterval(-Self.timerCacheRestoreWindow)
 
             for cache in caches {
@@ -465,7 +469,10 @@ final class TimerViewController: UIViewController {
 
                 appendRestoredTimerControlsView(activityType: activityType, cache: cache)
                 didMutateCaches = true
+                restoredCount += 1
             }
+
+            restoredTimerCacheCount = restoredCount
 
             if didMutateCaches {
                 try modelContext.save()
