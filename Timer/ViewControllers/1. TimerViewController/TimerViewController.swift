@@ -2,6 +2,38 @@ import UIKit
 import SwiftData
 
 final class TimerViewController: UIViewController {
+    private enum Theme {
+        static let accent = UIColor(red: 0.42, green: 0.39, blue: 0.96, alpha: 1)
+
+        static var screenBackground: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1)
+                    : UIColor(red: 0.96, green: 0.96, blue: 0.98, alpha: 1)
+            }
+        }
+
+        static var primaryText: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.88, green: 0.87, blue: 0.96, alpha: 1)
+                    : UIColor(red: 0.10, green: 0.09, blue: 0.19, alpha: 1)
+            }
+        }
+
+        static var separator: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.11, green: 0.11, blue: 0.14, alpha: 1)
+                    : UIColor(red: 0.89, green: 0.88, blue: 0.93, alpha: 1)
+            }
+        }
+
+        static func roundedFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
+            .systemFont(ofSize: size, weight: weight)
+        }
+    }
+
     fileprivate static var activeInstance: TimerViewController?
     fileprivate static var activeNavigationController: UINavigationController?
     private static let inactiveTimerControlsRetentionInterval: TimeInterval = 5
@@ -75,6 +107,9 @@ final class TimerViewController: UIViewController {
 
         Self.activeInstance = self
         configureAppearance()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
+            viewController.applyTheme()
+        }
         configureTimerPersistence()
 
         if let initialActivityType {
@@ -107,7 +142,7 @@ final class TimerViewController: UIViewController {
             action: #selector(activityTypesButtonTapped)
         )
 
-        view.backgroundColor = .systemBackground
+        applyTheme()
 
         scrollView.alwaysBounceVertical = true
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -131,6 +166,31 @@ final class TimerViewController: UIViewController {
             timerControlsStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24),
             timerControlsStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -48)
         ])
+    }
+
+    private func applyTheme() {
+        view.backgroundColor = Theme.screenBackground
+        scrollView.backgroundColor = Theme.screenBackground
+        navigationController?.navigationBar.tintColor = Theme.accent
+        navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
+        navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
+        navigationController?.navigationBar.compactAppearance = navigationBarAppearance()
+    }
+
+    private func navigationBarAppearance() -> UINavigationBarAppearance {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = Theme.screenBackground
+        appearance.shadowColor = Theme.separator
+        appearance.titleTextAttributes = [
+            .foregroundColor: Theme.primaryText,
+            .font: Theme.roundedFont(ofSize: 17, weight: .semibold)
+        ]
+        appearance.largeTitleTextAttributes = [
+            .foregroundColor: Theme.primaryText,
+            .font: Theme.roundedFont(ofSize: 34, weight: .bold)
+        ]
+        return appearance
     }
 
     private func configureTimerPersistence() {

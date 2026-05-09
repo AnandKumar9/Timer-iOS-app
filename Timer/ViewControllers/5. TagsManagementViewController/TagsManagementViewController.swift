@@ -2,6 +2,54 @@ import UIKit
 import SwiftData
 
 final class TagsManagementViewController: UIViewController {
+    private enum Theme {
+        static let accent = UIColor(red: 0.42, green: 0.39, blue: 0.96, alpha: 1)
+
+        static var screenBackground: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1)
+                    : UIColor(red: 0.96, green: 0.96, blue: 0.98, alpha: 1)
+            }
+        }
+
+        static var controlBackground: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.12, green: 0.12, blue: 0.15, alpha: 1)
+                    : UIColor(red: 0.92, green: 0.91, blue: 0.96, alpha: 1)
+            }
+        }
+
+        static var primaryText: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.88, green: 0.87, blue: 0.96, alpha: 1)
+                    : UIColor(red: 0.10, green: 0.09, blue: 0.19, alpha: 1)
+            }
+        }
+
+        static var metadataText: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.46, green: 0.45, blue: 0.66, alpha: 1)
+                    : UIColor(red: 0.35, green: 0.34, blue: 0.63, alpha: 1)
+            }
+        }
+
+        static var separator: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.16, green: 0.16, blue: 0.22, alpha: 1)
+                    : UIColor(red: 0.86, green: 0.85, blue: 0.91, alpha: 1)
+            }
+        }
+
+        static func roundedFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
+            .systemFont(ofSize: size, weight: weight)
+        }
+    }
+
     enum PrimaryActionMode {
         case createTag
         case saveSelection
@@ -52,7 +100,7 @@ final class TagsManagementViewController: UIViewController {
         static let reuseIdentifier = "TagChipCell"
         private static let horizontalPadding: CGFloat = 28
         private static let chipHeight: CGFloat = 34
-        private static let font = UIFont.systemFont(ofSize: 15, weight: .medium)
+        private static let font = Theme.roundedFont(ofSize: 15, weight: .medium)
 
         private let nameLabel = UILabel()
 
@@ -68,9 +116,9 @@ final class TagsManagementViewController: UIViewController {
 
         func configure(with row: TagRow, isSelected: Bool) {
             nameLabel.text = row.name
-            contentView.backgroundColor = isSelected ? .systemBlue : .secondarySystemGroupedBackground
-            contentView.layer.borderColor = isSelected ? UIColor.systemBlue.cgColor : UIColor.separator.cgColor
-            nameLabel.textColor = isSelected ? .white : .label
+            contentView.backgroundColor = isSelected ? Theme.accent : Theme.controlBackground
+            contentView.layer.borderColor = isSelected ? Theme.accent.cgColor : Theme.separator.cgColor
+            nameLabel.textColor = isSelected ? .white : Theme.primaryText
         }
 
         static func fittingSize(for text: String, maximumWidth: CGFloat) -> CGSize {
@@ -82,15 +130,15 @@ final class TagsManagementViewController: UIViewController {
         }
 
         private func configureCell() {
-            contentView.backgroundColor = .secondarySystemGroupedBackground
+            contentView.backgroundColor = Theme.controlBackground
             contentView.layer.cornerRadius = 17
             contentView.layer.cornerCurve = .continuous
-            contentView.layer.borderColor = UIColor.separator.cgColor
+            contentView.layer.borderColor = Theme.separator.cgColor
             contentView.layer.borderWidth = 0.5
             contentView.clipsToBounds = true
 
             nameLabel.font = Self.font
-            nameLabel.textColor = .label
+            nameLabel.textColor = Theme.primaryText
             nameLabel.numberOfLines = 1
             nameLabel.lineBreakMode = .byTruncatingTail
             nameLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -155,15 +203,18 @@ final class TagsManagementViewController: UIViewController {
 
         initialSelectedTagIDs = selectedTagIDs
         configureAppearance()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
+            viewController.applyTheme()
+        }
         loadTags()
     }
 
     private func configureAppearance() {
-        view.backgroundColor = .systemGroupedBackground
+        applyTheme()
 
         titleLabel.text = sheetTitle
-        titleLabel.font = .systemFont(ofSize: 24, weight: .semibold)
-        titleLabel.textColor = .label
+        titleLabel.font = Theme.roundedFont(ofSize: 24, weight: .semibold)
+        titleLabel.textColor = Theme.primaryText
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         collectionView.backgroundColor = .clear
@@ -174,15 +225,15 @@ final class TagsManagementViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
 
         emptyStateLabel.text = emptyStateMessage
-        emptyStateLabel.font = .systemFont(ofSize: 15, weight: .regular)
-        emptyStateLabel.textColor = .secondaryLabel
+        emptyStateLabel.font = Theme.roundedFont(ofSize: 15, weight: .regular)
+        emptyStateLabel.textColor = Theme.metadataText
         emptyStateLabel.textAlignment = .center
         emptyStateLabel.numberOfLines = 0
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
 
         tagLimitMessageLabel.text = "Up to 7 tags for now"
-        tagLimitMessageLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        tagLimitMessageLabel.textColor = .secondaryLabel
+        tagLimitMessageLabel.font = Theme.roundedFont(ofSize: 13, weight: .regular)
+        tagLimitMessageLabel.textColor = Theme.metadataText
         tagLimitMessageLabel.textAlignment = .right
         tagLimitMessageLabel.numberOfLines = 2
         tagLimitMessageLabel.isHidden = true
@@ -222,12 +273,21 @@ final class TagsManagementViewController: UIViewController {
         ])
     }
 
+    private func applyTheme() {
+        view.backgroundColor = Theme.screenBackground
+        collectionView.backgroundColor = .clear
+        titleLabel.textColor = Theme.primaryText
+        emptyStateLabel.textColor = Theme.metadataText
+        tagLimitMessageLabel.textColor = Theme.metadataText
+        collectionView.reloadData()
+    }
+
     private func configureCreateTagButton() {
         var configuration = UIButton.Configuration.filled()
         configuration.title = "Create Tag"
         configuration.buttonSize = .large
         configuration.cornerStyle = .fixed
-        configuration.baseBackgroundColor = .systemBlue
+        configuration.baseBackgroundColor = Theme.accent
         configuration.baseForegroundColor = .white
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 13, leading: 20, bottom: 13, trailing: 20)
 
@@ -278,7 +338,8 @@ final class TagsManagementViewController: UIViewController {
             createTagButton.isEnabled = selectedTagIDs != initialSelectedTagIDs
             var configuration = createTagButton.configuration
             configuration?.title = "Save"
-            configuration?.baseBackgroundColor = createTagButton.isEnabled ? .systemBlue : .systemGray3
+            configuration?.baseBackgroundColor = createTagButton.isEnabled ? Theme.accent : Theme.controlBackground
+            configuration?.baseForegroundColor = createTagButton.isEnabled ? .white : Theme.metadataText
             createTagButton.configuration = configuration
             return
         }
@@ -289,7 +350,8 @@ final class TagsManagementViewController: UIViewController {
 
         var configuration = createTagButton.configuration
         configuration?.title = "Create Tag"
-        configuration?.baseBackgroundColor = canCreateTag ? .systemBlue : .systemGray4
+        configuration?.baseBackgroundColor = canCreateTag ? Theme.accent : Theme.controlBackground
+        configuration?.baseForegroundColor = canCreateTag ? .white : Theme.metadataText
         createTagButton.configuration = configuration
     }
 

@@ -2,6 +2,55 @@ import UIKit
 import SwiftData
 
 final class ActivityTypesViewController: UIViewController {
+    private enum Theme {
+        static let accent = UIColor(red: 0.42, green: 0.39, blue: 0.96, alpha: 1)
+
+        static let screenBackground = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1)
+                : UIColor(red: 0.96, green: 0.96, blue: 0.98, alpha: 1)
+        }
+
+        static let controlBackground = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.12, green: 0.12, blue: 0.15, alpha: 1)
+                : UIColor(red: 0.92, green: 0.91, blue: 0.96, alpha: 1)
+        }
+
+        static let primaryText = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.88, green: 0.87, blue: 0.96, alpha: 1)
+                : UIColor(red: 0.10, green: 0.09, blue: 0.19, alpha: 1)
+        }
+
+        static let metadataText = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.46, green: 0.45, blue: 0.66, alpha: 1)
+                : UIColor(red: 0.35, green: 0.34, blue: 0.63, alpha: 1)
+        }
+
+        static let tagText = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.63, green: 0.62, blue: 0.88, alpha: 1)
+                : accent
+        }
+
+        static let separator = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark
+                ? UIColor(red: 0.11, green: 0.11, blue: 0.14, alpha: 1)
+                : UIColor(red: 0.89, green: 0.88, blue: 0.93, alpha: 1)
+        }
+
+        static func roundedFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
+            let font = UIFont.systemFont(ofSize: size, weight: weight)
+            guard let descriptor = font.fontDescriptor.withDesign(.rounded) else {
+                return font
+            }
+
+            return UIFont(descriptor: descriptor, size: size)
+        }
+    }
+
     private struct ActivityTypeRow {
         let activityType: ActivityType
         let name: String
@@ -59,6 +108,8 @@ final class ActivityTypesViewController: UIViewController {
         }
 
         func configure(with row: ActivityTypeRow) {
+            backgroundColor = Theme.screenBackground
+            contentView.backgroundColor = Theme.screenBackground
             nameLabel.text = row.name
             configureTagPreviews(row.tagPreviewTexts)
             actionView.onRecordTapped = { [weak self] in
@@ -82,12 +133,17 @@ final class ActivityTypesViewController: UIViewController {
         }
 
         private func configureCell() {
-            nameLabel.font = .systemFont(ofSize: 17, weight: .regular)
-            nameLabel.textColor = .label
+            backgroundColor = Theme.screenBackground
+            selectedBackgroundView = UIView()
+            selectedBackgroundView?.backgroundColor = Theme.controlBackground
+            contentView.backgroundColor = Theme.screenBackground
+
+            nameLabel.font = Theme.roundedFont(ofSize: 17, weight: .regular)
+            nameLabel.textColor = Theme.primaryText
             nameLabel.numberOfLines = 1
 
-            latestActivityLabel.font = .systemFont(ofSize: 14, weight: .regular)
-            latestActivityLabel.textColor = .secondaryLabel
+            latestActivityLabel.font = Theme.roundedFont(ofSize: 14, weight: .regular)
+            latestActivityLabel.textColor = Theme.metadataText
             latestActivityLabel.numberOfLines = 1
 
             tagPreviewStackView.axis = .horizontal
@@ -175,9 +231,9 @@ final class ActivityTypesViewController: UIViewController {
         ) -> PillLabel {
             let label = PillLabel()
             label.text = text
-            label.font = .systemFont(ofSize: 12, weight: .medium)
-            label.textColor = .secondaryLabel
-            label.backgroundColor = .tertiarySystemFill
+            label.font = Theme.roundedFont(ofSize: 12, weight: .medium)
+            label.textColor = Theme.tagText
+            label.backgroundColor = Theme.controlBackground
             label.layer.cornerRadius = 9
             label.layer.masksToBounds = true
             label.lineBreakMode = .byTruncatingTail
@@ -229,6 +285,7 @@ final class ActivityTypesViewController: UIViewController {
         super.viewDidLoad()
 
         configureAppearance()
+        registerForThemeChanges()
         configureTimerNotifications()
         loadActivityTypes()
     }
@@ -237,6 +294,7 @@ final class ActivityTypesViewController: UIViewController {
         super.viewWillAppear(animated)
 
         updateAppearanceButton()
+        applyTheme()
         loadActivityTypes()
     }
 
@@ -252,26 +310,25 @@ final class ActivityTypesViewController: UIViewController {
 
     private func configureAppearance() {
         title = "Activity Types"
-        let addActivityTypeButton = UIBarButtonItem(
+        let navigationAddActivityTypeButton = UIBarButtonItem(
             systemItem: .add,
             primaryAction: UIAction { [weak self] _ in
                 self?.addButtonTapped()
             }
         )
-        let tagsButton = UIBarButtonItem(
+        let navigationTagsButton = UIBarButtonItem(
             image: UIImage(systemName: "tag"),
             primaryAction: UIAction { [weak self] _ in
                 self?.presentTagsManagementSheet()
             }
         )
-        tagsButton.accessibilityLabel = "Manage Tags"
+        navigationTagsButton.accessibilityLabel = "Manage Tags"
         appearanceButton.accessibilityLabel = appearanceButtonAccessibilityLabel()
-        navigationItem.rightBarButtonItems = [addActivityTypeButton, tagsButton, appearanceButton]
-
-        view.backgroundColor = .systemBackground
+        navigationItem.rightBarButtonItems = [navigationAddActivityTypeButton, navigationTagsButton, appearanceButton]
 
         configureTableView()
         configureEmptyStateLabel()
+        applyTheme()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -301,10 +358,42 @@ final class ActivityTypesViewController: UIViewController {
 
     private func configureEmptyStateLabel() {
         emptyStateLabel.text = "No activity types"
-        emptyStateLabel.font = .systemFont(ofSize: 17, weight: .regular)
-        emptyStateLabel.textColor = .secondaryLabel
+        emptyStateLabel.font = Theme.roundedFont(ofSize: 17, weight: .regular)
+        emptyStateLabel.textColor = Theme.metadataText
         emptyStateLabel.textAlignment = .center
         emptyStateLabel.isHidden = true
+    }
+
+    private func applyTheme() {
+        view.backgroundColor = Theme.screenBackground
+        tableView.backgroundColor = Theme.screenBackground
+        tableView.separatorColor = Theme.separator
+        navigationController?.navigationBar.tintColor = Theme.accent
+        navigationController?.navigationBar.titleTextAttributes = [
+            .foregroundColor: Theme.primaryText,
+            .font: Theme.roundedFont(ofSize: 17, weight: .semibold)
+        ]
+        navigationController?.navigationBar.largeTitleTextAttributes = [
+            .foregroundColor: Theme.primaryText,
+            .font: Theme.roundedFont(ofSize: 34, weight: .bold)
+        ]
+        navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
+        navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
+    }
+
+    private func navigationBarAppearance() -> UINavigationBarAppearance {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = Theme.screenBackground
+        appearance.titleTextAttributes = [
+            .foregroundColor: Theme.primaryText,
+            .font: Theme.roundedFont(ofSize: 17, weight: .semibold)
+        ]
+        appearance.largeTitleTextAttributes = [
+            .foregroundColor: Theme.primaryText,
+            .font: Theme.roundedFont(ofSize: 34, weight: .bold)
+        ]
+        return appearance
     }
 
     private func configureTimerNotifications() {
@@ -314,6 +403,14 @@ final class ActivityTypesViewController: UIViewController {
             name: TimerSessionState.didChangeActiveTimersNotification,
             object: nil
         )
+    }
+
+    private func registerForThemeChanges() {
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
+            viewController.updateAppearanceButton()
+            viewController.applyTheme()
+            viewController.tableView.reloadData()
+        }
     }
 
     private func loadActivityTypes() {
@@ -430,7 +527,11 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func appearanceButtonImage() -> UIImage? {
-        UIImage(systemName: currentAppearanceStyle == .dark ? "moon" : "sun.max")
+        UIImage(systemName: appearanceButtonImageName())
+    }
+
+    private func appearanceButtonImageName() -> String {
+        currentAppearanceStyle == .dark ? "moon" : "sun.max"
     }
 
     private func appearanceButtonAccessibilityLabel() -> String {

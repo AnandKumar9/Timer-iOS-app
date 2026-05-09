@@ -48,6 +48,56 @@ struct RestoredTimerControlsState {
 }
 
 final class TimerControlsView: UIView {
+    private enum Theme {
+        static let accent = UIColor(red: 0.42, green: 0.39, blue: 0.96, alpha: 1)
+        static let paused = UIColor(red: 0.96, green: 0.65, blue: 0.14, alpha: 1)
+        static let destructive = UIColor(red: 0.94, green: 0.44, blue: 0.42, alpha: 1)
+
+        static var runningDigitText: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.49, green: 1.00, blue: 0.64, alpha: 1)
+                    : UIColor(red: 0.10, green: 0.55, blue: 0.31, alpha: 1)
+            }
+        }
+
+        static var primaryText: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.88, green: 0.87, blue: 0.96, alpha: 1)
+                    : UIColor(red: 0.10, green: 0.09, blue: 0.19, alpha: 1)
+            }
+        }
+
+        static var metadataText: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.46, green: 0.45, blue: 0.66, alpha: 1)
+                    : UIColor(red: 0.35, green: 0.34, blue: 0.63, alpha: 1)
+            }
+        }
+
+        static var durationText: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.63, green: 0.62, blue: 0.88, alpha: 1)
+                    : UIColor(red: 0.35, green: 0.34, blue: 0.63, alpha: 1)
+            }
+        }
+
+        static var stopBackground: UIColor {
+            UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.09, green: 0.09, blue: 0.12, alpha: 1)
+                    : UIColor(red: 0.92, green: 0.91, blue: 0.96, alpha: 1)
+            }
+        }
+
+        static func roundedFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
+            .systemFont(ofSize: size, weight: weight)
+        }
+    }
+
     private enum TimerState {
         case running
         case paused
@@ -140,8 +190,8 @@ final class TimerControlsView: UIView {
 
     private func configureActivityTypeNameLabel() {
         activityTypeNameLabel.text = activity.activityType.name
-        activityTypeNameLabel.font = .systemFont(ofSize: 25, weight: .semibold)
-        activityTypeNameLabel.textColor = .label
+        activityTypeNameLabel.font = Theme.roundedFont(ofSize: 25, weight: .semibold)
+        activityTypeNameLabel.textColor = Theme.primaryText
         activityTypeNameLabel.textAlignment = .center
         activityTypeNameLabel.numberOfLines = 2
         activityTypeNameLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -149,7 +199,7 @@ final class TimerControlsView: UIView {
 
     private func configureTimerLabel() {
         timerLabel.font = .monospacedDigitSystemFont(ofSize: 56, weight: .regular)
-        timerLabel.textColor = .label
+        timerLabel.textColor = Theme.durationText
         timerLabel.textAlignment = .center
         timerLabel.adjustsFontSizeToFitWidth = true
         timerLabel.minimumScaleFactor = 0.7
@@ -157,12 +207,12 @@ final class TimerControlsView: UIView {
     }
 
     private func configureLastActivityRow() {
-        lastActivityDateLabel.font = .systemFont(ofSize: 15, weight: .regular)
-        lastActivityDateLabel.textColor = .secondaryLabel
+        lastActivityDateLabel.font = Theme.roundedFont(ofSize: 15, weight: .regular)
+        lastActivityDateLabel.textColor = Theme.metadataText
         lastActivityDateLabel.numberOfLines = 1
 
-        lastActivityDurationLabel.font = .systemFont(ofSize: 15, weight: .medium)
-        lastActivityDurationLabel.textColor = .secondaryLabel
+        lastActivityDurationLabel.font = Theme.roundedFont(ofSize: 15, weight: .medium)
+        lastActivityDurationLabel.textColor = Theme.durationText
         lastActivityDurationLabel.textAlignment = .right
         lastActivityDurationLabel.numberOfLines = 1
         lastActivityDurationLabel.setContentHuggingPriority(.required, for: .horizontal)
@@ -189,13 +239,13 @@ final class TimerControlsView: UIView {
     private func configureButtons() {
         configureButton(
             startButton,
-            backgroundColor: .systemBlue.withAlphaComponent(0.12),
-            foregroundColor: .systemBlue
+            backgroundColor: Theme.accent.withAlphaComponent(0.14),
+            foregroundColor: Theme.accent
         )
         configureButton(
             stopButton,
-            backgroundColor: .systemGray5,
-            foregroundColor: .systemRed
+            backgroundColor: Theme.stopBackground,
+            foregroundColor: Theme.destructive
         )
 
         startButton.addTarget(self, action: #selector(startButtonTapped), for: .touchUpInside)
@@ -211,7 +261,7 @@ final class TimerControlsView: UIView {
         button.configuration = nil
         button.backgroundColor = backgroundColor
         button.setTitleColor(foregroundColor, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        button.titleLabel?.font = Theme.roundedFont(ofSize: 16, weight: .medium)
         button.layer.cornerRadius = 10
         button.layer.cornerCurve = .continuous
         button.clipsToBounds = true
@@ -355,6 +405,10 @@ final class TimerControlsView: UIView {
         startButton.setTitle(title, for: .normal)
         startButton.isEnabled = true
         startButton.alpha = 1.0
+        startButton.backgroundColor = timerState == .running
+            ? Theme.paused.withAlphaComponent(0.18)
+            : Theme.accent.withAlphaComponent(0.14)
+        startButton.setTitleColor(timerState == .running ? Theme.paused : Theme.accent, for: .normal)
 
         let shouldEnableStopButton = timerState != .stopped
         stopButton.isEnabled = shouldEnableStopButton
@@ -377,6 +431,7 @@ final class TimerControlsView: UIView {
         } else {
             timerLabel.text = String(format: "%02d:%02d", minutes, seconds)
         }
+        timerLabel.textColor = timerState == .running ? Theme.runningDigitText : Theme.durationText
     }
 
     private func updateLastActivityRow() {
