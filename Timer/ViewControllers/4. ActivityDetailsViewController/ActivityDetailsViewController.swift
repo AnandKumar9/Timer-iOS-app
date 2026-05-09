@@ -2,65 +2,6 @@ import UIKit
 import SwiftData
 
 final class ActivityDetailsViewController: UIViewController {
-    private enum Theme {
-        static let accent = UIColor(red: 0.42, green: 0.39, blue: 0.96, alpha: 1)
-        static let completed = UIColor(red: 0.10, green: 0.55, blue: 0.31, alpha: 1)
-        static let paused = UIColor(red: 0.96, green: 0.65, blue: 0.14, alpha: 1)
-        static let destructive = UIColor(red: 0.94, green: 0.44, blue: 0.42, alpha: 1)
-
-        static var screenBackground: UIColor {
-            UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1)
-                    : UIColor(red: 0.96, green: 0.96, blue: 0.98, alpha: 1)
-            }
-        }
-
-        static var controlBackground: UIColor {
-            UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.09, green: 0.09, blue: 0.12, alpha: 1)
-                    : UIColor.white
-            }
-        }
-
-        static var primaryText: UIColor {
-            UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.88, green: 0.87, blue: 0.96, alpha: 1)
-                    : UIColor(red: 0.10, green: 0.09, blue: 0.19, alpha: 1)
-            }
-        }
-
-        static var metadataText: UIColor {
-            UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.46, green: 0.45, blue: 0.66, alpha: 1)
-                    : UIColor(red: 0.35, green: 0.34, blue: 0.63, alpha: 1)
-            }
-        }
-
-        static var durationText: UIColor {
-            UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.63, green: 0.62, blue: 0.88, alpha: 1)
-                    : UIColor(red: 0.35, green: 0.34, blue: 0.63, alpha: 1)
-            }
-        }
-
-        static var separator: UIColor {
-            UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.11, green: 0.11, blue: 0.14, alpha: 1)
-                    : UIColor(red: 0.89, green: 0.88, blue: 0.93, alpha: 1)
-            }
-        }
-
-        static func roundedFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
-            .systemFont(ofSize: size, weight: weight)
-        }
-    }
-
     private final class DetailRowView: UIView {
         private let iconView = UIImageView()
         private let titleLabel = UILabel()
@@ -83,18 +24,18 @@ final class ActivityDetailsViewController: UIViewController {
 
             iconView.image = UIImage(systemName: iconName)
             iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
-            iconView.tintColor = Theme.metadataText
+            iconView.tintColor = AppTheme.metadataText
             iconView.contentMode = .scaleAspectFit
             iconView.translatesAutoresizingMaskIntoConstraints = false
 
             titleLabel.text = title
-            titleLabel.font = Theme.roundedFont(ofSize: 13, weight: .semibold)
-            titleLabel.textColor = Theme.metadataText
+            titleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+            titleLabel.textColor = AppTheme.metadataText
             titleLabel.numberOfLines = 1
 
             valueLabel.text = value
-            valueLabel.font = Theme.roundedFont(ofSize: 17, weight: .medium)
-            valueLabel.textColor = Theme.primaryText
+            valueLabel.font = AppTheme.roundedFont(ofSize: 17, weight: .medium)
+            valueLabel.textColor = AppTheme.primaryText
             valueLabel.numberOfLines = 0
             valueLabel.lineBreakMode = .byWordWrapping
 
@@ -141,18 +82,18 @@ final class ActivityDetailsViewController: UIViewController {
 
             iconView.image = UIImage(systemName: iconName)
             iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
-            iconView.tintColor = Theme.metadataText
+            iconView.tintColor = AppTheme.metadataText
             iconView.contentMode = .scaleAspectFit
             iconView.translatesAutoresizingMaskIntoConstraints = false
 
             titleLabel.text = title
-            titleLabel.font = Theme.roundedFont(ofSize: 13, weight: .semibold)
-            titleLabel.textColor = Theme.metadataText
+            titleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+            titleLabel.textColor = AppTheme.metadataText
 
             datePicker.date = date
             datePicker.datePickerMode = .dateAndTime
             datePicker.preferredDatePickerStyle = .compact
-            datePicker.tintColor = Theme.accent
+            datePicker.tintColor = AppTheme.accent
             datePicker.translatesAutoresizingMaskIntoConstraints = false
 
             textStackView.axis = .vertical
@@ -198,20 +139,20 @@ final class ActivityDetailsViewController: UIViewController {
 
             iconView.image = UIImage(systemName: iconName)
             iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
-            iconView.tintColor = Theme.metadataText
+            iconView.tintColor = AppTheme.metadataText
             iconView.contentMode = .scaleAspectFit
             iconView.translatesAutoresizingMaskIntoConstraints = false
 
             titleLabel.text = title
-            titleLabel.font = Theme.roundedFont(ofSize: 13, weight: .semibold)
-            titleLabel.textColor = Theme.metadataText
+            titleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+            titleLabel.textColor = AppTheme.metadataText
 
             var configuration = UIButton.Configuration.tinted()
             configuration.title = selectedName
             configuration.image = UIImage(systemName: "chevron.up.chevron.down")
             configuration.imagePlacement = .trailing
             configuration.imagePadding = 8
-            configuration.baseForegroundColor = Theme.accent
+            configuration.baseForegroundColor = AppTheme.accent
             selectionButton.configuration = configuration
             selectionButton.contentHorizontalAlignment = .leading
             selectionButton.showsMenuAsPrimaryAction = true
@@ -310,9 +251,9 @@ final class ActivityDetailsViewController: UIViewController {
     }
 
     private func applyTheme() {
-        view.backgroundColor = Theme.screenBackground
-        scrollView.backgroundColor = Theme.screenBackground
-        navigationController?.navigationBar.tintColor = Theme.accent
+        view.backgroundColor = AppTheme.screenBackground
+        scrollView.backgroundColor = AppTheme.screenBackground
+        navigationController?.navigationBar.tintColor = AppTheme.accent
         navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
         navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
         navigationController?.navigationBar.compactAppearance = navigationBarAppearance()
@@ -321,15 +262,15 @@ final class ActivityDetailsViewController: UIViewController {
     private func navigationBarAppearance() -> UINavigationBarAppearance {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = Theme.screenBackground
-        appearance.shadowColor = Theme.separator
+        appearance.backgroundColor = AppTheme.screenBackground
+        appearance.shadowColor = AppTheme.separator
         appearance.titleTextAttributes = [
-            .foregroundColor: Theme.primaryText,
-            .font: Theme.roundedFont(ofSize: 17, weight: .semibold)
+            .foregroundColor: AppTheme.primaryText,
+            .font: AppTheme.roundedFont(ofSize: 17, weight: .semibold)
         ]
         appearance.largeTitleTextAttributes = [
-            .foregroundColor: Theme.primaryText,
-            .font: Theme.roundedFont(ofSize: 34, weight: .bold)
+            .foregroundColor: AppTheme.primaryText,
+            .font: AppTheme.roundedFont(ofSize: 34, weight: .bold)
         ]
         return appearance
     }
@@ -350,18 +291,18 @@ final class ActivityDetailsViewController: UIViewController {
     private func configureHeader() {
         let titleCaptionLabel = UILabel()
         titleCaptionLabel.text = "Activity Type"
-        titleCaptionLabel.font = Theme.roundedFont(ofSize: 13, weight: .semibold)
-        titleCaptionLabel.textColor = Theme.metadataText
+        titleCaptionLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+        titleCaptionLabel.textColor = AppTheme.metadataText
         titleCaptionLabel.textAlignment = .center
 
-        activityNameLabel.font = Theme.roundedFont(ofSize: 36, weight: .bold)
-        activityNameLabel.textColor = Theme.primaryText
+        activityNameLabel.font = AppTheme.roundedFont(ofSize: 36, weight: .bold)
+        activityNameLabel.textColor = AppTheme.primaryText
         activityNameLabel.textAlignment = .center
         activityNameLabel.numberOfLines = 2
         activityNameLabel.adjustsFontSizeToFitWidth = true
         activityNameLabel.minimumScaleFactor = 0.72
 
-        statusCapsuleLabel.font = Theme.roundedFont(ofSize: 13, weight: .semibold)
+        statusCapsuleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
         statusCapsuleLabel.textAlignment = .center
         statusCapsuleLabel.layer.cornerRadius = 13
         statusCapsuleLabel.layer.cornerCurve = .continuous
@@ -391,19 +332,19 @@ final class ActivityDetailsViewController: UIViewController {
 
     private func configureSummaryCard() {
         let summaryCardView = UIView()
-        summaryCardView.backgroundColor = Theme.controlBackground
+        summaryCardView.backgroundColor = AppTheme.cardBackground
         summaryCardView.layer.cornerRadius = 8
         summaryCardView.layer.cornerCurve = .continuous
         summaryCardView.translatesAutoresizingMaskIntoConstraints = false
 
         let durationTitleLabel = UILabel()
         durationTitleLabel.text = "Duration"
-        durationTitleLabel.font = Theme.roundedFont(ofSize: 13, weight: .semibold)
-        durationTitleLabel.textColor = Theme.metadataText
+        durationTitleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+        durationTitleLabel.textColor = AppTheme.metadataText
         durationTitleLabel.textAlignment = .center
 
         durationValueLabel.font = .monospacedDigitSystemFont(ofSize: 42, weight: .bold)
-        durationValueLabel.textColor = Theme.durationText
+        durationValueLabel.textColor = AppTheme.durationText
         durationValueLabel.textAlignment = .center
         durationValueLabel.numberOfLines = 1
         durationValueLabel.adjustsFontSizeToFitWidth = true
@@ -432,10 +373,10 @@ final class ActivityDetailsViewController: UIViewController {
     private func configureDetailsContainer() {
         let sectionTitleLabel = UILabel()
         sectionTitleLabel.text = "Activity Info"
-        sectionTitleLabel.font = Theme.roundedFont(ofSize: 20, weight: .bold)
-        sectionTitleLabel.textColor = Theme.primaryText
+        sectionTitleLabel.font = AppTheme.roundedFont(ofSize: 20, weight: .bold)
+        sectionTitleLabel.textColor = AppTheme.primaryText
 
-        detailsContainerView.backgroundColor = Theme.controlBackground
+        detailsContainerView.backgroundColor = AppTheme.cardBackground
         detailsContainerView.layer.cornerRadius = 8
         detailsContainerView.layer.cornerCurve = .continuous
 
@@ -463,7 +404,7 @@ final class ActivityDetailsViewController: UIViewController {
 
     private func configureEditSaveButton() {
         var configuration = UIButton.Configuration.filled()
-        configuration.baseBackgroundColor = Theme.accent
+        configuration.baseBackgroundColor = AppTheme.accent
         configuration.baseForegroundColor = .white
         configuration.image = UIImage(systemName: "pencil")
         configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
@@ -558,7 +499,7 @@ final class ActivityDetailsViewController: UIViewController {
 
     private func makeDividerView() -> UIView {
         let dividerView = UIView()
-        dividerView.backgroundColor = Theme.separator
+        dividerView.backgroundColor = AppTheme.separator
         dividerView.translatesAutoresizingMaskIntoConstraints = false
         dividerView.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale).isActive = true
         return dividerView
@@ -589,8 +530,8 @@ final class ActivityDetailsViewController: UIViewController {
         configuration.title = "Delete Activity"
         configuration.image = UIImage(systemName: "trash")
         configuration.imagePadding = 8
-        configuration.baseBackgroundColor = Theme.destructive.withAlphaComponent(0.14)
-        configuration.baseForegroundColor = Theme.destructive
+        configuration.baseBackgroundColor = AppTheme.destructive.withAlphaComponent(0.14)
+        configuration.baseForegroundColor = AppTheme.destructive
         configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
 
         let button = UIButton(type: .system)
@@ -649,7 +590,7 @@ final class ActivityDetailsViewController: UIViewController {
     private func updateEditSaveButtonAppearance() {
         var configuration = editSaveButton.configuration ?? UIButton.Configuration.filled()
         configuration.image = UIImage(systemName: isEditingActivityDetails ? "checkmark" : "pencil")
-        configuration.baseBackgroundColor = isEditingActivityDetails ? Theme.completed : Theme.accent
+        configuration.baseBackgroundColor = isEditingActivityDetails ? AppTheme.completed : AppTheme.accent
         editSaveButton.configuration = configuration
         editSaveButton.accessibilityLabel = isEditingActivityDetails ? "Save activity" : "Edit activity"
     }
@@ -844,11 +785,11 @@ final class ActivityDetailsViewController: UIViewController {
 
     private func statusColor(for activity: Activity) -> UIColor {
         if activity.activityCompletionTime != nil {
-            return Theme.completed
+            return AppTheme.completed
         }
 
         if activity.activityStartTime != nil {
-            return Theme.paused
+            return AppTheme.paused
         }
 
         return .systemGray

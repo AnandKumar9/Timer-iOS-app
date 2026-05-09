@@ -5,8 +5,6 @@ final class ActivityTimerActionView: UIView {
     var onTimerStatusTapped: (() -> Void)?
 
     private let timerStatusButton = UIButton(type: .system)
-    private let accentColor = UIColor(red: 0.42, green: 0.39, blue: 0.96, alpha: 1)
-    private let pausedColor = UIColor(red: 0.96, green: 0.65, blue: 0.14, alpha: 1)
 
     private lazy var recordButton: UIButton = {
         var configuration = UIButton.Configuration.filled()
@@ -15,7 +13,7 @@ final class ActivityTimerActionView: UIView {
         configuration.imagePadding = 6
         configuration.buttonSize = .small
         configuration.cornerStyle = .fixed
-        configuration.baseBackgroundColor = accentColor
+        configuration.baseBackgroundColor = AppTheme.accent
         configuration.baseForegroundColor = .white
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 7, leading: 14, bottom: 7, trailing: 14)
 
@@ -52,16 +50,16 @@ final class ActivityTimerActionView: UIView {
             recordButton.isHidden = true
             timerStatusButton.isHidden = false
             timerStatusButton.setImage(UIImage(systemName: "timer"), for: .normal)
-            timerStatusButton.tintColor = accentColor
+            timerStatusButton.tintColor = AppTheme.accent
             timerStatusButton.backgroundColor = .clear
-            timerStatusButton.layer.borderColor = accentColor.cgColor
+            timerStatusButton.layer.borderColor = AppTheme.accent.cgColor
             timerStatusButton.layer.borderWidth = 0
             timerStatusButton.accessibilityLabel = "Timer running"
         case .paused:
             recordButton.isHidden = true
             timerStatusButton.isHidden = false
             timerStatusButton.setImage(UIImage(systemName: "pause.circle.fill"), for: .normal)
-            timerStatusButton.tintColor = pausedColor
+            timerStatusButton.tintColor = AppTheme.paused
             timerStatusButton.backgroundColor = .clear
             timerStatusButton.layer.borderWidth = 0
             timerStatusButton.accessibilityLabel = "Timer paused"
@@ -78,7 +76,7 @@ final class ActivityTimerActionView: UIView {
         setContentHuggingPriority(.required, for: .horizontal)
         setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        timerStatusButton.tintColor = accentColor
+        timerStatusButton.tintColor = AppTheme.accent
         timerStatusButton.isHidden = true
         timerStatusButton.addAction(
             UIAction { [weak self] _ in

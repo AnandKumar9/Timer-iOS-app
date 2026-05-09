@@ -11,10 +11,6 @@ protocol FloatingTimerButtonContextProviding: AnyObject {
 }
 
 final class FloatingTimerButtonController: NSObject {
-    private enum Theme {
-        static let accent = UIColor(red: 0.42, green: 0.39, blue: 0.96, alpha: 1)
-    }
-
     private let containerView = UIView()
     private let currentTimersButton = UIButton(type: .system)
     private weak var navigationController: UINavigationController?
@@ -62,7 +58,7 @@ final class FloatingTimerButtonController: NSObject {
 
     private func configureCurrentTimersButton() {
         var configuration = UIButton.Configuration.filled()
-        configuration.baseBackgroundColor = Theme.accent
+        configuration.baseBackgroundColor = AppTheme.accent
         configuration.baseForegroundColor = .white
 
         currentTimersButton.configuration = configuration
@@ -199,13 +195,13 @@ final class FloatingTimerButtonController: NSObject {
     private func currentTimersButtonBackgroundColor(for context: FloatingTimerButtonContext) -> UIColor {
         switch context {
         case .globalTimers:
-            return Theme.accent
+            return AppTheme.accent
         case let .activityType(activityType):
             switch TimerViewController.timerState(for: activityType) {
             case .none, .running:
-                return Theme.accent
+                return AppTheme.accent
             case .paused:
-                return .systemOrange
+                return AppTheme.paused
             }
         }
     }

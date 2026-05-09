@@ -2,55 +2,6 @@ import UIKit
 import SwiftData
 
 final class ActivityTypesViewController: UIViewController {
-    private enum Theme {
-        static let accent = UIColor(red: 0.42, green: 0.39, blue: 0.96, alpha: 1)
-
-        static let screenBackground = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1)
-                : UIColor(red: 0.96, green: 0.96, blue: 0.98, alpha: 1)
-        }
-
-        static let controlBackground = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? UIColor(red: 0.12, green: 0.12, blue: 0.15, alpha: 1)
-                : UIColor(red: 0.92, green: 0.91, blue: 0.96, alpha: 1)
-        }
-
-        static let primaryText = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? UIColor(red: 0.88, green: 0.87, blue: 0.96, alpha: 1)
-                : UIColor(red: 0.10, green: 0.09, blue: 0.19, alpha: 1)
-        }
-
-        static let metadataText = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? UIColor(red: 0.46, green: 0.45, blue: 0.66, alpha: 1)
-                : UIColor(red: 0.35, green: 0.34, blue: 0.63, alpha: 1)
-        }
-
-        static let tagText = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? UIColor(red: 0.63, green: 0.62, blue: 0.88, alpha: 1)
-                : accent
-        }
-
-        static let separator = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? UIColor(red: 0.11, green: 0.11, blue: 0.14, alpha: 1)
-                : UIColor(red: 0.89, green: 0.88, blue: 0.93, alpha: 1)
-        }
-
-        static func roundedFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
-            let font = UIFont.systemFont(ofSize: size, weight: weight)
-            guard let descriptor = font.fontDescriptor.withDesign(.rounded) else {
-                return font
-            }
-
-            return UIFont(descriptor: descriptor, size: size)
-        }
-    }
-
     private struct ActivityTypeRow {
         let activityType: ActivityType
         let name: String
@@ -108,8 +59,8 @@ final class ActivityTypesViewController: UIViewController {
         }
 
         func configure(with row: ActivityTypeRow) {
-            backgroundColor = Theme.screenBackground
-            contentView.backgroundColor = Theme.screenBackground
+            backgroundColor = AppTheme.screenBackground
+            contentView.backgroundColor = AppTheme.screenBackground
             nameLabel.text = row.name
             configureTagPreviews(row.tagPreviewTexts)
             actionView.onRecordTapped = { [weak self] in
@@ -133,17 +84,17 @@ final class ActivityTypesViewController: UIViewController {
         }
 
         private func configureCell() {
-            backgroundColor = Theme.screenBackground
+            backgroundColor = AppTheme.screenBackground
             selectedBackgroundView = UIView()
-            selectedBackgroundView?.backgroundColor = Theme.controlBackground
-            contentView.backgroundColor = Theme.screenBackground
+            selectedBackgroundView?.backgroundColor = AppTheme.controlBackground
+            contentView.backgroundColor = AppTheme.screenBackground
 
-            nameLabel.font = Theme.roundedFont(ofSize: 17, weight: .regular)
-            nameLabel.textColor = Theme.primaryText
+            nameLabel.font = AppTheme.roundedFont(ofSize: 17, weight: .regular)
+            nameLabel.textColor = AppTheme.primaryText
             nameLabel.numberOfLines = 1
 
-            latestActivityLabel.font = Theme.roundedFont(ofSize: 14, weight: .regular)
-            latestActivityLabel.textColor = Theme.metadataText
+            latestActivityLabel.font = AppTheme.roundedFont(ofSize: 14, weight: .regular)
+            latestActivityLabel.textColor = AppTheme.metadataText
             latestActivityLabel.numberOfLines = 1
 
             tagPreviewStackView.axis = .horizontal
@@ -231,9 +182,9 @@ final class ActivityTypesViewController: UIViewController {
         ) -> PillLabel {
             let label = PillLabel()
             label.text = text
-            label.font = Theme.roundedFont(ofSize: 12, weight: .medium)
-            label.textColor = Theme.tagText
-            label.backgroundColor = Theme.controlBackground
+            label.font = AppTheme.roundedFont(ofSize: 12, weight: .medium)
+            label.textColor = AppTheme.tagText
+            label.backgroundColor = AppTheme.controlBackground
             label.layer.cornerRadius = 9
             label.layer.masksToBounds = true
             label.lineBreakMode = .byTruncatingTail
@@ -358,24 +309,24 @@ final class ActivityTypesViewController: UIViewController {
 
     private func configureEmptyStateLabel() {
         emptyStateLabel.text = "No activity types"
-        emptyStateLabel.font = Theme.roundedFont(ofSize: 17, weight: .regular)
-        emptyStateLabel.textColor = Theme.metadataText
+        emptyStateLabel.font = AppTheme.roundedFont(ofSize: 17, weight: .regular)
+        emptyStateLabel.textColor = AppTheme.metadataText
         emptyStateLabel.textAlignment = .center
         emptyStateLabel.isHidden = true
     }
 
     private func applyTheme() {
-        view.backgroundColor = Theme.screenBackground
-        tableView.backgroundColor = Theme.screenBackground
-        tableView.separatorColor = Theme.separator
-        navigationController?.navigationBar.tintColor = Theme.accent
+        view.backgroundColor = AppTheme.screenBackground
+        tableView.backgroundColor = AppTheme.screenBackground
+        tableView.separatorColor = AppTheme.separator
+        navigationController?.navigationBar.tintColor = AppTheme.accent
         navigationController?.navigationBar.titleTextAttributes = [
-            .foregroundColor: Theme.primaryText,
-            .font: Theme.roundedFont(ofSize: 17, weight: .semibold)
+            .foregroundColor: AppTheme.primaryText,
+            .font: AppTheme.roundedFont(ofSize: 17, weight: .semibold)
         ]
         navigationController?.navigationBar.largeTitleTextAttributes = [
-            .foregroundColor: Theme.primaryText,
-            .font: Theme.roundedFont(ofSize: 34, weight: .bold)
+            .foregroundColor: AppTheme.primaryText,
+            .font: AppTheme.roundedFont(ofSize: 34, weight: .bold)
         ]
         navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
         navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
@@ -384,14 +335,14 @@ final class ActivityTypesViewController: UIViewController {
     private func navigationBarAppearance() -> UINavigationBarAppearance {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = Theme.screenBackground
+        appearance.backgroundColor = AppTheme.screenBackground
         appearance.titleTextAttributes = [
-            .foregroundColor: Theme.primaryText,
-            .font: Theme.roundedFont(ofSize: 17, weight: .semibold)
+            .foregroundColor: AppTheme.primaryText,
+            .font: AppTheme.roundedFont(ofSize: 17, weight: .semibold)
         ]
         appearance.largeTitleTextAttributes = [
-            .foregroundColor: Theme.primaryText,
-            .font: Theme.roundedFont(ofSize: 34, weight: .bold)
+            .foregroundColor: AppTheme.primaryText,
+            .font: AppTheme.roundedFont(ofSize: 34, weight: .bold)
         ]
         return appearance
     }
