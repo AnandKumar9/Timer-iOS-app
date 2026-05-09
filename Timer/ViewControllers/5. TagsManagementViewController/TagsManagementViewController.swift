@@ -337,6 +337,7 @@ final class TagsManagementViewController: UIViewController {
             message: "Enter a tag name up to \(Self.maximumTagNameLength) characters.",
             preferredStyle: .alert
         )
+        alertController.view.tintColor = AppTheme.primaryText
 
         let createAction = UIAlertAction(title: "Create", style: .default) { [weak self, weak alertController] _ in
             guard let name = alertController?.textFields?.first?.text else {

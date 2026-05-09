@@ -253,7 +253,7 @@ final class ActivityDetailsViewController: UIViewController {
     private func applyTheme() {
         view.backgroundColor = AppTheme.screenBackground
         scrollView.backgroundColor = AppTheme.screenBackground
-        navigationController?.navigationBar.tintColor = AppTheme.accent
+        navigationController?.navigationBar.tintColor = AppTheme.primaryText
         navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
         navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
         navigationController?.navigationBar.compactAppearance = navigationBarAppearance()

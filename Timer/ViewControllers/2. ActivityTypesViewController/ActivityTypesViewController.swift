@@ -646,6 +646,7 @@ final class ActivityTypesViewController: UIViewController {
             message: "Enter an activity type name.",
             preferredStyle: .alert
         )
+        alertController.view.tintColor = AppTheme.primaryText
 
         let submitAction = UIAlertAction(title: "Submit", style: .default) { [weak self, weak alertController] _ in
             guard let name = alertController?.textFields?.first?.text else {
