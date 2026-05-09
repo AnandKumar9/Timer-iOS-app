@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		440DE4982FAF8F0300910C7F /* AppFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4972FAF8EFF00910C7F /* AppFont.swift */; };
 		440DE49A2FAF8F3C00910C7F /* AppPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4992FAF8F3600910C7F /* AppPalette.swift */; };
+		440DE49C2FAFA00100910C7F /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE49B2FAFA00100910C7F /* SettingsViewController.swift */; };
+		440DE49E2FAFC00100910C7F /* ThemeCoral.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 440DE49D2FAFC00100910C7F /* ThemeCoral.xcassets */; };
 		9A0000010000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000011 /* AppDelegate.swift */; };
 		9A0000010000000000000002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000012 /* SceneDelegate.swift */; };
 		9A0000010000000000000003 /* ActivityDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000013 /* ActivityDetailsViewController.swift */; };
@@ -48,6 +50,8 @@
 /* Begin PBXFileReference section */
 		440DE4972FAF8EFF00910C7F /* AppFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFont.swift; sourceTree = "<group>"; };
 		440DE4992FAF8F3600910C7F /* AppPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPalette.swift; sourceTree = "<group>"; };
+		440DE49B2FAFA00100910C7F /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		440DE49D2FAFC00100910C7F /* ThemeCoral.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ThemeCoral.xcassets; sourceTree = "<group>"; };
 		9A0000010000000000000010 /* Timer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Timer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A0000010000000000000011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9A0000010000000000000012 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -109,6 +113,7 @@
 			isa = PBXGroup;
 			children = (
 				9A000001000000000000005C /* Fonts */,
+				440DE49D2FAFC00100910C7F /* ThemeCoral.xcassets */,
 				9A0000010000000000000051 /* ThemePurple.xcassets */,
 				9A0000010000000000000053 /* ThemeTeal.xcassets */,
 				9A000001000000000000004F /* AppTheme.swift */,
@@ -131,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				9A0000010000000000000015 /* ActivityTypesViewController.swift */,
+				440DE49B2FAFA00100910C7F /* SettingsViewController.swift */,
 				9A0000010000000000000037 /* ActivityTypesViewController.xib */,
 			);
 			path = "2. ActivityTypesViewController";
@@ -290,6 +296,7 @@
 				9A0000010000000000000009 /* Assets.xcassets in Resources */,
 				9A0000010000000000000050 /* ThemePurple.xcassets in Resources */,
 				9A0000010000000000000052 /* ThemeTeal.xcassets in Resources */,
+				440DE49E2FAFC00100910C7F /* ThemeCoral.xcassets in Resources */,
 				9A0000010000000000000030 /* ActivityDetailsViewController.xib in Resources */,
 				9A0000010000000000000031 /* TimerViewController.xib in Resources */,
 				9A0000010000000000000032 /* ActivityTypesViewController.xib in Resources */,
@@ -328,6 +335,7 @@
 				9A0000010000000000000042 /* Activity.swift in Sources */,
 				440DE49A2FAF8F3C00910C7F /* AppPalette.swift in Sources */,
 				440DE4982FAF8F0300910C7F /* AppFont.swift in Sources */,
+				440DE49C2FAFA00100910C7F /* SettingsViewController.swift in Sources */,
 				9A0000010000000000000046 /* ActivityTag.swift in Sources */,
 				9A0000010000000000000048 /* TagsManagementViewController.swift in Sources */,
 				9A000001000000000000004A /* ActivityTimerCache.swift in Sources */,
@@ -464,7 +472,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.Timer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -490,7 +498,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.Timer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

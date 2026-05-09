@@ -7,11 +7,18 @@
 
 import UIKit
 
-enum AppFont {
-    case system
+enum AppFont: String, CaseIterable {
     case jetBrainsMono
     case manrope
-    case spaceGrotesk
+
+    var displayName: String {
+        switch self {
+        case .jetBrainsMono:
+            return "JetBrains Mono"
+        case .manrope:
+            return "Manrope"
+        }
+    }
     
     func roundedFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
         let fontName = fontName(for: weight)
@@ -35,8 +42,6 @@ enum AppFont {
         }
 
         switch (self, fontWeight) {
-        case (.system, _):
-            return nil
         case (.jetBrainsMono, .light):
             return "JetBrainsMono-Light"
         case (.jetBrainsMono, .regular):
@@ -57,14 +62,6 @@ enum AppFont {
             return "Manrope-SemiBold"
         case (.manrope, .bold):
             return "Manrope-Bold"
-        case (.spaceGrotesk, .light):
-            return "SpaceGrotesk-Light"
-        case (.spaceGrotesk, .regular):
-            return "SpaceGrotesk-Regular"
-        case (.spaceGrotesk, .medium), (.spaceGrotesk, .semibold):
-            return "SpaceGrotesk-Medium"
-        case (.spaceGrotesk, .bold):
-            return "SpaceGrotesk-Bold"
         }
     }
     

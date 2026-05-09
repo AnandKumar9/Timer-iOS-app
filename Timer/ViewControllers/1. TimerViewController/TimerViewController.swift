@@ -150,6 +150,20 @@ final class TimerViewController: UIViewController {
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = AppTheme.screenBackground
         appearance.shadowColor = AppTheme.separator
+        let buttonAppearance = UIBarButtonItemAppearance(style: .plain)
+        buttonAppearance.normal.titleTextAttributes = [
+            .foregroundColor: AppTheme.primaryText,
+            .font: AppTheme.roundedFont(ofSize: 17, weight: .regular)
+        ]
+        buttonAppearance.highlighted.titleTextAttributes = [
+            .foregroundColor: AppTheme.metadataText,
+            .font: AppTheme.roundedFont(ofSize: 17, weight: .regular)
+        ]
+        buttonAppearance.disabled.titleTextAttributes = [
+            .foregroundColor: AppTheme.metadataText,
+            .font: AppTheme.roundedFont(ofSize: 17, weight: .regular)
+        ]
+        appearance.buttonAppearance = buttonAppearance
         appearance.titleTextAttributes = [
             .foregroundColor: AppTheme.primaryText,
             .font: AppTheme.roundedFont(ofSize: 17, weight: .semibold)

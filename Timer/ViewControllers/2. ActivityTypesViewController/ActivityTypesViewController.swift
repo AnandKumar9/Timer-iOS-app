@@ -61,6 +61,11 @@ final class ActivityTypesViewController: UIViewController {
         func configure(with row: ActivityTypeRow) {
             backgroundColor = AppTheme.screenBackground
             contentView.backgroundColor = AppTheme.screenBackground
+            selectedBackgroundView?.backgroundColor = AppTheme.controlBackground
+            nameLabel.font = AppTheme.roundedFont(ofSize: 17, weight: .regular)
+            nameLabel.textColor = AppTheme.primaryText
+            latestActivityLabel.font = AppTheme.roundedFont(ofSize: 14, weight: .regular)
+            latestActivityLabel.textColor = AppTheme.metadataText
             nameLabel.text = row.name
             configureTagPreviews(row.tagPreviewTexts)
             actionView.onRecordTapped = { [weak self] in
@@ -220,10 +225,10 @@ final class ActivityTypesViewController: UIViewController {
 
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
-    private lazy var appearanceButton = UIBarButtonItem(
-        image: appearanceButtonImage(),
+    private lazy var settingsButton = UIBarButtonItem(
+        image: UIImage(systemName: "gearshape"),
         primaryAction: UIAction { [weak self] _ in
-            self?.appearanceButtonTapped()
+            self?.settingsButtonTapped()
         }
     )
     private var activityTypeRows: [ActivityTypeRow] = []
@@ -244,7 +249,6 @@ final class ActivityTypesViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        updateAppearanceButton()
         applyTheme()
         loadActivityTypes()
     }
@@ -274,8 +278,8 @@ final class ActivityTypesViewController: UIViewController {
             }
         )
         navigationTagsButton.accessibilityLabel = "Manage Tags"
-        appearanceButton.accessibilityLabel = appearanceButtonAccessibilityLabel()
-        navigationItem.rightBarButtonItems = [navigationAddActivityTypeButton, navigationTagsButton, appearanceButton]
+        settingsButton.accessibilityLabel = "Settings"
+        navigationItem.rightBarButtonItems = [navigationAddActivityTypeButton, navigationTagsButton, settingsButton]
 
         configureTableView()
         configureEmptyStateLabel()
@@ -358,10 +362,16 @@ final class ActivityTypesViewController: UIViewController {
 
     private func registerForThemeChanges() {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
-            viewController.updateAppearanceButton()
             viewController.applyTheme()
             viewController.tableView.reloadData()
         }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(themeDidChange),
+            name: AppTheme.didChangeNotification,
+            object: nil
+        )
     }
 
     private func loadActivityTypes() {
@@ -467,31 +477,26 @@ final class ActivityTypesViewController: UIViewController {
         loadActivityTypes()
     }
 
-    private func appearanceButtonTapped() {
-        AppAppearanceController.toggleAppearance(from: traitCollection.userInterfaceStyle)
-        updateAppearanceButton()
+    @objc private func themeDidChange() {
+        applyTheme()
+        emptyStateLabel.font = AppTheme.roundedFont(ofSize: 17, weight: .regular)
+        emptyStateLabel.textColor = AppTheme.metadataText
+        tableView.reloadData()
     }
 
-    private func updateAppearanceButton() {
-        appearanceButton.image = appearanceButtonImage()
-        appearanceButton.accessibilityLabel = appearanceButtonAccessibilityLabel()
-    }
+    private func settingsButtonTapped() {
+        let settingsViewController = SettingsViewController()
+        let navigationController = UINavigationController(rootViewController: settingsViewController)
+        navigationController.modalPresentationStyle = .pageSheet
 
-    private func appearanceButtonImage() -> UIImage? {
-        UIImage(systemName: appearanceButtonImageName())
-    }
+        if let sheetPresentationController = navigationController.sheetPresentationController {
+            sheetPresentationController.detents = [.medium(), .large()]
+            sheetPresentationController.selectedDetentIdentifier = .medium
+            sheetPresentationController.prefersGrabberVisible = true
+            sheetPresentationController.preferredCornerRadius = 18
+        }
 
-    private func appearanceButtonImageName() -> String {
-        currentAppearanceStyle == .dark ? "moon" : "sun.max"
-    }
-
-    private func appearanceButtonAccessibilityLabel() -> String {
-        currentAppearanceStyle == .dark ? "Switch to Light Mode" : "Switch to Dark Mode"
-    }
-
-    private var currentAppearanceStyle: UIUserInterfaceStyle {
-        let savedStyle = AppAppearanceController.savedUserInterfaceStyle
-        return savedStyle == .unspecified ? traitCollection.userInterfaceStyle : savedStyle
+        present(navigationController, animated: true)
     }
 
     private func startActivityType(_ activityType: ActivityType) {

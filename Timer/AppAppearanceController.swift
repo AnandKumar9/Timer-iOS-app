@@ -34,8 +34,14 @@ enum AppAppearanceController {
 
     static func toggleAppearance(from currentStyle: UIUserInterfaceStyle) {
         let nextAppearance: StoredAppearance = currentStyle == .dark ? .light : .dark
+        setAppearance(nextAppearance.userInterfaceStyle)
+    }
+
+    static func setAppearance(_ style: UIUserInterfaceStyle) {
+        let nextAppearance: StoredAppearance = style == .dark ? .dark : .light
         UserDefaults.standard.set(nextAppearance.rawValue, forKey: userDefaultsKey)
         applySavedAppearanceToConnectedWindows()
+        AppTheme.applyThemeChange()
     }
 
     private static func applySavedAppearanceToConnectedWindows() {

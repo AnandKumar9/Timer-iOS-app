@@ -89,3 +89,61 @@ enum TealPalette: AppPalette {
         return color
     }
 }
+
+enum CoralPalette: AppPalette {
+    static let accent = color(named: "ThemeCoralAccent")
+    static let paused = color(named: "ThemeCoralPaused")
+    static let completed = color(named: "ThemeCoralCompleted")
+    static let destructive = color(named: "ThemeCoralDestructive")
+    static let screenBackground = color(named: "ThemeCoralScreenBackground")
+    static let controlBackground = color(named: "ThemeCoralControlBackground")
+    static let cardBackground = color(named: "ThemeCoralCardBackground")
+    static let primaryText = color(named: "ThemeCoralPrimaryText")
+    static let metadataText = color(named: "ThemeCoralMetadataText")
+    static let durationText = color(named: "ThemeCoralDurationText")
+    static let tagText = color(named: "ThemeCoralTagText")
+    static let separator = color(named: "ThemeCoralSeparator")
+    static let chipBorder = color(named: "ThemeCoralChipBorder")
+    static let runningDigitText = color(named: "ThemeCoralRunningDigitText")
+
+    private static func color(named name: String) -> UIColor {
+        guard let color = UIColor(named: name) else {
+            assertionFailure("Missing color asset named \(name)")
+            return .systemPink
+        }
+
+        return color
+    }
+}
+
+enum AppAccentColor: String, CaseIterable {
+    case teal
+    case purple
+    case coral
+
+    var displayName: String {
+        switch self {
+        case .teal:
+            return "Teal"
+        case .purple:
+            return "Purple"
+        case .coral:
+            return "Coral"
+        }
+    }
+
+    var palette: any AppPalette.Type {
+        switch self {
+        case .teal:
+            return TealPalette.self
+        case .purple:
+            return PurplePalette.self
+        case .coral:
+            return CoralPalette.self
+        }
+    }
+
+    var previewColor: UIColor {
+        palette.accent
+    }
+}

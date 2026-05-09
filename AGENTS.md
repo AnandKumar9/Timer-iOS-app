@@ -41,8 +41,8 @@ k tags - filter using tags in activityttpesvc
 k force quit app - how to continue
 k if a type is deleted, both the activies and its cache should be cleared
 
-redesign theme, explore mode designs
-settings for dark/light mode
+k redesign theme, explore mode designs
+k settings for dark/light mode
 
 
 activityhistoryvc: Better UI when there are plenty of entries, may be year/month sections.
