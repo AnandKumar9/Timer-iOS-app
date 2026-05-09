@@ -52,7 +52,7 @@
 		440DE4992FAF8F3600910C7F /* AppPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPalette.swift; sourceTree = "<group>"; };
 		440DE49B2FAFA00100910C7F /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		440DE49D2FAFC00100910C7F /* ThemeCoral.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ThemeCoral.xcassets; sourceTree = "<group>"; };
-		9A0000010000000000000010 /* Timer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Timer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9A0000010000000000000010 /* Chronomark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chronomark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A0000010000000000000011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9A0000010000000000000012 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		9A0000010000000000000013 /* ActivityDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDetailsViewController.swift; sourceTree = "<group>"; };
@@ -164,12 +164,12 @@
 		9A0000010000000000000022 = {
 			isa = PBXGroup;
 			children = (
-				9A0000010000000000000023 /* Timer */,
+				9A0000010000000000000023 /* Chronomark */,
 				9A0000010000000000000024 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		9A0000010000000000000023 /* Timer */ = {
+		9A0000010000000000000023 /* Chronomark */ = {
 			isa = PBXGroup;
 			children = (
 				9A0000010000000000000011 /* AppDelegate.swift */,
@@ -184,13 +184,13 @@
 				9A0000010000000000000019 /* Assets.xcassets */,
 				9A0000010000000000000020 /* Info.plist */,
 			);
-			path = Timer;
+			path = Chronomark;
 			sourceTree = "<group>";
 		};
 		9A0000010000000000000024 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9A0000010000000000000010 /* Timer.app */,
+				9A0000010000000000000010 /* Chronomark.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -238,9 +238,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		9A0000010000000000000025 /* Timer */ = {
+		9A0000010000000000000025 /* Chronomark */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 9A0000010000000000000026 /* Build configuration list for PBXNativeTarget "Timer" */;
+			buildConfigurationList = 9A0000010000000000000026 /* Build configuration list for PBXNativeTarget "Chronomark" */;
 			buildPhases = (
 				9A0000010000000000000027 /* Sources */,
 				9A0000010000000000000021 /* Frameworks */,
@@ -250,9 +250,9 @@
 			);
 			dependencies = (
 			);
-			name = Timer;
-			productName = Timer;
-			productReference = 9A0000010000000000000010 /* Timer.app */;
+			name = Chronomark;
+			productName = Chronomark;
+			productReference = 9A0000010000000000000010 /* Chronomark.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -270,7 +270,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 9A000001000000000000002A /* Build configuration list for PBXProject "Timer" */;
+			buildConfigurationList = 9A000001000000000000002A /* Build configuration list for PBXProject "Chronomark" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -283,7 +283,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				9A0000010000000000000025 /* Timer */,
+				9A0000010000000000000025 /* Chronomark */,
 			);
 		};
 /* End PBXProject section */
@@ -466,7 +466,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Timer/Info.plist;
+				INFOPLIST_FILE = Chronomark/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Chronomark;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -476,7 +476,7 @@
 				);
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.chronomark;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Chronomark;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -494,7 +494,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Timer/Info.plist;
+				INFOPLIST_FILE = Chronomark/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Chronomark;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -504,7 +504,7 @@
 				);
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.chronomark;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Chronomark;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -517,7 +517,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		9A0000010000000000000026 /* Build configuration list for PBXNativeTarget "Timer" */ = {
+		9A0000010000000000000026 /* Build configuration list for PBXNativeTarget "Chronomark" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9A000001000000000000002D /* Debug */,
@@ -526,7 +526,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9A000001000000000000002A /* Build configuration list for PBXProject "Timer" */ = {
+		9A000001000000000000002A /* Build configuration list for PBXProject "Chronomark" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9A000001000000000000002B /* Debug */,
