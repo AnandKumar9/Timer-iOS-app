@@ -265,7 +265,6 @@ final class SettingsViewController: UIViewController {
         button.setImage(image, for: .highlighted)
         button.addAction(action, for: .touchUpInside)
         button.accessibilityLabel = accessibilityLabel
-        button.adjustsImageWhenHighlighted = false
         button.layer.cornerRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
 
