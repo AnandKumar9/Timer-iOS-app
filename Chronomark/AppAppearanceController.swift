@@ -1,31 +1,38 @@
 import UIKit
 
-enum AppAppearanceController {
-    private enum StoredAppearance: String {
-        case light
-        case dark
+enum AppAppearanceMode: String {
+    case system
+    case light
+    case dark
 
-        var userInterfaceStyle: UIUserInterfaceStyle {
-            switch self {
-            case .light:
-                return .light
-            case .dark:
-                return .dark
-            }
+    var userInterfaceStyle: UIUserInterfaceStyle {
+        switch self {
+        case .system:
+            return .unspecified
+        case .light:
+            return .light
+        case .dark:
+            return .dark
         }
     }
+}
 
+enum AppAppearanceController {
     private static let userDefaultsKey = "selectedAppAppearance"
 
-    static var savedUserInterfaceStyle: UIUserInterfaceStyle {
+    static var savedAppearanceMode: AppAppearanceMode {
         guard
             let rawValue = UserDefaults.standard.string(forKey: userDefaultsKey),
-            let storedAppearance = StoredAppearance(rawValue: rawValue)
+            let storedAppearance = AppAppearanceMode(rawValue: rawValue)
         else {
-            return .unspecified
+            return .system
         }
 
-        return storedAppearance.userInterfaceStyle
+        return storedAppearance
+    }
+
+    static var savedUserInterfaceStyle: UIUserInterfaceStyle {
+        savedAppearanceMode.userInterfaceStyle
     }
 
     static func applySavedAppearance(to window: UIWindow) {
@@ -33,13 +40,17 @@ enum AppAppearanceController {
     }
 
     static func toggleAppearance(from currentStyle: UIUserInterfaceStyle) {
-        let nextAppearance: StoredAppearance = currentStyle == .dark ? .light : .dark
-        setAppearance(nextAppearance.userInterfaceStyle)
+        let nextAppearance: AppAppearanceMode = currentStyle == .dark ? .light : .dark
+        setAppearanceMode(nextAppearance)
     }
 
     static func setAppearance(_ style: UIUserInterfaceStyle) {
-        let nextAppearance: StoredAppearance = style == .dark ? .dark : .light
-        UserDefaults.standard.set(nextAppearance.rawValue, forKey: userDefaultsKey)
+        let nextAppearance: AppAppearanceMode = style == .dark ? .dark : .light
+        setAppearanceMode(nextAppearance)
+    }
+
+    static func setAppearanceMode(_ mode: AppAppearanceMode) {
+        UserDefaults.standard.set(mode.rawValue, forKey: userDefaultsKey)
         applySavedAppearanceToConnectedWindows()
         AppTheme.applyThemeChange()
     }

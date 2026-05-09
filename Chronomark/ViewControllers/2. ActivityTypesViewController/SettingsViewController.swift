@@ -90,18 +90,25 @@ final class SettingsViewController: UIViewController {
     private let scrollView = UIScrollView()
     private let contentStackView = UIStackView()
     private let versionLabel = UILabel()
+    private lazy var systemModeButton = makeAppearanceButton(
+        systemImageName: "circle.lefthalf.filled",
+        accessibilityLabel: "System Appearance",
+        action: UIAction { [weak self] _ in
+            self?.appearanceButtonTapped(mode: .system)
+        }
+    )
     private lazy var lightModeButton = makeAppearanceButton(
         systemImageName: "sun.max",
         accessibilityLabel: "Light Mode",
         action: UIAction { [weak self] _ in
-            self?.appearanceButtonTapped(style: .light)
+            self?.appearanceButtonTapped(mode: .light)
         }
     )
     private lazy var darkModeButton = makeAppearanceButton(
         systemImageName: "moon",
         accessibilityLabel: "Dark Mode",
         action: UIAction { [weak self] _ in
-            self?.appearanceButtonTapped(style: .dark)
+            self?.appearanceButtonTapped(mode: .dark)
         }
     )
     private var fontButtons: [AppFont: OptionButton] = [:]
@@ -120,6 +127,17 @@ final class SettingsViewController: UIViewController {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        guard previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle else {
+            return
+        }
+
+        updateSelections()
+        applyTheme()
     }
 
     private func configureNavigation() {
@@ -224,7 +242,7 @@ final class SettingsViewController: UIViewController {
         spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacerView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let buttonsStackView = UIStackView(arrangedSubviews: [lightModeButton, darkModeButton])
+        let buttonsStackView = UIStackView(arrangedSubviews: [lightModeButton, darkModeButton, systemModeButton])
         buttonsStackView.axis = .horizontal
         buttonsStackView.alignment = .center
         buttonsStackView.spacing = 8
@@ -290,14 +308,15 @@ final class SettingsViewController: UIViewController {
         applyTheme()
     }
 
-    private func appearanceButtonTapped(style: UIUserInterfaceStyle) {
-        AppAppearanceController.setAppearance(style)
+    private func appearanceButtonTapped(mode: AppAppearanceMode) {
+        AppAppearanceController.setAppearanceMode(mode)
     }
 
     private func updateSelections() {
-        let selectedAppearance = selectedAppearanceStyle()
-        lightModeButton.isSelected = selectedAppearance == .light
-        darkModeButton.isSelected = selectedAppearance == .dark
+        let selectedAppearanceMode = AppAppearanceController.savedAppearanceMode
+        systemModeButton.isSelected = selectedAppearanceMode == .system
+        lightModeButton.isSelected = selectedAppearanceMode == .light
+        darkModeButton.isSelected = selectedAppearanceMode == .dark
 
         fontButtons.forEach { font, button in
             button.isSelected = font == AppTheme.selectedFont
@@ -316,8 +335,9 @@ final class SettingsViewController: UIViewController {
         navigationController?.navigationBar.tintColor = AppTheme.accent
         navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
         navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
-        applyAppearanceButtonTheme(lightModeButton)
-        applyAppearanceButtonTheme(darkModeButton)
+        applyAppearanceButtonTheme(systemModeButton, mode: .system)
+        applyAppearanceButtonTheme(lightModeButton, mode: .light)
+        applyAppearanceButtonTheme(darkModeButton, mode: .dark)
 
         contentStackView.arrangedSubviews.forEach { sectionView in
             guard let sectionStackView = sectionView as? UIStackView,
@@ -340,13 +360,17 @@ final class SettingsViewController: UIViewController {
         }
     }
 
-    private func applyAppearanceButtonTheme(_ button: UIButton) {
-        let isDarkMode = selectedAppearanceStyle() == .dark
-        button.backgroundColor = .clear
+    private func applyAppearanceButtonTheme(_ button: UIButton, mode: AppAppearanceMode) {
+        let resolvedStyle = selectedAppearanceStyle()
+        let selectedMode = AppAppearanceController.savedAppearanceMode
+        let showsResolvedSystemMode = selectedMode == .system && mode.userInterfaceStyle == resolvedStyle
+        let isProminent = button.isSelected || showsResolvedSystemMode
+
+        button.backgroundColor = isProminent ? AppTheme.accent.withAlphaComponent(button.isSelected ? 0.18 : 0.12) : .clear
         button.layer.backgroundColor = UIColor.clear.cgColor
-        button.tintColor = isDarkMode ? .white : .black
-        button.layer.borderWidth = button.isSelected ? 1.5 : 0
-        button.layer.borderColor = AppTheme.accent.cgColor
+        button.tintColor = button.isSelected || showsResolvedSystemMode ? AppTheme.accent : AppTheme.metadataText
+        button.layer.borderWidth = button.isSelected ? 1.5 : (showsResolvedSystemMode ? 1 : 0)
+        button.layer.borderColor = (button.isSelected ? AppTheme.accent : AppTheme.accent.withAlphaComponent(0.55)).cgColor
     }
 
     private func navigationBarAppearance() -> UINavigationBarAppearance {
