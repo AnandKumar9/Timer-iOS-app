@@ -32,7 +32,7 @@ final class TimerViewController: UIViewController {
 
         guard
             let modelContext,
-            (try? modelContext.fetch(FetchDescriptor<ActivityTimerCache>()).isEmpty) == false
+            pruneStaleCachesAndCheckForRestorableTimers(modelContext: modelContext)
         else {
             return 0
         }
@@ -45,6 +45,49 @@ final class TimerViewController: UIViewController {
         activeNavigationController = navigationController
         timerViewController.loadViewIfNeeded()
         return timerViewController.restoredTimerCacheCount
+    }
+
+    private static func pruneStaleCachesAndCheckForRestorableTimers(modelContext: ModelContext) -> Bool {
+        do {
+            let caches = try modelContext.fetch(FetchDescriptor<ActivityTimerCache>())
+            guard !caches.isEmpty else {
+                return false
+            }
+
+            let activityTypeIDs = Set(
+                try modelContext.fetch(FetchDescriptor<ActivityType>())
+                    .map(\.uniqueID)
+            )
+            let restoreCutoffDate = timerCacheRestoreCutoffDate()
+            var hasRestorableCache = false
+            var didMutateCaches = false
+
+            for cache in caches {
+                guard
+                    cache.lastUpdateTime >= restoreCutoffDate,
+                    activityTypeIDs.contains(cache.activityTypeUniqueID)
+                else {
+                    modelContext.delete(cache)
+                    didMutateCaches = true
+                    continue
+                }
+
+                hasRestorableCache = true
+            }
+
+            if didMutateCaches {
+                try modelContext.save()
+            }
+
+            return hasRestorableCache
+        } catch {
+            assertionFailure("Unable to inspect timer caches: \(error)")
+            return false
+        }
+    }
+
+    private static func timerCacheRestoreCutoffDate() -> Date {
+        Date().addingTimeInterval(-timerCacheRestoreWindow)
     }
 
     private let scrollView = UIScrollView()
@@ -68,6 +111,7 @@ final class TimerViewController: UIViewController {
 
     deinit {
         timerCacheCheckpointTimer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewDidLoad() {
@@ -78,6 +122,7 @@ final class TimerViewController: UIViewController {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
             viewController.applyTheme()
         }
+        registerForApplicationLifecycleNotifications()
         configureTimerPersistence()
 
         if let initialActivityType {
@@ -86,9 +131,34 @@ final class TimerViewController: UIViewController {
         }
     }
 
+    private func registerForApplicationLifecycleNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+    }
+
+    @objc private func applicationDidBecomeActive() {
+        refreshDisplayedTimers()
+    }
+
+    @objc private func applicationDidEnterBackground() {
+        refreshDisplayedTimers()
+        checkpointTimerCaches()
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        refreshDisplayedTimers()
         removeExpiredInactiveTimerControls()
         promptForInitialActivityTypeIfNeeded()
     }
@@ -490,7 +560,7 @@ final class TimerViewController: UIViewController {
             }
             var didMutateCaches = false
             var restoredCount = 0
-            let restoreCutoffDate = Date().addingTimeInterval(-Self.timerCacheRestoreWindow)
+            let restoreCutoffDate = Self.timerCacheRestoreCutoffDate()
 
             for cache in caches {
                 guard cache.lastUpdateTime >= restoreCutoffDate else {
@@ -543,6 +613,12 @@ final class TimerViewController: UIViewController {
                 from: timerControlsView,
                 isRunning: timerControlsView.activityTimerState == .running
             )
+        }
+    }
+
+    private func refreshDisplayedTimers() {
+        for timerControlsView in timerControlsViews {
+            timerControlsView.refreshDisplayedElapsedTime()
         }
     }
 

@@ -7,7 +7,7 @@ ActivityHistoryViewController
 ActivityDetailsViewController
 
 
-#### Persistence Behavior
+#### Persistent Cache Behavior
 
 1. SwiftData entity called ActivityCache with these properties - activityTypeUniqueID, startTime, timeElapsed, isRunning, lastUpdateTime. Each of them are required, and it need not have any relationship to any other entity. isRunning true indicates timer is running, false indicates timer is false
 
@@ -26,7 +26,7 @@ ActivityDetailsViewController
 8. When app is launched, check if activitycache has any entries and for the ones whose lastUpdateTime is less than 8 hrs, reinstante those timers accordingly. Make sure all of the UI is also updated
 
 
-Next things - 
+#### Next things - 
 k ActivityDetailsVC: UI for all fields + edit persistence + delete persistence
 k ActivityTypesVC: Swipe to delete persistence
 k ActivityHistoryVC: Intelligent icons in bottom floating button
@@ -45,8 +45,11 @@ k redesign theme, explore mode designs
 k settings for dark/light mode
 
 
-activityhistoryvc: Better UI when there are plenty of entries, may be year/month sections.
 watchOS app
-widgets/intents
+widgets/intents (easy start/stop)
+activityhistoryvc: Better UI when there are plenty of entries, may be year/month sections.
+locations
 insights
-background app 
+background app
+telemetry (Telemetry deck)
+exception reporting

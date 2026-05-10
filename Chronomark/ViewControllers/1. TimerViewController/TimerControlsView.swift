@@ -67,6 +67,7 @@ final class TimerControlsView: UIView {
     private var timer: Timer?
     private var elapsedSeconds = 0
     private var activeTimeTaken: TimeInterval = 0
+    private var runningElapsedReferenceTime: Date?
     private var activity: Activity
     private var timerState = TimerState.stopped
     private var latestCurrentSessionCompletionTime: Date?
@@ -100,7 +101,8 @@ final class TimerControlsView: UIView {
         activity.activityStartTime
     }
     var activeElapsedTime: TimeInterval {
-        activeTimeTaken
+        refreshDisplayedElapsedTime()
+        return activeTimeTaken
     }
 
     init(activity: Activity, restoredState: RestoredTimerControlsState? = nil) {
@@ -263,6 +265,7 @@ final class TimerControlsView: UIView {
         activity.activityCompletionTime = nil
         activity.timeTaken = nil
         timerState = restoredState.isRunning ? .running : .paused
+        runningElapsedReferenceTime = restoredState.isRunning ? Date() : nil
 
         updateStartButtonTitle()
         updateTimerLabel()
@@ -287,9 +290,11 @@ final class TimerControlsView: UIView {
     }
 
     @objc private func stopButtonTapped() {
+        refreshDisplayedElapsedTime()
         timer?.invalidate()
         timer = nil
         elapsedSeconds = 0
+        runningElapsedReferenceTime = nil
         timerState = .stopped
 
         let completionTime = Date()
@@ -318,6 +323,7 @@ final class TimerControlsView: UIView {
         }
 
         timerState = .running
+        runningElapsedReferenceTime = Date()
         updateStartButtonTitle()
         if wasStopped {
             onTimerStarted?(self)
@@ -333,8 +339,10 @@ final class TimerControlsView: UIView {
     }
 
     private func pauseTimer() {
+        refreshDisplayedElapsedTime()
         timer?.invalidate()
         timer = nil
+        runningElapsedReferenceTime = nil
         timerState = .paused
         updateStartButtonTitle()
         onTimerPaused?(self)
@@ -366,8 +374,21 @@ final class TimerControlsView: UIView {
     }
 
     private func tick() {
-        activeTimeTaken += 1
+        refreshDisplayedElapsedTime()
+    }
+
+    func refreshDisplayedElapsedTime() {
+        guard
+            timerState == .running,
+            let runningElapsedReferenceTime
+        else {
+            return
+        }
+
+        let now = Date()
+        activeTimeTaken += max(0, now.timeIntervalSince(runningElapsedReferenceTime))
         elapsedSeconds = Int(activeTimeTaken)
+        self.runningElapsedReferenceTime = now
         updateTimerLabel()
     }
 
