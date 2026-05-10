@@ -121,23 +121,13 @@ final class SettingsViewController: UIViewController {
         configureLayout()
         configureSections()
         registerForThemeChanges()
+        registerForUserInterfaceStyleChanges()
         updateSelections()
         applyTheme()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        guard previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle else {
-            return
-        }
-
-        updateSelections()
-        applyTheme()
     }
 
     private func configureNavigation() {
@@ -303,6 +293,13 @@ final class SettingsViewController: UIViewController {
         )
     }
 
+    private func registerForUserInterfaceStyleChanges() {
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
+            viewController.updateSelections()
+            viewController.applyTheme()
+        }
+    }
+
     @objc private func themeDidChange() {
         updateSelections()
         applyTheme()
@@ -391,8 +388,9 @@ final class SettingsViewController: UIViewController {
 
     private func appVersionText() -> String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         let components = version.split(separator: ".").map(String.init)
         let normalizedComponents = Array((components + ["0", "0", "0"]).prefix(3))
-        return "v\(normalizedComponents.joined(separator: "."))"
+        return "v\(normalizedComponents.joined(separator: ".")) (\(buildNumber))"
     }
 }
