@@ -92,6 +92,7 @@ final class ActivityHistoryViewController: UIViewController {
     private struct ActivityHistoryRow {
         let activity: Activity
         let doneTimeText: String
+        let duration: TimeInterval
         let durationText: String
     }
 
@@ -99,6 +100,7 @@ final class ActivityHistoryViewController: UIViewController {
     private let activityNameLabel = UILabel()
     private let tagPreviewContainerView = UIView()
     private let tagPreviewStackView = UIStackView()
+    private let activityStatsLabel = UILabel()
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
     private var activityRows: [ActivityHistoryRow] = []
@@ -139,6 +141,7 @@ final class ActivityHistoryViewController: UIViewController {
 
         configureActivityNameLabel()
         configureTagPreviewStackView()
+        configureActivityStatsLabel()
         configureTableView()
         configureEmptyStateLabel()
         configureActivityNotifications()
@@ -150,6 +153,7 @@ final class ActivityHistoryViewController: UIViewController {
         headerStackView.translatesAutoresizingMaskIntoConstraints = false
         headerStackView.addArrangedSubview(activityNameLabel)
         headerStackView.addArrangedSubview(tagPreviewContainerView)
+        headerStackView.addArrangedSubview(activityStatsLabel)
 
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -188,6 +192,15 @@ final class ActivityHistoryViewController: UIViewController {
         activityNameLabel.addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(activityNameLabelTapped))
         )
+    }
+
+    private func configureActivityStatsLabel() {
+        activityStatsLabel.font = AppTheme.roundedFont(ofSize: 15, weight: .medium)
+        activityStatsLabel.textColor = AppTheme.metadataText
+        activityStatsLabel.numberOfLines = 1
+        activityStatsLabel.adjustsFontSizeToFitWidth = true
+        activityStatsLabel.minimumScaleFactor = 0.8
+        activityStatsLabel.lineBreakMode = .byClipping
     }
 
     private func configureTagPreviewStackView() {
@@ -233,6 +246,7 @@ final class ActivityHistoryViewController: UIViewController {
         tableView.backgroundColor = AppTheme.screenBackground
         tableView.separatorColor = AppTheme.separator
         activityNameLabel.textColor = AppTheme.primaryText
+        activityStatsLabel.textColor = AppTheme.metadataText
         emptyStateLabel.textColor = AppTheme.metadataText
         navigationController?.navigationBar.tintColor = AppTheme.accent
         navigationController?.navigationBar.titleTextAttributes = [
@@ -284,6 +298,7 @@ final class ActivityHistoryViewController: UIViewController {
         guard let activityType else {
             activityRows = []
             configureTagPreviews([])
+            updateActivityStats()
             updateContent()
             return
         }
@@ -303,7 +318,26 @@ final class ActivityHistoryViewController: UIViewController {
                 return lhsCompletionTime > rhsCompletionTime
             }
             .compactMap(makeActivityHistoryRow)
+        updateActivityStats()
         updateContent()
+    }
+
+    private func updateActivityStats() {
+        let activityCount = activityRows.count
+        let activityText = activityCount == 1 ? "1 activity" : "\(activityCount) activities"
+        let averageText = averageActivityDurationText()
+        activityStatsLabel.text = "\(activityText), Avg time: \(averageText)"
+    }
+
+    private func averageActivityDurationText() -> String {
+        let durations = activityRows.map(\.duration)
+
+        guard !durations.isEmpty else {
+            return "0 min"
+        }
+
+        let averageDuration = durations.reduce(0, +) / Double(durations.count)
+        return ActivityDisplayFormatter.roundedHistoryDurationText(for: averageDuration)
     }
 
     private func tagPreviewTexts(for activityType: ActivityType) -> [String] {
@@ -379,10 +413,13 @@ final class ActivityHistoryViewController: UIViewController {
             return nil
         }
 
+        let duration = activityDuration(for: activity, completionTime: completionTime)
+
         return ActivityHistoryRow(
             activity: activity,
             doneTimeText: activityHistoryDateText(for: completionTime),
-            durationText: makeDurationText(for: activity, completionTime: completionTime)
+            duration: duration,
+            durationText: ActivityDisplayFormatter.roundedHistoryDurationText(for: duration)
         )
     }
 
@@ -392,18 +429,16 @@ final class ActivityHistoryViewController: UIViewController {
         return formatter.string(from: date)
     }
 
-    private func makeDurationText(for activity: Activity, completionTime: Date) -> String {
+    private func activityDuration(for activity: Activity, completionTime: Date) -> TimeInterval {
         if let timeTaken = activity.timeTaken {
-            return ActivityDisplayFormatter.roundedHistoryDurationText(for: timeTaken)
+            return timeTaken
         }
 
         guard let startTime = activity.activityStartTime else {
-            return "Unavailable"
+            return 0
         }
 
-        return ActivityDisplayFormatter.roundedHistoryDurationText(
-            for: completionTime.timeIntervalSince(startTime)
-        )
+        return completionTime.timeIntervalSince(startTime)
     }
 
     private func presentDeleteActivityAlert(for row: ActivityHistoryRow, completion: @escaping (Bool) -> Void) {
