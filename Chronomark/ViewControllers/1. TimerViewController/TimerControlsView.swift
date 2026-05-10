@@ -364,9 +364,9 @@ final class TimerControlsView: UIView {
         startButton.isEnabled = true
         startButton.alpha = 1.0
         startButton.backgroundColor = timerState == .running
-            ? AppTheme.paused.withAlphaComponent(0.18)
+            ? AppTheme.paused.withAlphaComponent(0.22)
             : AppTheme.accent.withAlphaComponent(0.14)
-        startButton.setTitleColor(timerState == .running ? AppTheme.paused : AppTheme.accent, for: .normal)
+        startButton.setTitleColor(AppTheme.primaryText, for: .normal)
 
         let shouldEnableStopButton = timerState != .stopped
         stopButton.isEnabled = shouldEnableStopButton
