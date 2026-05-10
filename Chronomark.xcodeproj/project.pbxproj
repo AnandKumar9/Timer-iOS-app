@@ -11,6 +11,7 @@
 		440DE49A2FAF8F3C00910C7F /* AppPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4992FAF8F3600910C7F /* AppPalette.swift */; };
 		440DE49C2FAFA00100910C7F /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE49B2FAFA00100910C7F /* SettingsViewController.swift */; };
 		440DE49E2FAFC00100910C7F /* ThemeCoral.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 440DE49D2FAFC00100910C7F /* ThemeCoral.xcassets */; };
+		440DE4A02FB0000000910C7F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 440DE49F2FB0000000910C7F /* LaunchScreen.storyboard */; };
 		9A0000010000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000011 /* AppDelegate.swift */; };
 		9A0000010000000000000002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000012 /* SceneDelegate.swift */; };
 		9A0000010000000000000003 /* ActivityDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000013 /* ActivityDetailsViewController.swift */; };
@@ -52,6 +53,7 @@
 		440DE4992FAF8F3600910C7F /* AppPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPalette.swift; sourceTree = "<group>"; };
 		440DE49B2FAFA00100910C7F /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		440DE49D2FAFC00100910C7F /* ThemeCoral.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ThemeCoral.xcassets; sourceTree = "<group>"; };
+		440DE49F2FB0000000910C7F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9A0000010000000000000010 /* Chronomark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chronomark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A0000010000000000000011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9A0000010000000000000012 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -182,6 +184,7 @@
 				9A0000010000000000000040 /* ViewControllers */,
 				9A0000010000000000000045 /* Models */,
 				9A0000010000000000000019 /* Assets.xcassets */,
+				440DE49F2FB0000000910C7F /* LaunchScreen.storyboard */,
 				9A0000010000000000000020 /* Info.plist */,
 			);
 			path = Chronomark;
@@ -294,6 +297,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9A0000010000000000000009 /* Assets.xcassets in Resources */,
+				440DE4A02FB0000000910C7F /* LaunchScreen.storyboard in Resources */,
 				9A0000010000000000000050 /* ThemePurple.xcassets in Resources */,
 				9A0000010000000000000052 /* ThemeTeal.xcassets in Resources */,
 				440DE49E2FAFC00100910C7F /* ThemeCoral.xcassets in Resources */,
@@ -464,7 +468,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chronomark/Info.plist;
@@ -494,7 +498,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chronomark/Info.plist;
