@@ -234,6 +234,8 @@ final class ActivityTypesViewController: UIViewController {
             self?.settingsButtonTapped()
         }
     )
+    private let tagsButton = UIButton(type: .system)
+    private lazy var navigationTagsButton = UIBarButtonItem(customView: tagsButton)
     private var activityTypeRows: [ActivityTypeRow] = []
     private var selectedTagIDs: Set<UUID> = []
     private var didPromptForInitialActivityTypeCreation = false
@@ -278,13 +280,7 @@ final class ActivityTypesViewController: UIViewController {
                 self?.addButtonTapped()
             }
         )
-        let navigationTagsButton = UIBarButtonItem(
-            image: UIImage(systemName: "tag"),
-            primaryAction: UIAction { [weak self] _ in
-                self?.presentTagsManagementSheet()
-            }
-        )
-        navigationTagsButton.accessibilityLabel = "Manage Tags"
+        configureTagsButton()
         settingsButton.accessibilityLabel = "Settings"
         navigationItem.rightBarButtonItems = [navigationAddActivityTypeButton, navigationTagsButton, settingsButton]
 
@@ -341,6 +337,7 @@ final class ActivityTypesViewController: UIViewController {
         ]
         navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
         navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
+        updateTagsFilterIndicator()
     }
 
     private func navigationBarAppearance() -> UINavigationBarAppearance {
@@ -484,6 +481,7 @@ final class ActivityTypesViewController: UIViewController {
         tableView.reloadData()
         emptyStateLabel.text = selectedTagIDs.isEmpty ? "No activity types" : "No activity types match the selected tags"
         emptyStateLabel.isHidden = !activityTypeRows.isEmpty
+        updateTagsFilterIndicator()
     }
 
     private func promptForInitialActivityTypeIfNeeded() {
@@ -649,6 +647,41 @@ final class ActivityTypesViewController: UIViewController {
 
     private func addButtonTapped() {
         presentCreateActivityTypeAlert()
+    }
+
+    private func configureTagsButton() {
+        tagsButton.addAction(
+            UIAction { [weak self] _ in
+                self?.presentTagsManagementSheet()
+            },
+            for: .touchUpInside
+        )
+        updateTagsFilterIndicator()
+    }
+
+    private func updateTagsFilterIndicator() {
+        let isFiltering = !selectedTagIDs.isEmpty
+        var configuration = UIButton.Configuration.plain()
+        configuration.image = UIImage(systemName: isFiltering ? "tag.fill" : "tag")
+        configuration.imagePadding = 4
+        configuration.cornerStyle = .capsule
+        configuration.baseForegroundColor = AppTheme.accent
+        configuration.background.backgroundColor = isFiltering ? AppTheme.controlBackground : .clear
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 7, bottom: 5, trailing: 7)
+
+        if isFiltering {
+            configuration.title = "\(selectedTagIDs.count)"
+            configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+                var updatedAttributes = attributes
+                updatedAttributes.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+                return updatedAttributes
+            }
+        }
+
+        tagsButton.configuration = configuration
+        tagsButton.accessibilityLabel = isFiltering
+            ? "Filtered by \(selectedTagIDs.count) tags. Manage Tags"
+            : "Manage Tags"
     }
 
     private func presentTagsManagementSheet() {
