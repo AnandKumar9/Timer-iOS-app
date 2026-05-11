@@ -242,6 +242,7 @@ final class TagsManagementViewController: UIViewController {
         configuration.baseBackgroundColor = AppTheme.accent
         configuration.baseForegroundColor = .white
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 13, leading: 20, bottom: 13, trailing: 20)
+        configuration.titleTextAttributesTransformer = createTagButtonTitleAttributesTransformer()
 
         createTagButton.configuration = configuration
         createTagButton.layer.cornerRadius = 12
@@ -292,6 +293,7 @@ final class TagsManagementViewController: UIViewController {
             configuration?.title = "Save"
             configuration?.baseBackgroundColor = createTagButton.isEnabled ? AppTheme.accent : AppTheme.controlBackground
             configuration?.baseForegroundColor = createTagButton.isEnabled ? .white : AppTheme.metadataText
+            configuration?.titleTextAttributesTransformer = createTagButtonTitleAttributesTransformer()
             createTagButton.configuration = configuration
             return
         }
@@ -304,7 +306,16 @@ final class TagsManagementViewController: UIViewController {
         configuration?.title = "Create Tag"
         configuration?.baseBackgroundColor = canCreateTag ? AppTheme.accent : AppTheme.controlBackground
         configuration?.baseForegroundColor = canCreateTag ? .white : AppTheme.metadataText
+        configuration?.titleTextAttributesTransformer = createTagButtonTitleAttributesTransformer()
         createTagButton.configuration = configuration
+    }
+
+    private func createTagButtonTitleAttributesTransformer() -> UIConfigurationTextAttributesTransformer {
+        UIConfigurationTextAttributesTransformer { attributes in
+            var updatedAttributes = attributes
+            updatedAttributes.font = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
+            return updatedAttributes
+        }
     }
 
     private func primaryButtonTapped() {

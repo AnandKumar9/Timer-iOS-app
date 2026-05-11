@@ -202,6 +202,10 @@ final class ActivityDetailsViewController: UIViewController {
     private var originalActivityTypeID: UUID?
     private var availableActivityTypes: [ActivityType] = []
     private var selectedActivityType: ActivityType?
+#if DEBUG
+    private var screenshotSampleActivityTypes: [ActivityType] = []
+    private var startsInScreenshotSampleEditMode = false
+#endif
 
     var modelContext: ModelContext?
     var activity: Activity?
@@ -215,6 +219,11 @@ final class ActivityDetailsViewController: UIViewController {
         }
         configureSettingsNotifications()
         populateActivityDetails()
+#if DEBUG
+        if startsInScreenshotSampleEditMode {
+            setEditingActivityDetails(true)
+        }
+#endif
     }
 
     deinit {
@@ -610,6 +619,12 @@ final class ActivityDetailsViewController: UIViewController {
     }
 
     private func saveActivityDetails() {
+#if DEBUG
+        guard screenshotSampleActivityTypes.isEmpty else {
+            setEditingActivityDetails(false)
+            return
+        }
+#endif
         guard
             let activity,
             let modelContext,
@@ -691,6 +706,12 @@ final class ActivityDetailsViewController: UIViewController {
     }
 
     private func deleteActivity() {
+#if DEBUG
+        guard screenshotSampleActivityTypes.isEmpty else {
+            navigationController?.popViewController(animated: true)
+            return
+        }
+#endif
         guard let activity, let modelContext else {
             navigationController?.popViewController(animated: true)
             return
@@ -725,6 +746,11 @@ final class ActivityDetailsViewController: UIViewController {
     }
 
     private func fetchActivityTypes() -> [ActivityType] {
+#if DEBUG
+        if !screenshotSampleActivityTypes.isEmpty {
+            return screenshotSampleActivityTypes
+        }
+#endif
         guard let modelContext else {
             return activity.map { [$0.activityType] } ?? []
         }
@@ -845,5 +871,25 @@ final class ActivityDetailsViewController: UIViewController {
         formatter.dateFormat = "MMM d, yyyy (EEE), h:mm:ss a"
         return formatter.string(from: date)
     }
+
+#if DEBUG
+    func configureForScreenshotSample(
+        activity: Activity?,
+        availableActivityTypes: [ActivityType],
+        startsInEditMode: Bool
+    ) {
+        modelContext = nil
+        self.activity = activity
+        screenshotSampleActivityTypes = availableActivityTypes
+        startsInScreenshotSampleEditMode = startsInEditMode
+
+        if isViewLoaded {
+            populateActivityDetails()
+            if startsInEditMode {
+                setEditingActivityDetails(true)
+            }
+        }
+    }
+#endif
 
 }

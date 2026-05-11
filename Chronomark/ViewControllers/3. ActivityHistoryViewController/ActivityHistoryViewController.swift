@@ -105,6 +105,9 @@ final class ActivityHistoryViewController: UIViewController {
     private let emptyStateLabel = UILabel()
     private var activityRows: [ActivityHistoryRow] = []
     private let maximumVisibleTagCount = 4
+#if DEBUG
+    private var isUsingScreenshotSamples = false
+#endif
 
     var modelContext: ModelContext?
     var activityType: ActivityType?
@@ -455,6 +458,12 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private func presentDeleteActivityAlert(for row: ActivityHistoryRow, completion: @escaping (Bool) -> Void) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            completion(false)
+            return
+        }
+#endif
         let alertController = UIAlertController(
             title: "Delete Activity?",
             message: "Delete \(row.startTimeText) : \(row.durationText)?",
@@ -483,6 +492,11 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private func presentRenameActivityTypeAlert() {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         guard let activityType else {
             return
         }
@@ -525,6 +539,11 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private func presentTagsSheet() {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         guard let activityType else {
             return
         }
@@ -649,6 +668,11 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private func deleteActivity(_ activity: Activity) throws {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         guard let modelContext else {
             return
         }
@@ -722,6 +746,18 @@ final class ActivityHistoryViewController: UIViewController {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .localizedLowercase ?? ""
     }
+
+#if DEBUG
+    func configureForScreenshotSample(activityType: ActivityType?) {
+        isUsingScreenshotSamples = true
+        modelContext = nil
+        self.activityType = activityType
+
+        if isViewLoaded {
+            loadActivities()
+        }
+    }
+#endif
 
     private func updateContent() {
         tableView.reloadData()

@@ -16,6 +16,21 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         let window = UIWindow(windowScene: windowScene)
+#if DEBUG
+        if ScreenshotSampleCoordinator.isEnabled {
+            let navigationController = ScreenshotSampleCoordinator.makeInitialNavigationController()
+            floatingTimerButtonController = ScreenshotSampleCoordinator.installFloatingTimerButton(
+                on: navigationController
+            )
+            window.rootViewController = navigationController
+            AppAppearanceController.applySavedAppearance(to: window)
+            window.makeKeyAndVisible()
+
+            self.window = window
+            self.modelContext = nil
+            return
+        }
+#endif
         let modelContext = (UIApplication.shared.delegate as? AppDelegate)?.modelContainer.mainContext
         let restoredTimerCount = TimerViewController.restoreCachedTimersIfNeeded(modelContext: modelContext)
         let navigationController = UINavigationController(

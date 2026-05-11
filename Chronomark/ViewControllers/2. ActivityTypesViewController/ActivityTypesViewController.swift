@@ -237,6 +237,9 @@ final class ActivityTypesViewController: UIViewController {
     private var activityTypeRows: [ActivityTypeRow] = []
     private var selectedTagIDs: Set<UUID> = []
     private var didPromptForInitialActivityTypeCreation = false
+#if DEBUG
+    private var screenshotSampleActivityTypes: [ActivityType] = []
+#endif
 
     var modelContext: ModelContext?
 
@@ -388,6 +391,16 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func loadActivityTypes() {
+#if DEBUG
+        if !screenshotSampleActivityTypes.isEmpty {
+            activityTypeRows = screenshotSampleActivityTypes
+                .filter(matchesSelectedTags)
+                .map(makeActivityTypeRow)
+                .sorted(by: activityTypeSort)
+            updateContent()
+            return
+        }
+#endif
         guard let modelContext else {
             activityTypeRows = []
             updateContent()
@@ -474,6 +487,11 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func promptForInitialActivityTypeIfNeeded() {
+#if DEBUG
+        guard screenshotSampleActivityTypes.isEmpty else {
+            return
+        }
+#endif
         guard !didPromptForInitialActivityTypeCreation else {
             return
         }
@@ -535,6 +553,11 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func deleteActivityType(_ activityType: ActivityType) throws {
+#if DEBUG
+        guard screenshotSampleActivityTypes.isEmpty else {
+            return
+        }
+#endif
         guard let modelContext else {
             return
         }
@@ -657,6 +680,11 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func presentCreateActivityTypeAlert() {
+#if DEBUG
+        guard screenshotSampleActivityTypes.isEmpty else {
+            return
+        }
+#endif
         let existingNames = fetchExistingActivityTypeNames()
         let alertController = UIAlertController(
             title: "New Activity Type",
@@ -719,6 +747,11 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func fetchExistingActivityTypeNames() -> Set<String> {
+#if DEBUG
+        if !screenshotSampleActivityTypes.isEmpty {
+            return Set(screenshotSampleActivityTypes.map { normalizeActivityTypeName($0.name) })
+        }
+#endif
         guard let modelContext else {
             return []
         }
@@ -745,6 +778,22 @@ final class ActivityTypesViewController: UIViewController {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .localizedLowercase ?? ""
     }
+
+#if DEBUG
+    func configureForScreenshotSample(
+        activityTypes: [ActivityType],
+        selectedTagIDs: Set<UUID>
+    ) {
+        screenshotSampleActivityTypes = activityTypes
+        self.selectedTagIDs = selectedTagIDs
+        modelContext = nil
+        didPromptForInitialActivityTypeCreation = true
+
+        if isViewLoaded {
+            loadActivityTypes()
+        }
+    }
+#endif
 }
 
 extension ActivityTypesViewController: FloatingTimerButtonContextProviding {

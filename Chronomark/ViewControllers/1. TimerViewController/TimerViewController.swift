@@ -98,6 +98,11 @@ final class TimerViewController: UIViewController {
     private var didRestoreTimerCaches = false
     private var restoredTimerCacheCount = 0
     private var timerCacheCheckpointTimer: Timer?
+#if DEBUG
+    private var screenshotSampleActivityTypes: [ActivityType] = []
+    private var screenshotSampleTimers: [ScreenshotSampleTimer] = []
+    private var isUsingScreenshotSamples = false
+#endif
 
     var modelContext: ModelContext? {
         didSet {
@@ -133,6 +138,10 @@ final class TimerViewController: UIViewController {
             )
             shouldAutoStartInitialActivityType = false
         }
+
+#if DEBUG
+        appendScreenshotSampleTimerControlsIfNeeded()
+#endif
     }
 
     private func registerForApplicationLifecycleNotifications() {
@@ -250,6 +259,11 @@ final class TimerViewController: UIViewController {
     }
 
     private func configureTimerPersistence() {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         restoreTimerControlsFromCacheIfNeeded()
         scheduleTimerCacheCheckpoint()
     }
@@ -351,6 +365,18 @@ final class TimerViewController: UIViewController {
             isRunning: cache.isRunning,
             lastUpdateTime: cache.lastUpdateTime
         )
+        let timerControlsView = appendRestoredTimerControlsView(
+            activityType: activityType,
+            restoredState: restoredState
+        )
+        updateTimerCache(from: timerControlsView, isRunning: cache.isRunning)
+    }
+
+    @discardableResult
+    private func appendRestoredTimerControlsView(
+        activityType: ActivityType,
+        restoredState: RestoredTimerControlsState
+    ) -> TimerControlsView {
         let activity = makeTimerActivity(activityType: activityType)
         let timerControlsView = makeTimerControlsView(
             activity: activity,
@@ -359,7 +385,7 @@ final class TimerViewController: UIViewController {
 
         timerControlsStackView.insertArrangedSubview(timerControlsView, at: 0)
         timerControlsViews.insert(timerControlsView, at: 0)
-        updateTimerCache(from: timerControlsView, isRunning: cache.isRunning)
+        return timerControlsView
     }
 
     private func makeTimerControlsView(
@@ -436,6 +462,11 @@ final class TimerViewController: UIViewController {
     }
 
     private func promptForInitialActivityTypeIfNeeded() {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         guard !didPromptForInitialActivityType else {
             return
         }
@@ -621,6 +652,11 @@ final class TimerViewController: UIViewController {
     }
 
     private func checkpointTimerCaches() {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         for timerControlsView in timerControlsViews where timerControlsView.hasActiveTimer {
             updateTimerCache(
                 from: timerControlsView,
@@ -636,6 +672,11 @@ final class TimerViewController: UIViewController {
     }
 
     private func createOrReplaceTimerCache(from timerControlsView: TimerControlsView) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         guard
             let modelContext,
             let startTime = timerControlsView.activityStartTime
@@ -658,6 +699,11 @@ final class TimerViewController: UIViewController {
     }
 
     private func updateTimerCache(from timerControlsView: TimerControlsView, isRunning: Bool) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         guard
             let modelContext,
             let startTime = timerControlsView.activityStartTime
@@ -722,6 +768,11 @@ final class TimerViewController: UIViewController {
     }
 
     private func deleteTimerCache(activityTypeID: UUID, shouldSave: Bool = true) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         guard let modelContext else {
             return
         }
@@ -768,6 +819,11 @@ final class TimerViewController: UIViewController {
     }
 
     private func saveTimerActivity(_ activity: Activity) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
         guard let modelContext else {
             return
         }
@@ -791,6 +847,56 @@ final class TimerViewController: UIViewController {
             assertionFailure("Unable to save timer activity: \(error)")
         }
     }
+
+#if DEBUG
+    func configureForScreenshotSample(
+        activityTypes: [ActivityType],
+        timers: [ScreenshotSampleTimer]
+    ) {
+        isUsingScreenshotSamples = true
+        didPromptForInitialActivityType = true
+        didRestoreTimerCaches = true
+        modelContext = nil
+        screenshotSampleActivityTypes = activityTypes
+        screenshotSampleTimers = timers
+
+        if isViewLoaded {
+            appendScreenshotSampleTimerControlsIfNeeded()
+        }
+    }
+
+    static func setActiveScreenshotSampleController(
+        _ timerViewController: TimerViewController,
+        navigationController: UINavigationController
+    ) {
+        activeInstance = timerViewController
+        activeNavigationController = navigationController
+    }
+
+    private func appendScreenshotSampleTimerControlsIfNeeded() {
+        guard isUsingScreenshotSamples, timerControlsViews.isEmpty else {
+            return
+        }
+
+        let activityTypesByID = Dictionary(
+            uniqueKeysWithValues: screenshotSampleActivityTypes.map { ($0.uniqueID, $0) }
+        )
+
+        for timer in screenshotSampleTimers.reversed() {
+            guard let activityType = activityTypesByID[timer.activityTypeID] else {
+                continue
+            }
+
+            appendRestoredTimerControlsView(
+                activityType: activityType,
+                restoredState: timer.state
+            )
+        }
+
+        TimerSessionState.markTimerStarted()
+        TimerSessionState.notifyActiveTimersChanged()
+    }
+#endif
 }
 
 extension UIViewController {
