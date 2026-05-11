@@ -391,6 +391,6 @@ final class SettingsViewController: UIViewController {
         let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         let components = version.split(separator: ".").map(String.init)
         let normalizedComponents = Array((components + ["0", "0", "0"]).prefix(3))
-        return "v\(normalizedComponents.joined(separator: ".")) (\(buildNumber))"
+        return "Version \(normalizedComponents.joined(separator: ".")) (\(buildNumber))"
     }
 }
