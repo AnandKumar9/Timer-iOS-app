@@ -236,6 +236,93 @@ final class SettingsViewController: UIViewController {
         }
     }
 
+    private final class AccentSwatchButton: UIControl {
+        private let fillView = UIView()
+        private let titleLabel = UILabel()
+        private let accentColor: AppAccentColor
+
+        override var isSelected: Bool {
+            didSet {
+                updateSelectionAppearance()
+            }
+        }
+
+        init(accentColor: AppAccentColor) {
+            self.accentColor = accentColor
+            super.init(frame: .zero)
+            configure()
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError("Use init(accentColor:) instead.")
+        }
+
+        func applyTheme() {
+            fillView.backgroundColor = accentColor.previewColor
+            updateSelectionAppearance()
+            titleLabel.font = AppTheme.roundedFont(ofSize: 14, weight: .semibold)
+            titleLabel.textColor = readableTextColor(for: accentColor.previewColor)
+        }
+
+        private func configure() {
+            layer.cornerRadius = 8
+            layer.borderWidth = 1
+            backgroundColor = .clear
+            accessibilityLabel = "\(accentColor.displayName) Accent Color"
+            accessibilityTraits.insert(.button)
+            translatesAutoresizingMaskIntoConstraints = false
+
+            fillView.layer.cornerRadius = 6
+            fillView.layer.masksToBounds = true
+            fillView.translatesAutoresizingMaskIntoConstraints = false
+            fillView.isUserInteractionEnabled = false
+
+            titleLabel.text = accentColor.displayName
+            titleLabel.textAlignment = .center
+            titleLabel.adjustsFontSizeToFitWidth = true
+            titleLabel.minimumScaleFactor = 0.75
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+            titleLabel.isUserInteractionEnabled = false
+
+            addSubview(fillView)
+            addSubview(titleLabel)
+
+            NSLayoutConstraint.activate([
+                heightAnchor.constraint(equalToConstant: 44),
+                fillView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
+                fillView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
+                fillView.topAnchor.constraint(equalTo: topAnchor, constant: 5),
+                fillView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -5),
+                titleLabel.leadingAnchor.constraint(equalTo: fillView.leadingAnchor, constant: 6),
+                titleLabel.trailingAnchor.constraint(equalTo: fillView.trailingAnchor, constant: -6),
+                titleLabel.centerYAnchor.constraint(equalTo: fillView.centerYAnchor)
+            ])
+
+            applyTheme()
+        }
+
+        private func updateSelectionAppearance() {
+            layer.borderWidth = isSelected ? 2.5 : 1
+            layer.borderColor = (isSelected ? AppTheme.primaryText : AppTheme.separator).cgColor
+            accessibilityTraits = isSelected ? [.button, .selected] : [.button]
+        }
+
+        private func readableTextColor(for color: UIColor) -> UIColor {
+            let resolvedColor = color.resolvedColor(with: traitCollection)
+            var red: CGFloat = 0
+            var green: CGFloat = 0
+            var blue: CGFloat = 0
+            var alpha: CGFloat = 0
+
+            guard resolvedColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+                return .white
+            }
+
+            let luminance = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+            return luminance > 0.62 ? .black : .white
+        }
+    }
+
     private let scrollView = UIScrollView()
     private let contentStackView = UIStackView()
     private let disclaimerLabel = UILabel()
@@ -263,7 +350,7 @@ final class SettingsViewController: UIViewController {
         }
     )
     private var fontButtons: [AppFont: OptionButton] = [:]
-    private var accentButtons: [AppAccentColor: OptionButton] = [:]
+    private var accentButtons: [AppAccentColor: AccentSwatchButton] = [:]
     private var settingsRows: [SettingsRow] = []
     private var sectionTitleLabels: [UILabel] = []
 
@@ -503,13 +590,14 @@ final class SettingsViewController: UIViewController {
     }
 
     private func makeAccentOptionsView() -> UIView {
-        let stackView = makeOptionsStackView()
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.distribution = .fillEqually
+        stackView.spacing = 6
 
         AppAccentColor.allCases.forEach { accentColor in
-            let button = OptionButton()
-            button.title = accentColor.displayName
-            button.titleFont = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
-            button.swatchColor = accentColor.previewColor
+            let button = AccentSwatchButton(accentColor: accentColor)
             button.addAction(
                 UIAction { _ in
                     AppTheme.selectedAccentColor = accentColor
@@ -664,10 +752,7 @@ final class SettingsViewController: UIViewController {
             button.applyTheme()
         }
 
-        accentButtons.forEach { _, button in
-            button.titleFont = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
-            button.applyTheme()
-        }
+        accentButtons.forEach { _, button in button.applyTheme() }
 
         settingsRows.forEach { $0.applyTheme() }
     }
