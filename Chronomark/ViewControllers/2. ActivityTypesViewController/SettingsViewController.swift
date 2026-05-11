@@ -87,17 +87,9 @@ final class SettingsViewController: UIViewController {
         }
     }
 
-    private enum SettingsTab: Int {
-        case theme
-        case config
-    }
-
-    private let tabControl = UISegmentedControl(items: ["Theme", "Config"])
     private let scrollView = UIScrollView()
     private let contentStackView = UIStackView()
-    private let configPlaceholderView = UIView()
     private let versionLabel = UILabel()
-    private var selectedTab: SettingsTab = .theme
     private lazy var systemModeButton = makeAppearanceButton(
         systemImageName: "circle.lefthalf.filled",
         accessibilityLabel: "System Appearance",
@@ -139,61 +131,34 @@ final class SettingsViewController: UIViewController {
     }
 
     private func configureNavigation() {
-        title = "Settings"
+        title = "Theme"
         navigationItem.rightBarButtonItem = nil
     }
 
     private func configureLayout() {
-        tabControl.translatesAutoresizingMaskIntoConstraints = false
-        tabControl.selectedSegmentIndex = SettingsTab.theme.rawValue
-        tabControl.addAction(
-            UIAction { [weak self] _ in
-                self?.tabSelectionChanged()
-            },
-            for: .valueChanged
-        )
-
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentStackView.translatesAutoresizingMaskIntoConstraints = false
         contentStackView.axis = .vertical
         contentStackView.spacing = 24
-        configPlaceholderView.translatesAutoresizingMaskIntoConstraints = false
-        configPlaceholderView.isHidden = true
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
         versionLabel.text = appVersionText()
-        versionLabel.textAlignment = .center
-        versionLabel.setContentHuggingPriority(.required, for: .vertical)
-        versionLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        versionLabel.textAlignment = .right
+        versionLabel.setContentHuggingPriority(.required, for: .horizontal)
+        versionLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        view.addSubview(tabControl)
         view.addSubview(scrollView)
-        view.addSubview(configPlaceholderView)
-        view.addSubview(versionLabel)
         scrollView.addSubview(contentStackView)
 
         NSLayoutConstraint.activate([
-            tabControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            tabControl.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            tabControl.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-
-            versionLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            versionLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            versionLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
-
-            scrollView.topAnchor.constraint(equalTo: tabControl.bottomAnchor, constant: 8),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: versionLabel.topAnchor, constant: -8),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             contentStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 24),
             contentStackView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 20),
             contentStackView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -20),
-            contentStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24),
-
-            configPlaceholderView.topAnchor.constraint(equalTo: tabControl.bottomAnchor, constant: 8),
-            configPlaceholderView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            configPlaceholderView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            configPlaceholderView.bottomAnchor.constraint(equalTo: versionLabel.topAnchor, constant: -8)
+            contentStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24)
         ])
     }
 
@@ -201,6 +166,7 @@ final class SettingsViewController: UIViewController {
         contentStackView.addArrangedSubview(makeAppearanceSection())
         contentStackView.addArrangedSubview(makeSection(title: "Font", contentView: makeFontOptionsView()))
         contentStackView.addArrangedSubview(makeSection(title: "Accent Color", contentView: makeAccentOptionsView()))
+        contentStackView.addArrangedSubview(versionLabel)
     }
 
     private func makeFontOptionsView() -> UIView {
@@ -318,17 +284,6 @@ final class SettingsViewController: UIViewController {
         return button
     }
 
-    private func tabSelectionChanged() {
-        selectedTab = SettingsTab(rawValue: tabControl.selectedSegmentIndex) ?? .theme
-        updateVisibleTab()
-    }
-
-    private func updateVisibleTab() {
-        let showsTheme = selectedTab == .theme
-        scrollView.isHidden = !showsTheme
-        configPlaceholderView.isHidden = showsTheme
-    }
-
     private func registerForThemeChanges() {
         NotificationCenter.default.addObserver(
             self,
@@ -371,17 +326,7 @@ final class SettingsViewController: UIViewController {
 
     private func applyTheme() {
         view.backgroundColor = AppTheme.screenBackground
-        tabControl.selectedSegmentTintColor = AppTheme.accent.withAlphaComponent(0.18)
-        tabControl.setTitleTextAttributes([
-            .foregroundColor: AppTheme.metadataText,
-            .font: AppTheme.roundedFont(ofSize: 13, weight: .semibold)
-        ], for: .normal)
-        tabControl.setTitleTextAttributes([
-            .foregroundColor: AppTheme.accent,
-            .font: AppTheme.roundedFont(ofSize: 13, weight: .semibold)
-        ], for: .selected)
         scrollView.backgroundColor = AppTheme.screenBackground
-        configPlaceholderView.backgroundColor = AppTheme.screenBackground
         versionLabel.font = AppTheme.roundedFont(ofSize: 11, weight: .regular)
         versionLabel.textColor = AppTheme.metadataText
         navigationController?.navigationBar.tintColor = AppTheme.accent
