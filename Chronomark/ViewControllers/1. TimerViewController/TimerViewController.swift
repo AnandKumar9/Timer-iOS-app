@@ -95,6 +95,7 @@ final class TimerViewController: UIViewController {
     private var timerControlsViews: [TimerControlsView] = []
     private var didPromptForInitialActivityType = false
     private var initialActivityType: ActivityType?
+    private var shouldAutoStartInitialActivityType = false
     private var didRestoreTimerCaches = false
     private var restoredTimerCacheCount = 0
     private var timerCacheCheckpointTimer: Timer?
@@ -127,7 +128,11 @@ final class TimerViewController: UIViewController {
 
         if let initialActivityType {
             didPromptForInitialActivityType = true
-            appendTimerControlsView(activityType: initialActivityType)
+            appendTimerControlsView(
+                activityType: initialActivityType,
+                autoStart: shouldAutoStartInitialActivityType
+            )
+            shouldAutoStartInitialActivityType = false
         }
     }
 
@@ -281,17 +286,22 @@ final class TimerViewController: UIViewController {
         }?.activityTimerState ?? .none
     }
 
-    func configure(activityType: ActivityType) {
+    func configure(activityType: ActivityType, autoStart: Bool = false) {
         if let existingTimerControlsView = reusableTimerControlsView(activityType: activityType) {
             scrollToTimerControlsView(existingTimerControlsView)
+            if autoStart {
+                existingTimerControlsView.startIfNeeded()
+            }
             return
         }
 
         initialActivityType = activityType
+        shouldAutoStartInitialActivityType = autoStart
 
         if isViewLoaded {
             didPromptForInitialActivityType = true
-            appendTimerControlsView(activityType: activityType)
+            appendTimerControlsView(activityType: activityType, autoStart: autoStart)
+            shouldAutoStartInitialActivityType = false
         }
     }
 
@@ -317,7 +327,7 @@ final class TimerViewController: UIViewController {
         return Activity(activityType: activityType)
     }
 
-    private func appendTimerControlsView(activityType: ActivityType) {
+    private func appendTimerControlsView(activityType: ActivityType, autoStart: Bool = false) {
         removeExpiredInactiveTimerControls()
 
         let activity = makeTimerActivity(activityType: activityType)
@@ -326,6 +336,10 @@ final class TimerViewController: UIViewController {
         timerControlsStackView.insertArrangedSubview(timerControlsView, at: 0)
         timerControlsViews.insert(timerControlsView, at: 0)
         scrollToTimerControlsView(timerControlsView)
+
+        if autoStart {
+            timerControlsView.startIfNeeded()
+        }
     }
 
     private func appendRestoredTimerControlsView(
@@ -783,14 +797,15 @@ final class TimerViewController: UIViewController {
 extension UIViewController {
     func presentTimerViewController(
         modelContext: ModelContext?,
-        activityType: ActivityType? = nil
+        activityType: ActivityType? = nil,
+        autoStart: Bool = false
     ) {
         if let timerViewController = TimerViewController.activeInstance,
            let navigationController = TimerViewController.activeNavigationController {
             timerViewController.modelContext = modelContext
 
             if let activityType {
-                timerViewController.configure(activityType: activityType)
+                timerViewController.configure(activityType: activityType, autoStart: autoStart)
             }
 
             guard navigationController.presentingViewController == nil else {
@@ -805,7 +820,7 @@ extension UIViewController {
         timerViewController.modelContext = modelContext
 
         if let activityType {
-            timerViewController.configure(activityType: activityType)
+            timerViewController.configure(activityType: activityType, autoStart: autoStart)
         }
 
         let navigationController = UINavigationController(rootViewController: timerViewController)

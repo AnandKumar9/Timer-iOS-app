@@ -503,7 +503,7 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func startActivityType(_ activityType: ActivityType) {
-        presentTimerViewController(modelContext: modelContext, activityType: activityType)
+        presentTimerViewController(modelContext: modelContext, activityType: activityType, autoStart: true)
     }
 
     private func showTimerViewController(activityType: ActivityType) {

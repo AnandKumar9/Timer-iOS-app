@@ -105,6 +105,14 @@ final class TimerControlsView: UIView {
         return activeTimeTaken
     }
 
+    func startIfNeeded() {
+        guard timerState == .stopped else {
+            return
+        }
+
+        startTimer()
+    }
+
     init(activity: Activity, restoredState: RestoredTimerControlsState? = nil) {
         self.activity = activity
         super.init(frame: .zero)

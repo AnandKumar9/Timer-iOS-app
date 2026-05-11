@@ -233,7 +233,8 @@ final class FloatingTimerButtonController: NSObject {
         case let .activityType(activityType):
             presentingViewController.presentTimerViewController(
                 modelContext: modelContext,
-                activityType: activityType
+                activityType: activityType,
+                autoStart: TimerViewController.timerState(for: activityType) == .none
             )
         }
     }
