@@ -408,34 +408,34 @@ final class TimerControlsView: UIView {
     private func updateLastActivityRow() {
         guard
             let lastActivity = latestCompletedActivity(),
-            let completionTime = lastActivity.activityCompletionTime
+            let startTime = lastActivity.activityStartTime
         else {
             lastActivityRowView.isHidden = true
             return
         }
 
-        lastActivityDateLabel.text = "Last: \(formattedDate(completionTime))"
+        lastActivityDateLabel.text = "Last: \(formattedDate(startTime))"
         lastActivityDurationLabel.text = formattedDuration(for: lastActivity)
         lastActivityRowView.isHidden = false
     }
 
     private func latestCompletedActivity() -> Activity? {
         activity.activityType.activities
-            .filter { $0.activityCompletionTime != nil }
-            .sorted(by: activityCompletionSort)
+            .filter { $0.activityStartTime != nil && $0.activityCompletionTime != nil }
+            .sorted(by: activityStartSort)
             .first
     }
 
-    private func activityCompletionSort(_ lhs: Activity, _ rhs: Activity) -> Bool {
-        guard let lhsCompletionTime = lhs.activityCompletionTime else {
+    private func activityStartSort(_ lhs: Activity, _ rhs: Activity) -> Bool {
+        guard let lhsStartTime = lhs.activityStartTime else {
             return false
         }
 
-        guard let rhsCompletionTime = rhs.activityCompletionTime else {
+        guard let rhsStartTime = rhs.activityStartTime else {
             return true
         }
 
-        return lhsCompletionTime > rhsCompletionTime
+        return lhsStartTime > rhsStartTime
     }
 
     private func formattedDate(_ date: Date) -> String {

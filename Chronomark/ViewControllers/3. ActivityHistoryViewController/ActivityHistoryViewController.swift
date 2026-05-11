@@ -37,7 +37,7 @@ final class ActivityHistoryViewController: UIViewController {
             backgroundColor = AppTheme.screenBackground
             contentView.backgroundColor = AppTheme.screenBackground
             activitySummaryLabel.attributedText = makeActivitySummaryText(
-                dateText: row.doneTimeText,
+                dateText: row.startTimeText,
                 durationText: row.durationText
             )
         }
@@ -91,7 +91,7 @@ final class ActivityHistoryViewController: UIViewController {
 
     private struct ActivityHistoryRow {
         let activity: Activity
-        let doneTimeText: String
+        let startTimeText: String
         let duration: TimeInterval
         let durationText: String
     }
@@ -305,17 +305,17 @@ final class ActivityHistoryViewController: UIViewController {
 
         configureTagPreviews(tagPreviewTexts(for: activityType))
         activityRows = activityType.activities
-            .filter { $0.activityCompletionTime != nil }
+            .filter { $0.activityStartTime != nil && $0.activityCompletionTime != nil }
             .sorted { lhs, rhs in
-                guard let lhsCompletionTime = lhs.activityCompletionTime else {
+                guard let lhsStartTime = lhs.activityStartTime else {
                     return false
                 }
 
-                guard let rhsCompletionTime = rhs.activityCompletionTime else {
+                guard let rhsStartTime = rhs.activityStartTime else {
                     return true
                 }
 
-                return lhsCompletionTime > rhsCompletionTime
+                return lhsStartTime > rhsStartTime
             }
             .compactMap(makeActivityHistoryRow)
         updateActivityStats()
@@ -409,7 +409,10 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private func makeActivityHistoryRow(from activity: Activity) -> ActivityHistoryRow? {
-        guard let completionTime = activity.activityCompletionTime else {
+        guard
+            let startTime = activity.activityStartTime,
+            let completionTime = activity.activityCompletionTime
+        else {
             return nil
         }
 
@@ -417,7 +420,7 @@ final class ActivityHistoryViewController: UIViewController {
 
         return ActivityHistoryRow(
             activity: activity,
-            doneTimeText: activityHistoryDateText(for: completionTime),
+            startTimeText: activityHistoryDateText(for: startTime),
             duration: duration,
             durationText: ActivityDisplayFormatter.roundedHistoryDurationText(for: duration)
         )
@@ -444,7 +447,7 @@ final class ActivityHistoryViewController: UIViewController {
     private func presentDeleteActivityAlert(for row: ActivityHistoryRow, completion: @escaping (Bool) -> Void) {
         let alertController = UIAlertController(
             title: "Delete Activity?",
-            message: "Delete \(row.doneTimeText) : \(row.durationText)?",
+            message: "Delete \(row.startTimeText) : \(row.durationText)?",
             preferredStyle: .alert
         )
 

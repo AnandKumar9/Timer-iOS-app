@@ -6,7 +6,7 @@ final class ActivityTypesViewController: UIViewController {
         let activityType: ActivityType
         let name: String
         let latestActivity: Activity?
-        let latestActivityCompletionTime: Date?
+        let latestActivityStartTime: Date?
         let timerState: ActivityTimerState
         let tagPreviewTexts: [String]
     }
@@ -78,10 +78,10 @@ final class ActivityTypesViewController: UIViewController {
 
             if
                 let latestActivity = row.latestActivity,
-                let latestActivityCompletionTime = row.latestActivityCompletionTime {
+                let latestActivityStartTime = row.latestActivityStartTime {
                 latestActivityLabel.text = makeLatestActivityText(
                     activity: latestActivity,
-                    completionTime: latestActivityCompletionTime
+                    startTime: latestActivityStartTime
                 )
             } else {
                 latestActivityLabel.text = "No activity recorded"
@@ -201,21 +201,24 @@ final class ActivityTypesViewController: UIViewController {
 
         private func makeLatestActivityText(
             activity: Activity,
-            completionTime: Date
+            startTime: Date
         ) -> String {
-            let dateText = ActivityDisplayFormatter.activityDateWithoutTimeText(for: completionTime)
+            let dateText = ActivityDisplayFormatter.activityDateWithoutTimeText(for: startTime)
             let durationText = ActivityDisplayFormatter.roundedHistoryDurationText(
-                for: activityDuration(for: activity, completionTime: completionTime)
+                for: activityDuration(for: activity)
             )
             return "\(dateText) : \(durationText)"
         }
 
-        private func activityDuration(for activity: Activity, completionTime: Date) -> TimeInterval {
+        private func activityDuration(for activity: Activity) -> TimeInterval {
             if let timeTaken = activity.timeTaken {
                 return timeTaken
             }
 
-            guard let startTime = activity.activityStartTime else {
+            guard
+                let startTime = activity.activityStartTime,
+                let completionTime = activity.activityCompletionTime
+            else {
                 return 0
             }
 
@@ -400,7 +403,7 @@ final class ActivityTypesViewController: UIViewController {
             activityType: activityType,
             name: activityType.name,
             latestActivity: latestActivity,
-            latestActivityCompletionTime: latestActivity?.activityCompletionTime,
+            latestActivityStartTime: latestActivity?.activityStartTime,
             timerState: TimerViewController.timerState(for: activityType),
             tagPreviewTexts: tagPreviewTexts(for: activityType)
         )
@@ -423,17 +426,17 @@ final class ActivityTypesViewController: UIViewController {
 
     private func latestCompletedActivity(for activityType: ActivityType) -> Activity? {
         activityType.activities
-            .filter { $0.activityCompletionTime != nil }
+            .filter { $0.activityStartTime != nil && $0.activityCompletionTime != nil }
             .sorted { lhs, rhs in
-                guard let lhsCompletionTime = lhs.activityCompletionTime else {
+                guard let lhsStartTime = lhs.activityStartTime else {
                     return false
                 }
 
-                guard let rhsCompletionTime = rhs.activityCompletionTime else {
+                guard let rhsStartTime = rhs.activityStartTime else {
                     return true
                 }
 
-                return lhsCompletionTime > rhsCompletionTime
+                return lhsStartTime > rhsStartTime
             }
             .first
     }
@@ -442,7 +445,7 @@ final class ActivityTypesViewController: UIViewController {
         _ lhs: ActivityTypeRow,
         _ rhs: ActivityTypeRow
     ) -> Bool {
-        switch (lhs.latestActivityCompletionTime, rhs.latestActivityCompletionTime) {
+        switch (lhs.latestActivityStartTime, rhs.latestActivityStartTime) {
         case let (lhsDate?, rhsDate?) where lhsDate != rhsDate:
             return lhsDate > rhsDate
         case (.some, .none):
