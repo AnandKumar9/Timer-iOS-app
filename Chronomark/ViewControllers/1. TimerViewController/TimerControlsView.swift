@@ -344,6 +344,7 @@ final class TimerControlsView: UIView {
         timerState = .running
         runningElapsedReferenceTime = Date()
         updateStartButtonTitle()
+        updateTimerLabel()
         if wasStopped {
             onTimerStarted?(self)
         } else {
@@ -364,6 +365,7 @@ final class TimerControlsView: UIView {
         runningElapsedReferenceTime = nil
         timerState = .paused
         updateStartButtonTitle()
+        updateTimerLabel()
         onTimerPaused?(self)
         TimerSessionState.notifyActiveTimersChanged()
     }
@@ -421,7 +423,14 @@ final class TimerControlsView: UIView {
         } else {
             timerLabel.text = String(format: "%02d:%02d", minutes, seconds)
         }
-        timerLabel.textColor = timerState == .running ? AppTheme.runningDigitText : AppTheme.durationText
+        switch timerState {
+        case .running:
+            timerLabel.textColor = AppTheme.runningDigitText
+        case .paused:
+            timerLabel.textColor = AppTheme.paused
+        case .stopped:
+            timerLabel.textColor = AppTheme.durationText
+        }
     }
 
     private func updateLastActivityRow() {

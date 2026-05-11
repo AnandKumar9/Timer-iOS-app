@@ -386,7 +386,7 @@ final class SettingsViewController: UIViewController {
         disclaimerLabel.numberOfLines = 0
         disclaimerLabel.textAlignment = .natural
         precisionDisclaimerLabel.translatesAutoresizingMaskIntoConstraints = false
-        precisionDisclaimerLabel.text = "Chronomark is not intended for precision-critical timing, but it is just fine for typical timer use."
+        precisionDisclaimerLabel.text = "Chronomark is designed for everyday stopwatch tasks, not precision-critical measurement."
         precisionDisclaimerLabel.numberOfLines = 0
         precisionDisclaimerLabel.textAlignment = .natural
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
