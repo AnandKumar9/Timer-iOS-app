@@ -1,5 +1,18 @@
 import UIKit
 
+enum AppSettings {
+    private static let alertWhenTimersRestoredKey = "alertWhenTimersRestored"
+
+    static var alertWhenTimersRestored: Bool {
+        get {
+            UserDefaults.standard.bool(forKey: alertWhenTimersRestoredKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: alertWhenTimersRestoredKey)
+        }
+    }
+}
+
 final class SettingsViewController: UIViewController {
     private final class SettingsRow: UIView {
         private let iconImageView = UIImageView()
@@ -282,14 +295,24 @@ final class SettingsViewController: UIViewController {
     private func makeTimerBehaviorOptionsView() -> UIView {
         let stackView = makeOptionsStackView()
 
-        let continueTimersSwitch = UISwitch()
-        continueTimersSwitch.isOn = true
+        let alertWhenRestoredSwitch = UISwitch()
+        alertWhenRestoredSwitch.isOn = AppSettings.alertWhenTimersRestored
+        alertWhenRestoredSwitch.addAction(
+            UIAction { action in
+                guard let toggle = action.sender as? UISwitch else {
+                    return
+                }
+
+                AppSettings.alertWhenTimersRestored = toggle.isOn
+            },
+            for: .valueChanged
+        )
         stackView.addArrangedSubview(
             makeSettingsRow(
                 systemImageName: "timer",
-                title: "Restore Active Timers",
-                subtitle: "Resume cached timers when the app opens.",
-                trailingView: continueTimersSwitch
+                title: "Alert when restored",
+                subtitle: "Show a confirmation alert every time old timers are restored.",
+                trailingView: alertWhenRestoredSwitch
             )
         )
 

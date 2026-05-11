@@ -55,6 +55,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
+        guard AppSettings.alertWhenTimersRestored else {
+            return
+        }
+
         let timerText = restoredTimerCount == 1 ? "timer" : "timers"
         let alertController = UIAlertController(
             title: "Timers Restored",
