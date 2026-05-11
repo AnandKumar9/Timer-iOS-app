@@ -117,6 +117,7 @@ final class TimerControlsView: UIView {
         self.activity = activity
         super.init(frame: .zero)
         configureView()
+        configureSettingsNotifications()
 
         if let restoredState {
             restoreTimerState(restoredState)
@@ -135,6 +136,7 @@ final class TimerControlsView: UIView {
 
     deinit {
         timer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
     }
 
     private func configureView() {
@@ -146,6 +148,15 @@ final class TimerControlsView: UIView {
         updateTimerLabel()
         updateLastActivityRow()
         updateStartButtonTitle()
+    }
+
+    private func configureSettingsNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(durationDisplayDidChange),
+            name: AppSettings.durationDisplayDidChangeNotification,
+            object: nil
+        )
     }
 
     private func configureActivityTypeNameLabel() {
@@ -427,6 +438,10 @@ final class TimerControlsView: UIView {
         lastActivityRowView.isHidden = false
     }
 
+    @objc private func durationDisplayDidChange() {
+        updateLastActivityRow()
+    }
+
     private func latestCompletedActivity() -> Activity? {
         activity.activityType.activities
             .filter { $0.activityStartTime != nil && $0.activityCompletionTime != nil }
@@ -453,28 +468,18 @@ final class TimerControlsView: UIView {
     }
 
     private func formattedDuration(for activity: Activity) -> String {
-        let duration: Int
+        let duration: TimeInterval
 
         if let timeTaken = activity.timeTaken {
-            duration = max(0, Int(timeTaken))
+            duration = timeTaken
         } else if
             let startTime = activity.activityStartTime,
             let completionTime = activity.activityCompletionTime {
-            duration = max(0, Int(completionTime.timeIntervalSince(startTime)))
+            duration = completionTime.timeIntervalSince(startTime)
         } else {
             duration = 0
         }
 
-        let hours = duration / 3_600
-        let minutes = (duration % 3_600) / 60
-        let seconds = duration % 60
-
-        if hours > 0 {
-            return "\(hours) hr \(minutes) min"
-        } else if minutes > 0 {
-            return "\(minutes) min \(seconds) sec"
-        } else {
-            return "\(seconds) sec"
-        }
+        return ActivityDisplayFormatter.roundedHistoryDurationText(for: duration)
     }
 }

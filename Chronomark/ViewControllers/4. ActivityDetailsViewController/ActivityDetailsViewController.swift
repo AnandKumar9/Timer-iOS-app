@@ -213,7 +213,21 @@ final class ActivityDetailsViewController: UIViewController {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
             viewController.applyTheme()
         }
+        configureSettingsNotifications()
         populateActivityDetails()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func configureSettingsNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(durationDisplayDidChange),
+            name: AppSettings.durationDisplayDidChangeNotification,
+            object: nil
+        )
     }
 
     private func configureAppearance() {
@@ -815,20 +829,11 @@ final class ActivityDetailsViewController: UIViewController {
             return "Unavailable"
         }
 
-        let seconds = max(0, Int(duration.rounded()))
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        let remainingSeconds = seconds % 60
+        return ActivityDisplayFormatter.roundedHistoryDurationText(for: duration)
+    }
 
-        if hours > 0 {
-            return String(format: "%d hr %02d min %02d sec", hours, minutes, remainingSeconds)
-        }
-
-        if minutes > 0 {
-            return String(format: "%d min %02d sec", minutes, remainingSeconds)
-        }
-
-        return "\(remainingSeconds) sec"
+    @objc private func durationDisplayDidChange() {
+        populateActivityDetails()
     }
 
     private func formattedDateTime(_ date: Date?) -> String {

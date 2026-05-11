@@ -246,6 +246,7 @@ final class ActivityTypesViewController: UIViewController {
         configureAppearance()
         registerForThemeChanges()
         configureTimerNotifications()
+        configureSettingsNotifications()
         loadActivityTypes()
     }
 
@@ -359,6 +360,15 @@ final class ActivityTypesViewController: UIViewController {
             self,
             selector: #selector(activeTimersDidChange),
             name: TimerSessionState.didChangeActiveTimersNotification,
+            object: nil
+        )
+    }
+
+    private func configureSettingsNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(durationDisplayDidChange),
+            name: AppSettings.durationDisplayDidChangeNotification,
             object: nil
         )
     }
@@ -477,6 +487,10 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     @objc private func activeTimersDidChange() {
+        loadActivityTypes()
+    }
+
+    @objc private func durationDisplayDidChange() {
         loadActivityTypes()
     }
 

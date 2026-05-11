@@ -1,8 +1,11 @@
 import UIKit
 
 enum AppSettings {
+    static let durationDisplayDidChangeNotification = Notification.Name("AppSettings.durationDisplayDidChangeNotification")
+
     private static let alertWhenTimersRestoredKey = "alertWhenTimersRestored"
     private static let restoreWindowHoursKey = "restoreWindowHours"
+    private static let showDurationSecondsKey = "showDurationSeconds"
     private static let defaultRestoreWindowHours = 8
     static let restoreWindowHourOptions = [4, 8, 24]
 
@@ -38,6 +41,20 @@ enum AppSettings {
 
     static var restoreWindowInterval: TimeInterval {
         TimeInterval(restoreWindowHours * 60 * 60)
+    }
+
+    static var showDurationSeconds: Bool {
+        get {
+            UserDefaults.standard.bool(forKey: showDurationSecondsKey)
+        }
+        set {
+            guard newValue != showDurationSeconds else {
+                return
+            }
+
+            UserDefaults.standard.set(newValue, forKey: showDurationSecondsKey)
+            NotificationCenter.default.post(name: durationDisplayDidChangeNotification, object: nil)
+        }
     }
 }
 
@@ -277,7 +294,7 @@ final class SettingsViewController: UIViewController {
         contentStackView.axis = .vertical
         contentStackView.spacing = 24
         disclaimerLabel.translatesAutoresizingMaskIntoConstraints = false
-        disclaimerLabel.text = "Timers left running from previous session get restored."
+        disclaimerLabel.text = "Timers left running in previous app session get restored."
         
         disclaimerLabel.numberOfLines = 0
         disclaimerLabel.textAlignment = .natural
@@ -311,6 +328,7 @@ final class SettingsViewController: UIViewController {
         contentStackView.addArrangedSubview(makeAppearanceSection())
         contentStackView.addArrangedSubview(makeSection(title: "Font", contentView: makeFontOptionsView()))
         contentStackView.addArrangedSubview(makeSection(title: "Accent Color", contentView: makeAccentOptionsView()))
+        contentStackView.addArrangedSubview(makeTimeDisplaySection())
         contentStackView.addArrangedSubview(makeTimerBehaviorSection())
         contentStackView.addArrangedSubview(makeFooterSection())
     }
@@ -357,14 +375,34 @@ final class SettingsViewController: UIViewController {
             )
         )
 
-        let checkpointSwitch = UISwitch()
-        checkpointSwitch.isOn = true
+        return stackView
+    }
+
+    private func makeTimeDisplaySection() -> UIView {
+        makeSection(title: "Time Display", contentView: makeTimeDisplayOptionsView())
+    }
+
+    private func makeTimeDisplayOptionsView() -> UIView {
+        let stackView = makeOptionsStackView()
+
+        let showDurationSecondsSwitch = UISwitch()
+        showDurationSecondsSwitch.isOn = AppSettings.showDurationSeconds
+        showDurationSecondsSwitch.addAction(
+            UIAction { action in
+                guard let toggle = action.sender as? UISwitch else {
+                    return
+                }
+
+                AppSettings.showDurationSeconds = toggle.isOn
+            },
+            for: .valueChanged
+        )
         stackView.addArrangedSubview(
             makeSettingsRow(
-                systemImageName: "arrow.triangle.2.circlepath",
-                title: "Background Checkpoints",
-                subtitle: "Keep a local timer checkpoint while the app is open.",
-                trailingView: checkpointSwitch
+                systemImageName: "stopwatch",
+                title: "Show Duration Seconds",
+                subtitle: "Include seconds in completed activity durations.",
+                trailingView: showDurationSecondsSwitch
             )
         )
 

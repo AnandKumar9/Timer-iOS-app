@@ -114,6 +114,7 @@ final class ActivityHistoryViewController: UIViewController {
 
         configureAppearance()
         registerForThemeChanges()
+        configureSettingsNotifications()
         loadActivities()
     }
 
@@ -281,6 +282,15 @@ final class ActivityHistoryViewController: UIViewController {
             self,
             selector: #selector(activityDidPersist(_:)),
             name: TimerSessionState.didPersistActivityNotification,
+            object: nil
+        )
+    }
+
+    private func configureSettingsNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(durationDisplayDidChange),
+            name: AppSettings.durationDisplayDidChangeNotification,
             object: nil
         )
     }
@@ -726,6 +736,10 @@ final class ActivityHistoryViewController: UIViewController {
             return
         }
 
+        loadActivities()
+    }
+
+    @objc private func durationDisplayDidChange() {
         loadActivities()
     }
 
