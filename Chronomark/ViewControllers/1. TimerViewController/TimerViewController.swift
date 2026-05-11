@@ -6,7 +6,6 @@ final class TimerViewController: UIViewController {
     fileprivate static var activeNavigationController: UINavigationController?
     private static let inactiveTimerControlsRetentionInterval: TimeInterval = 5
     private static let timerCacheCheckpointInterval: TimeInterval = 300
-    private static let timerCacheRestoreWindow: TimeInterval = 8 * 60 * 60
 
     static func hasRunningOrPausedTimer(for activityType: ActivityType) -> Bool {
         timerState(for: activityType) != .none
@@ -87,7 +86,7 @@ final class TimerViewController: UIViewController {
     }
 
     private static func timerCacheRestoreCutoffDate() -> Date {
-        Date().addingTimeInterval(-timerCacheRestoreWindow)
+        Date().addingTimeInterval(-AppSettings.restoreWindowInterval)
     }
 
     private let scrollView = UIScrollView()

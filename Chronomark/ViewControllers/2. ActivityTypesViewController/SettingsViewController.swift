@@ -2,6 +2,9 @@ import UIKit
 
 enum AppSettings {
     private static let alertWhenTimersRestoredKey = "alertWhenTimersRestored"
+    private static let restoreWindowHoursKey = "restoreWindowHours"
+    private static let defaultRestoreWindowHours = 8
+    static let restoreWindowHourOptions = [4, 8, 24]
 
     static var alertWhenTimersRestored: Bool {
         get {
@@ -10,6 +13,31 @@ enum AppSettings {
         set {
             UserDefaults.standard.set(newValue, forKey: alertWhenTimersRestoredKey)
         }
+    }
+
+    static var restoreWindowHours: Int {
+        get {
+            let savedHours = UserDefaults.standard.integer(forKey: restoreWindowHoursKey)
+            guard savedHours > 0 else {
+                return defaultRestoreWindowHours
+            }
+
+            return restoreWindowHourOptions.min { lhs, rhs in
+                abs(lhs - savedHours) < abs(rhs - savedHours)
+            } ?? defaultRestoreWindowHours
+        }
+        set {
+            guard restoreWindowHourOptions.contains(newValue) else {
+                UserDefaults.standard.set(defaultRestoreWindowHours, forKey: restoreWindowHoursKey)
+                return
+            }
+
+            UserDefaults.standard.set(newValue, forKey: restoreWindowHoursKey)
+        }
+    }
+
+    static var restoreWindowInterval: TimeInterval {
+        TimeInterval(restoreWindowHours * 60 * 60)
     }
 }
 
@@ -53,6 +81,9 @@ final class SettingsViewController: UIViewController {
                 label.textColor = AppTheme.accent
             } else if let control = trailingView as? UISwitch {
                 control.onTintColor = AppTheme.accent
+            } else if let button = trailingView as? UIButton {
+                button.tintColor = AppTheme.accent
+                button.configuration?.baseForegroundColor = AppTheme.accent
             }
         }
 
@@ -246,7 +277,7 @@ final class SettingsViewController: UIViewController {
         contentStackView.axis = .vertical
         contentStackView.spacing = 24
         disclaimerLabel.translatesAutoresizingMaskIntoConstraints = false
-        disclaimerLabel.text = "When you launch the app, we try to restore timers you did not stop in your previous session."
+        disclaimerLabel.text = "Timers left running from previous session get restored."
         
         disclaimerLabel.numberOfLines = 0
         disclaimerLabel.textAlignment = .natural
@@ -285,7 +316,7 @@ final class SettingsViewController: UIViewController {
     }
 
     private func makeTimerBehaviorSection() -> UIView {
-        let titleLabel = makeSectionTitleLabel("Timer Behavior")
+        let titleLabel = makeSectionTitleLabel("Timer Restoration")
         let stackView = UIStackView(arrangedSubviews: [titleLabel, disclaimerLabel, makeTimerBehaviorOptionsView()])
         stackView.axis = .vertical
         stackView.spacing = 10
@@ -294,6 +325,16 @@ final class SettingsViewController: UIViewController {
 
     private func makeTimerBehaviorOptionsView() -> UIView {
         let stackView = makeOptionsStackView()
+
+        let restoreWindowButton = makeRestoreWindowButton()
+        stackView.addArrangedSubview(
+            makeSettingsRow(
+                systemImageName: "clock.arrow.circlepath",
+                title: "Restore Window",
+                subtitle: "Oldest cached timers to restore.",
+                trailingView: restoreWindowButton
+            )
+        )
 
         let alertWhenRestoredSwitch = UISwitch()
         alertWhenRestoredSwitch.isOn = AppSettings.alertWhenTimersRestored
@@ -309,9 +350,9 @@ final class SettingsViewController: UIViewController {
         )
         stackView.addArrangedSubview(
             makeSettingsRow(
-                systemImageName: "timer",
-                title: "Alert when restored",
-                subtitle: "Show a confirmation alert every time old timers are restored.",
+                systemImageName: "exclamationmark.bubble",
+                title: "Alert When Restored",
+                subtitle: "Show a confirmation alert when old timers are restored.",
                 trailingView: alertWhenRestoredSwitch
             )
         )
@@ -327,18 +368,57 @@ final class SettingsViewController: UIViewController {
             )
         )
 
-        let restoreWindowLabel = UILabel()
-        restoreWindowLabel.text = "8 hr"
-        stackView.addArrangedSubview(
-            makeSettingsRow(
-                systemImageName: "clock.arrow.circlepath",
-                title: "Restore Window",
-                subtitle: "Maximum age for restoring cached timers.",
-                trailingView: restoreWindowLabel
-            )
-        )
-
         return stackView
+    }
+
+    private func makeRestoreWindowButton() -> UIButton {
+        let button = UIButton(type: .system)
+        button.showsMenuAsPrimaryAction = true
+        button.changesSelectionAsPrimaryAction = false
+        button.configuration = restoreWindowButtonConfiguration(hours: AppSettings.restoreWindowHours)
+        button.menu = restoreWindowMenu(button: button)
+        return button
+    }
+
+    private func restoreWindowMenu(button: UIButton) -> UIMenu {
+        let actions = AppSettings.restoreWindowHourOptions.map { hours in
+            UIAction(
+                title: restoreWindowTitle(hours: hours),
+                state: hours == AppSettings.restoreWindowHours ? .on : .off
+            ) { [weak button, weak self] _ in
+                guard let self else {
+                    return
+                }
+
+                AppSettings.restoreWindowHours = hours
+                button?.configuration = self.restoreWindowButtonConfiguration(hours: hours)
+                if let button {
+                    button.menu = self.restoreWindowMenu(button: button)
+                }
+            }
+        }
+
+        return UIMenu(children: actions)
+    }
+
+    private func restoreWindowButtonConfiguration(hours: Int) -> UIButton.Configuration {
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = restoreWindowTitle(hours: hours)
+        configuration.image = UIImage(systemName: "chevron.up.chevron.down")
+        configuration.imagePlacement = .trailing
+        configuration.imagePadding = 4
+        configuration.baseForegroundColor = AppTheme.accent
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 0)
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = AppTheme.roundedFont(ofSize: 15, weight: .semibold)
+            return outgoing
+        }
+        return configuration
+    }
+
+    private func restoreWindowTitle(hours: Int) -> String {
+        hours == 24 ? "1 day" : "\(hours) hr"
     }
 
     private func makeSettingsRow(
