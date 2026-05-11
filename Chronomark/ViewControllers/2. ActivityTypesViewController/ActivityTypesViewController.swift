@@ -494,7 +494,7 @@ final class ActivityTypesViewController: UIViewController {
 
         if let sheetPresentationController = navigationController.sheetPresentationController {
             sheetPresentationController.detents = [.medium(), .large()]
-            sheetPresentationController.selectedDetentIdentifier = .medium
+            sheetPresentationController.selectedDetentIdentifier = .large
             sheetPresentationController.prefersGrabberVisible = true
             sheetPresentationController.preferredCornerRadius = 18
         }

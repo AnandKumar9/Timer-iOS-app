@@ -1,6 +1,94 @@
 import UIKit
 
 final class SettingsViewController: UIViewController {
+    private final class SettingsRow: UIView {
+        private let iconImageView = UIImageView()
+        private let titleLabel = UILabel()
+        private let subtitleLabel = UILabel()
+        private let trailingView: UIView
+
+        init(
+            systemImageName: String,
+            title: String,
+            subtitle: String? = nil,
+            trailingView: UIView
+        ) {
+            self.trailingView = trailingView
+            super.init(frame: .zero)
+            titleLabel.text = title
+            subtitleLabel.text = subtitle
+            iconImageView.image = UIImage(systemName: systemImageName)
+            iconImageView.contentMode = .scaleAspectFit
+            configure()
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError("Use init(systemImageName:title:subtitle:trailingView:) instead.")
+        }
+
+        func applyTheme() {
+            backgroundColor = AppTheme.cardBackground
+            layer.borderColor = AppTheme.separator.cgColor
+            iconImageView.tintColor = AppTheme.metadataText
+            titleLabel.font = AppTheme.roundedFont(ofSize: 16, weight: .semibold)
+            titleLabel.textColor = AppTheme.primaryText
+            subtitleLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+            subtitleLabel.textColor = AppTheme.metadataText
+
+            if let label = trailingView as? UILabel {
+                label.font = AppTheme.roundedFont(ofSize: 15, weight: .semibold)
+                label.textColor = AppTheme.accent
+            } else if let control = trailingView as? UISwitch {
+                control.onTintColor = AppTheme.accent
+            }
+        }
+
+        private func configure() {
+            layer.cornerRadius = 8
+            layer.borderWidth = 1
+            directionalLayoutMargins = NSDirectionalEdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)
+
+            iconImageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
+            iconImageView.setContentHuggingPriority(.required, for: .horizontal)
+            iconImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+            iconImageView.translatesAutoresizingMaskIntoConstraints = false
+
+            titleLabel.numberOfLines = 1
+            titleLabel.adjustsFontForContentSizeCategory = true
+
+            subtitleLabel.numberOfLines = 2
+            subtitleLabel.adjustsFontForContentSizeCategory = true
+            subtitleLabel.isHidden = subtitleLabel.text?.isEmpty ?? true
+
+            let labelsStackView = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+            labelsStackView.axis = .vertical
+            labelsStackView.spacing = 3
+
+            trailingView.setContentHuggingPriority(.required, for: .horizontal)
+            trailingView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+            let rowStackView = UIStackView(arrangedSubviews: [iconImageView, labelsStackView, trailingView])
+            rowStackView.axis = .horizontal
+            rowStackView.alignment = .center
+            rowStackView.spacing = 12
+            rowStackView.translatesAutoresizingMaskIntoConstraints = false
+
+            addSubview(rowStackView)
+
+            NSLayoutConstraint.activate([
+                rowStackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+                rowStackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+                rowStackView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor),
+                rowStackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor),
+                iconImageView.widthAnchor.constraint(equalToConstant: 22),
+                iconImageView.heightAnchor.constraint(equalToConstant: 22),
+                heightAnchor.constraint(greaterThanOrEqualToConstant: 58)
+            ])
+
+            applyTheme()
+        }
+    }
+
     private final class OptionButton: UIControl {
         private let titleLabel = UILabel()
         private let accessoryImageView = UIImageView()
@@ -89,6 +177,8 @@ final class SettingsViewController: UIViewController {
 
     private let scrollView = UIScrollView()
     private let contentStackView = UIStackView()
+    private let disclaimerLabel = UILabel()
+    private let precisionDisclaimerLabel = UILabel()
     private let versionLabel = UILabel()
     private lazy var systemModeButton = makeAppearanceButton(
         systemImageName: "circle.lefthalf.filled",
@@ -113,6 +203,8 @@ final class SettingsViewController: UIViewController {
     )
     private var fontButtons: [AppFont: OptionButton] = [:]
     private var accentButtons: [AppAccentColor: OptionButton] = [:]
+    private var settingsRows: [SettingsRow] = []
+    private var sectionTitleLabels: [UILabel] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -131,7 +223,7 @@ final class SettingsViewController: UIViewController {
     }
 
     private func configureNavigation() {
-        title = "Theme"
+        title = "Settings"
         navigationItem.rightBarButtonItem = nil
     }
 
@@ -140,6 +232,15 @@ final class SettingsViewController: UIViewController {
         contentStackView.translatesAutoresizingMaskIntoConstraints = false
         contentStackView.axis = .vertical
         contentStackView.spacing = 24
+        disclaimerLabel.translatesAutoresizingMaskIntoConstraints = false
+        disclaimerLabel.text = "When you launch the app, we try to restore timers you did not stop in your previous session."
+        
+        disclaimerLabel.numberOfLines = 0
+        disclaimerLabel.textAlignment = .natural
+        precisionDisclaimerLabel.translatesAutoresizingMaskIntoConstraints = false
+        precisionDisclaimerLabel.text = "Chronomark is not intended for precision-critical timing, but it is just fine for typical timer use."
+        precisionDisclaimerLabel.numberOfLines = 0
+        precisionDisclaimerLabel.textAlignment = .natural
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
         versionLabel.text = appVersionText()
         versionLabel.textAlignment = .right
@@ -166,7 +267,78 @@ final class SettingsViewController: UIViewController {
         contentStackView.addArrangedSubview(makeAppearanceSection())
         contentStackView.addArrangedSubview(makeSection(title: "Font", contentView: makeFontOptionsView()))
         contentStackView.addArrangedSubview(makeSection(title: "Accent Color", contentView: makeAccentOptionsView()))
-        contentStackView.addArrangedSubview(versionLabel)
+        contentStackView.addArrangedSubview(makeTimerBehaviorSection())
+        contentStackView.addArrangedSubview(makeFooterSection())
+    }
+
+    private func makeTimerBehaviorSection() -> UIView {
+        let titleLabel = makeSectionTitleLabel("Timer Behavior")
+        let stackView = UIStackView(arrangedSubviews: [titleLabel, disclaimerLabel, makeTimerBehaviorOptionsView()])
+        stackView.axis = .vertical
+        stackView.spacing = 10
+        return stackView
+    }
+
+    private func makeTimerBehaviorOptionsView() -> UIView {
+        let stackView = makeOptionsStackView()
+
+        let continueTimersSwitch = UISwitch()
+        continueTimersSwitch.isOn = true
+        stackView.addArrangedSubview(
+            makeSettingsRow(
+                systemImageName: "timer",
+                title: "Restore Active Timers",
+                subtitle: "Resume cached timers when the app opens.",
+                trailingView: continueTimersSwitch
+            )
+        )
+
+        let checkpointSwitch = UISwitch()
+        checkpointSwitch.isOn = true
+        stackView.addArrangedSubview(
+            makeSettingsRow(
+                systemImageName: "arrow.triangle.2.circlepath",
+                title: "Background Checkpoints",
+                subtitle: "Keep a local timer checkpoint while the app is open.",
+                trailingView: checkpointSwitch
+            )
+        )
+
+        let restoreWindowLabel = UILabel()
+        restoreWindowLabel.text = "8 hr"
+        stackView.addArrangedSubview(
+            makeSettingsRow(
+                systemImageName: "clock.arrow.circlepath",
+                title: "Restore Window",
+                subtitle: "Maximum age for restoring cached timers.",
+                trailingView: restoreWindowLabel
+            )
+        )
+
+        return stackView
+    }
+
+    private func makeSettingsRow(
+        systemImageName: String,
+        title: String,
+        subtitle: String?,
+        trailingView: UIView
+    ) -> SettingsRow {
+        let row = SettingsRow(
+            systemImageName: systemImageName,
+            title: title,
+            subtitle: subtitle,
+            trailingView: trailingView
+        )
+        settingsRows.append(row)
+        return row
+    }
+
+    private func makeFooterSection() -> UIView {
+        let stackView = UIStackView(arrangedSubviews: [precisionDisclaimerLabel, versionLabel])
+        stackView.axis = .vertical
+        stackView.spacing = 12
+        return stackView
     }
 
     private func makeFontOptionsView() -> UIView {
@@ -254,6 +426,7 @@ final class SettingsViewController: UIViewController {
         titleLabel.textColor = AppTheme.metadataText
         titleLabel.textAlignment = .natural
         titleLabel.setContentHuggingPriority(.required, for: .horizontal)
+        sectionTitleLabels.append(titleLabel)
         return titleLabel
     }
 
@@ -327,6 +500,10 @@ final class SettingsViewController: UIViewController {
     private func applyTheme() {
         view.backgroundColor = AppTheme.screenBackground
         scrollView.backgroundColor = AppTheme.screenBackground
+        disclaimerLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+        disclaimerLabel.textColor = AppTheme.metadataText
+        precisionDisclaimerLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+        precisionDisclaimerLabel.textColor = AppTheme.metadataText
         versionLabel.font = AppTheme.roundedFont(ofSize: 11, weight: .regular)
         versionLabel.textColor = AppTheme.metadataText
         navigationController?.navigationBar.tintColor = AppTheme.accent
@@ -336,12 +513,7 @@ final class SettingsViewController: UIViewController {
         applyAppearanceButtonTheme(lightModeButton, mode: .light)
         applyAppearanceButtonTheme(darkModeButton, mode: .dark)
 
-        contentStackView.arrangedSubviews.forEach { sectionView in
-            guard let sectionStackView = sectionView as? UIStackView,
-                  let titleLabel = sectionStackView.arrangedSubviews.first as? UILabel else {
-                return
-            }
-
+        sectionTitleLabels.forEach { titleLabel in
             titleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
             titleLabel.textColor = AppTheme.metadataText
         }
@@ -355,6 +527,8 @@ final class SettingsViewController: UIViewController {
             button.titleFont = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
             button.applyTheme()
         }
+
+        settingsRows.forEach { $0.applyTheme() }
     }
 
     private func applyAppearanceButtonTheme(_ button: UIButton, mode: AppAppearanceMode) {
