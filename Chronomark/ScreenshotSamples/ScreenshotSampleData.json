@@ -5,10 +5,6 @@
       "name": "Focus"
     },
     {
-      "id": "22222222-2222-2222-2222-222222222222",
-      "name": "Fitness"
-    },
-    {
       "id": "33333333-3333-3333-3333-333333333333",
       "name": "Chores"
     },
@@ -17,54 +13,214 @@
       "name": "Home"
     },
     {
-      "id": "55555555-5555-5555-5555-555555555555",
-      "name": "Health"
-    },
-    {
-      "id": "66666666-6666-6666-6666-666666666666",
-      "name": "Learning"
+      "id": "77777777-7777-7777-7777-777777777777",
+      "name": "Commute"
     }
   ],
   "activityTypes": [
     {
-      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "name": "Deep Work",
-      "createdDaysAgo": 42,
+      "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "name": "Morning Commute",
+      "createdDaysAgo": 18,
       "tagIDs": [
-        "11111111-1111-1111-1111-111111111111",
-        "66666666-6666-6666-6666-666666666666"
+        "77777777-7777-7777-7777-777777777777"
       ],
       "activities": [
         {
-          "id": "10000000-0000-0000-0000-000000000001",
-          "startMinutesAgo": 165,
-          "durationSeconds": 5400
+          "id": "60000000-0000-0000-0000-000000000001",
+          "startMinutesAgo": 245,
+          "durationSeconds": 2100
         },
         {
-          "id": "10000000-0000-0000-0000-000000000002",
-          "startMinutesAgo": 1560,
-          "durationSeconds": 7200
+          "id": "60000000-0000-0000-0000-000000000002",
+          "startMinutesAgo": 1685,
+          "durationSeconds": 2280
         },
         {
-          "id": "10000000-0000-0000-0000-000000000003",
-          "startMinutesAgo": 3180,
-          "durationSeconds": 4500
+          "id": "60000000-0000-0000-0000-000000000003",
+          "startMinutesAgo": 3125,
+          "durationSeconds": 1980
         },
         {
-          "id": "10000000-0000-0000-0000-000000000004",
-          "startMinutesAgo": 5900,
-          "durationSeconds": 6300
+          "id": "60000000-0000-0000-0000-000000000004",
+          "startMinutesAgo": 4565,
+          "durationSeconds": 2160
+        },
+        {
+          "id": "60000000-0000-0000-0000-000000000005",
+          "startMinutesAgo": 6005,
+          "durationSeconds": 2040
+        },
+        {
+          "id": "60000000-0000-0000-0000-000000000006",
+          "startMinutesAgo": 7445,
+          "durationSeconds": 2340
+        },
+        {
+          "id": "60000000-0000-0000-0000-000000000007",
+          "startMinutesAgo": 8885,
+          "durationSeconds": 1920
+        },
+        {
+          "id": "60000000-0000-0000-0000-000000000008",
+          "startMinutesAgo": 10325,
+          "durationSeconds": 2220
+        },
+        {
+          "id": "60000000-0000-0000-0000-000000000009",
+          "startMinutesAgo": 11765,
+          "durationSeconds": 2460
+        },
+        {
+          "id": "60000000-0000-0000-0000-000000000010",
+          "startMinutesAgo": 13205,
+          "durationSeconds": 1860
+        },
+        {
+          "id": "60000000-0000-0000-0000-000000000011",
+          "startMinutesAgo": 14645,
+          "durationSeconds": 2400
+        }
+      ]
+    },
+    {
+      "id": "abababab-abab-abab-abab-abababababab",
+      "name": "Evening Commute",
+      "createdDaysAgo": 18,
+      "tagIDs": [
+        "77777777-7777-7777-7777-777777777777"
+      ],
+      "activities": [
+        {
+          "id": "70000000-0000-0000-0000-000000000001",
+          "startMinutesAgo": 65,
+          "durationSeconds": 2520
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000002",
+          "startMinutesAgo": 1505,
+          "durationSeconds": 2700
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000003",
+          "startMinutesAgo": 2945,
+          "durationSeconds": 2400
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000004",
+          "startMinutesAgo": 4385,
+          "durationSeconds": 2640
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000005",
+          "startMinutesAgo": 5825,
+          "durationSeconds": 2580
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000006",
+          "startMinutesAgo": 7265,
+          "durationSeconds": 2820
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000007",
+          "startMinutesAgo": 8705,
+          "durationSeconds": 2460
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000008",
+          "startMinutesAgo": 10145,
+          "durationSeconds": 2760
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000009",
+          "startMinutesAgo": 11585,
+          "durationSeconds": 2340
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000010",
+          "startMinutesAgo": 13025,
+          "durationSeconds": 2880
+        },
+        {
+          "id": "70000000-0000-0000-0000-000000000011",
+          "startMinutesAgo": 14465,
+          "durationSeconds": 2520
+        }
+      ]
+    },
+    {
+      "id": "92929292-9292-9292-9292-929292929292",
+      "name": "Dog Park Hangout",
+      "createdDaysAgo": 16,
+      "tagIDs": [],
+      "activities": [
+        {
+          "id": "92000000-0000-0000-0000-000000000001",
+          "startMinutesAgo": 215,
+          "durationSeconds": 2460
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000002",
+          "startMinutesAgo": 1660,
+          "durationSeconds": 2700
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000003",
+          "startMinutesAgo": 3075,
+          "durationSeconds": 2580
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000004",
+          "startMinutesAgo": 4510,
+          "durationSeconds": 2820
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000005",
+          "startMinutesAgo": 5985,
+          "durationSeconds": 2400
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000006",
+          "startMinutesAgo": 7420,
+          "durationSeconds": 2760
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000007",
+          "startMinutesAgo": 8845,
+          "durationSeconds": 2640
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000008",
+          "startMinutesAgo": 10270,
+          "durationSeconds": 2520
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000009",
+          "startMinutesAgo": 11725,
+          "durationSeconds": 2880
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000010",
+          "startMinutesAgo": 13140,
+          "durationSeconds": 2340
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000011",
+          "startMinutesAgo": 14595,
+          "durationSeconds": 2700
+        },
+        {
+          "id": "92000000-0000-0000-0000-000000000012",
+          "startMinutesAgo": 16020,
+          "durationSeconds": 2880
         }
       ]
     },
     {
       "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-      "name": "Strength Training",
+      "name": "Exercising",
       "createdDaysAgo": 36,
-      "tagIDs": [
-        "22222222-2222-2222-2222-222222222222",
-        "55555555-5555-5555-5555-555555555555"
-      ],
+      "tagIDs": [],
       "activities": [
         {
           "id": "20000000-0000-0000-0000-000000000001",
@@ -80,28 +236,11 @@
           "id": "20000000-0000-0000-0000-000000000003",
           "startMinutesAgo": 4920,
           "durationSeconds": 3720
-        }
-      ]
-    },
-    {
-      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
-      "name": "Meal Prep",
-      "createdDaysAgo": 28,
-      "tagIDs": [
-        "33333333-3333-3333-3333-333333333333",
-        "44444444-4444-4444-4444-444444444444",
-        "55555555-5555-5555-5555-555555555555"
-      ],
-      "activities": [
-        {
-          "id": "30000000-0000-0000-0000-000000000001",
-          "startMinutesAgo": 520,
-          "durationSeconds": 4200
         },
         {
-          "id": "30000000-0000-0000-0000-000000000002",
-          "startMinutesAgo": 3400,
-          "durationSeconds": 3900
+          "id": "20000000-0000-0000-0000-000000000004",
+          "startMinutesAgo": 7800,
+          "durationSeconds": 3480
         }
       ]
     },
@@ -110,8 +249,7 @@
       "name": "Reading",
       "createdDaysAgo": 21,
       "tagIDs": [
-        "11111111-1111-1111-1111-111111111111",
-        "66666666-6666-6666-6666-666666666666"
+        "11111111-1111-1111-1111-111111111111"
       ],
       "activities": [
         {
@@ -127,30 +265,70 @@
       ]
     },
     {
-      "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
-      "name": "House Reset",
-      "createdDaysAgo": 15,
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "name": "Meal Prep",
+      "createdDaysAgo": 28,
       "tagIDs": [
         "33333333-3333-3333-3333-333333333333",
         "44444444-4444-4444-4444-444444444444"
       ],
       "activities": [
         {
-          "id": "50000000-0000-0000-0000-000000000001",
-          "startMinutesAgo": 1240,
-          "durationSeconds": 3600
+          "id": "30000000-0000-0000-0000-000000000001",
+          "startMinutesAgo": 520,
+          "durationSeconds": 4200
+        },
+        {
+          "id": "30000000-0000-0000-0000-000000000002",
+          "startMinutesAgo": 3400,
+          "durationSeconds": 3900
+        }
+      ]
+    },
+    {
+      "id": "90909090-9090-9090-9090-909090909090",
+      "name": "Cooking",
+      "createdDaysAgo": 24,
+      "tagIDs": [
+        "33333333-3333-3333-3333-333333333333",
+        "44444444-4444-4444-4444-444444444444"
+      ],
+      "activities": [
+        {
+          "id": "90000000-0000-0000-0000-000000000001",
+          "startMinutesAgo": 780,
+          "durationSeconds": 2700
+        },
+        {
+          "id": "90000000-0000-0000-0000-000000000002",
+          "startMinutesAgo": 2220,
+          "durationSeconds": 3300
+        }
+      ]
+    },
+    {
+      "id": "91919191-9191-9191-9191-919191919191",
+      "name": "Mowing Lawn",
+      "createdDaysAgo": 10,
+      "tagIDs": [
+        "33333333-3333-3333-3333-333333333333",
+        "44444444-4444-4444-4444-444444444444"
+      ],
+      "activities": [
+        {
+          "id": "91000000-0000-0000-0000-000000000001",
+          "startMinutesAgo": 4380,
+          "durationSeconds": 4200
+        },
+        {
+          "id": "91000000-0000-0000-0000-000000000002",
+          "startMinutesAgo": 10140,
+          "durationSeconds": 3900
         }
       ]
     }
   ],
   "timers": [
-    {
-      "activityTypeID": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "startMinutesAgo": 76,
-      "elapsedSeconds": 3890,
-      "isRunning": true,
-      "lastUpdatedSecondsAgo": 42
-    },
     {
       "activityTypeID": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
       "startMinutesAgo": 44,
@@ -167,7 +345,6 @@
     }
   ],
   "selectedTagIDs": [
-    "11111111-1111-1111-1111-111111111111",
-    "66666666-6666-6666-6666-666666666666"
+    "11111111-1111-1111-1111-111111111111"
   ]
 }
