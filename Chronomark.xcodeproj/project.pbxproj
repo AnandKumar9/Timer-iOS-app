@@ -117,16 +117,6 @@
 			path = "5. TagsManagementViewController";
 			sourceTree = "<group>";
 		};
-		440DE4A72FB1000000910C7F /* ScreenshotSamples */ = {
-			isa = PBXGroup;
-			children = (
-				440DE4A12FB1000000910C7F /* ScreenshotSampleData.swift */,
-				440DE4A32FB1000000910C7F /* ScreenshotSampleCoordinator.swift */,
-				440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */,
-			);
-			path = ScreenshotSamples;
-			sourceTree = "<group>";
-		};
 		440DE4962FAF8EE600910C7F /* AppTheme */ = {
 			isa = PBXGroup;
 			children = (
@@ -139,6 +129,16 @@
 				440DE4992FAF8F3600910C7F /* AppPalette.swift */,
 			);
 			path = AppTheme;
+			sourceTree = "<group>";
+		};
+		440DE4A72FB1000000910C7F /* ScreenshotSamples */ = {
+			isa = PBXGroup;
+			children = (
+				440DE4A12FB1000000910C7F /* ScreenshotSampleData.swift */,
+				440DE4A32FB1000000910C7F /* ScreenshotSampleCoordinator.swift */,
+				440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */,
+			);
+			path = ScreenshotSamples;
 			sourceTree = "<group>";
 		};
 		4413A30D2FA432020005EE3C /* 4. ActivityDetailsViewController */ = {
@@ -488,7 +488,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chronomark/Info.plist;
@@ -499,7 +499,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.outonaweekend.chronomark;
 				PRODUCT_NAME = Chronomark;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -518,7 +518,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					ScreenshotSampleData.swift,
@@ -534,7 +534,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.outonaweekend.chronomark;
 				PRODUCT_NAME = Chronomark;
 				PROVISIONING_PROFILE_SPECIFIER = "";
