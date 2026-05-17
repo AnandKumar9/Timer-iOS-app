@@ -22,6 +22,7 @@ final class ActivityHistoryViewController: UIViewController {
         static let reuseIdentifier = "ActivityHistoryCell"
 
         private let activitySummaryLabel = UILabel()
+        private let noteLabel = UILabel()
 
         override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
             super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -40,6 +41,14 @@ final class ActivityHistoryViewController: UIViewController {
                 dateText: row.startTimeText,
                 durationText: row.durationText
             )
+
+            if let note = noteText(for: row.activity) {
+                noteLabel.text = note
+                noteLabel.isHidden = false
+            } else {
+                noteLabel.text = nil
+                noteLabel.isHidden = true
+            }
         }
 
         private func configureCell() {
@@ -51,16 +60,38 @@ final class ActivityHistoryViewController: UIViewController {
             activitySummaryLabel.adjustsFontSizeToFitWidth = true
             activitySummaryLabel.minimumScaleFactor = 0.75
             activitySummaryLabel.lineBreakMode = .byClipping
-            activitySummaryLabel.translatesAutoresizingMaskIntoConstraints = false
+            noteLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+            noteLabel.textColor = AppTheme.metadataText
+            noteLabel.numberOfLines = 1
+            noteLabel.lineBreakMode = .byTruncatingTail
 
-            contentView.addSubview(activitySummaryLabel)
+            let stackView = UIStackView(arrangedSubviews: [
+                activitySummaryLabel,
+                noteLabel
+            ])
+            stackView.axis = .vertical
+            stackView.alignment = .fill
+            stackView.spacing = 4
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+
+            contentView.addSubview(stackView)
 
             NSLayoutConstraint.activate([
-                activitySummaryLabel.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-                activitySummaryLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentView.layoutMarginsGuide.trailingAnchor),
-                activitySummaryLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
-                activitySummaryLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -14)
+                stackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+                stackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.layoutMarginsGuide.trailingAnchor),
+                stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+                stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -14)
             ])
+        }
+
+        private func noteText(for activity: Activity) -> String? {
+            guard let note = activity.activityNotes?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !note.isEmpty
+            else {
+                return nil
+            }
+
+            return note
         }
 
         private func makeActivitySummaryText(

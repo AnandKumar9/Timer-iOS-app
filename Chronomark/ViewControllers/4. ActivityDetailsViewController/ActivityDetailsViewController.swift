@@ -2,6 +2,11 @@ import UIKit
 import SwiftData
 
 final class ActivityDetailsViewController: UIViewController {
+    private static let noteCharacterLimit = 25
+    private static let editControlForegroundColor = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .light ? .black : AppTheme.accent
+    }
+
     private final class DetailRowView: UIView {
         private let iconView = UIImageView()
         private let titleLabel = UILabel()
@@ -152,7 +157,7 @@ final class ActivityDetailsViewController: UIViewController {
             configuration.image = UIImage(systemName: "chevron.up.chevron.down")
             configuration.imagePlacement = .trailing
             configuration.imagePadding = 8
-            configuration.baseForegroundColor = AppTheme.accent
+            configuration.baseForegroundColor = ActivityDetailsViewController.editControlForegroundColor
             selectionButton.configuration = configuration
             selectionButton.contentHorizontalAlignment = .leading
             selectionButton.showsMenuAsPrimaryAction = true
@@ -200,6 +205,8 @@ final class ActivityDetailsViewController: UIViewController {
     private var originalStartTime: Date?
     private var originalCompletionTime: Date?
     private var originalActivityTypeID: UUID?
+    private var originalActivityNotes: String?
+    private var editedActivityNotes: String?
     private var availableActivityTypes: [ActivityType] = []
     private var selectedActivityType: ActivityType?
 #if DEBUG
@@ -476,34 +483,47 @@ final class ActivityDetailsViewController: UIViewController {
             let activityTypeRow = makeEditableActivityTypeRow(selectedActivityType: selectedActivityType ?? activity.activityType)
             let startDateRow = EditableDateRowView(
                 iconName: "calendar.badge.plus",
-                title: "Activity Start Time",
+                title: "Start Time",
                 date: activity.activityStartTime ?? Date()
             )
             let completionDateRow = EditableDateRowView(
                 iconName: "checkmark.circle.fill",
-                title: "Activity Completion Time",
+                title: "Completion Time",
                 date: activity.activityCompletionTime ?? Date()
             )
             startDatePicker = startDateRow.datePicker
             completionDatePicker = completionDateRow.datePicker
 
-            setDetailRows([
+            var rows: [UIView] = [
                 activityTypeRow,
                 startDateRow,
-                completionDateRow,
-                makeDeleteActivityButton()
-            ])
+                completionDateRow
+            ]
+
+            if let notes = currentNotesText(for: activity) {
+                rows.append(DetailRowView(iconName: "text.bubble", title: "Note", value: notes))
+            }
+
+            rows.append(makeAddNoteButton())
+            rows.append(makeDeleteActivityButton())
+            setDetailRows(rows)
             return
         }
 
         startDatePicker = nil
         completionDatePicker = nil
         selectedActivityType = nil
-        setDetailRows([
-            DetailRowView(iconName: "tag.fill", title: "Activity Type Name", value: activity.activityType.name),
-            DetailRowView(iconName: "calendar.badge.plus", title: "Activity Start Time", value: startTimeText),
-            DetailRowView(iconName: "checkmark.circle.fill", title: "Activity Completion Time", value: completionTimeText)
-        ])
+        var rows: [UIView] = [
+            DetailRowView(iconName: "tag.fill", title: "Activity Type", value: activity.activityType.name),
+            DetailRowView(iconName: "calendar.badge.plus", title: "Start Time", value: startTimeText),
+            DetailRowView(iconName: "checkmark.circle.fill", title: "Completion Time", value: completionTimeText)
+        ]
+
+        if let notes = currentNotesText(for: activity) {
+            rows.append(DetailRowView(iconName: "text.bubble", title: "Note", value: notes))
+        }
+
+        setDetailRows(rows)
     }
 
     private func setDetailRows(_ rows: [UIView]) {
@@ -531,7 +551,7 @@ final class ActivityDetailsViewController: UIViewController {
     private func makeEditableActivityTypeRow(selectedActivityType: ActivityType) -> EditableActivityTypeRowView {
         let row = EditableActivityTypeRowView(
             iconName: "tag.fill",
-            title: "Activity Type Name",
+            title: "Activity Type",
             selectedName: selectedActivityType.name
         )
         row.selectionButton.menu = UIMenu(
@@ -572,6 +592,75 @@ final class ActivityDetailsViewController: UIViewController {
         return button
     }
 
+    private func makeAddNoteButton() -> UIButton {
+        var configuration = UIButton.Configuration.tinted()
+        configuration.title = activity.flatMap(currentNotesText) == nil ? "Add a Note" : "Edit Note"
+        configuration.image = UIImage(systemName: "note.text")
+        configuration.imagePadding = 8
+        configuration.baseForegroundColor = Self.editControlForegroundColor
+        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+
+        let button = UIButton(type: .system)
+        button.configuration = configuration
+        button.layer.cornerRadius = 8
+        button.layer.cornerCurve = .continuous
+        button.clipsToBounds = true
+        button.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        button.accessibilityLabel = configuration.title
+        button.addAction(
+            UIAction { [weak self] _ in
+                self?.presentNoteEditor()
+            },
+            for: .touchUpInside
+        )
+        return button
+    }
+
+    private func presentNoteEditor() {
+        guard let activity else {
+            return
+        }
+
+        let existingNote = currentNotesText(for: activity)
+        let alertController = UIAlertController(
+            title: existingNote == nil ? "Add a Note" : "Edit Note",
+            message: "Notes can be up to \(Self.noteCharacterLimit) characters.",
+            preferredStyle: .alert
+        )
+
+        var noteTextField: UITextField?
+
+        alertController.addTextField { textField in
+            textField.placeholder = "Add a note"
+            textField.text = existingNote
+            textField.clearButtonMode = .whileEditing
+            textField.autocapitalizationType = .sentences
+            textField.returnKeyType = .done
+            textField.addAction(
+                UIAction { [weak textField] _ in
+                    guard let textField else {
+                        return
+                    }
+
+                    if textField.text?.count ?? 0 > Self.noteCharacterLimit {
+                        textField.text = String(textField.text?.prefix(Self.noteCharacterLimit) ?? "")
+                    }
+                },
+                for: .editingChanged
+            )
+            noteTextField = textField
+        }
+
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alertController.addAction(
+            UIAlertAction(title: "Done", style: .default) { [weak self, weak noteTextField] _ in
+                self?.stageActivityNote(noteTextField?.text)
+            }
+        )
+
+        present(alertController, animated: true)
+    }
+
     private func configureStatusCapsule(text: String, color: UIColor) {
         statusCapsuleLabel.text = "  \(text)  "
         statusCapsuleLabel.textColor = color
@@ -596,12 +685,16 @@ final class ActivityDetailsViewController: UIViewController {
             originalStartTime = activity?.activityStartTime
             originalCompletionTime = activity?.activityCompletionTime
             originalActivityTypeID = activity?.activityType.uniqueID
+            originalActivityNotes = normalizedNote(activity?.activityNotes)
+            editedActivityNotes = originalActivityNotes
             selectedActivityType = activity?.activityType
         } else {
             availableActivityTypes = []
             originalStartTime = nil
             originalCompletionTime = nil
             originalActivityTypeID = nil
+            originalActivityNotes = nil
+            editedActivityNotes = nil
             selectedActivityType = nil
         }
 
@@ -655,6 +748,7 @@ final class ActivityDetailsViewController: UIViewController {
         activity.activityStartTime = startDate
         activity.activityCompletionTime = completionDate
         activity.timeTaken = completionDate.timeIntervalSince(startDate)
+        activity.activityNotes = normalizedNote(editedActivityNotes)
 
         do {
             try modelContext.save()
@@ -667,10 +761,38 @@ final class ActivityDetailsViewController: UIViewController {
         }
     }
 
+    private func stageActivityNote(_ note: String?) {
+        let currentStartDate = startDatePicker?.date
+        let currentCompletionDate = completionDatePicker?.date
+        let currentSelectedActivityType = selectedActivityType
+
+        editedActivityNotes = normalizedNote(note)
+        refreshActivityDetailsAfterStagingNote(
+            startDate: currentStartDate,
+            completionDate: currentCompletionDate,
+            selectedActivityType: currentSelectedActivityType
+        )
+    }
+
+    private func refreshActivityDetailsAfterStagingNote(
+        startDate: Date?,
+        completionDate: Date?,
+        selectedActivityType: ActivityType?
+    ) {
+        self.selectedActivityType = selectedActivityType ?? self.selectedActivityType
+        populateActivityDetails()
+        if let startDate {
+            startDatePicker?.date = startDate
+        }
+        if let completionDate {
+            completionDatePicker?.date = completionDate
+        }
+    }
+
     private func presentSaveConfirmationAlert() {
         let alertController = UIAlertController(
             title: "Save Changes?",
-            message: "Save the edited activity times or discard your changes.",
+            message: nil,
             preferredStyle: .alert
         )
 
@@ -743,6 +865,7 @@ final class ActivityDetailsViewController: UIViewController {
         return !areDatesEqual(startDate, originalStartTime)
             || !areDatesEqual(completionDate, originalCompletionTime)
             || selectedActivityType?.uniqueID != originalActivityTypeID
+            || editedActivityNotes != originalActivityNotes
     }
 
     private func fetchActivityTypes() -> [ActivityType] {
@@ -856,6 +979,24 @@ final class ActivityDetailsViewController: UIViewController {
         }
 
         return ActivityDisplayFormatter.roundedHistoryDurationText(for: duration)
+    }
+
+    private func currentNotesText(for activity: Activity) -> String? {
+        if isEditingActivityDetails {
+            return editedActivityNotes
+        }
+
+        return normalizedNote(activity.activityNotes)
+    }
+
+    private func normalizedNote(_ note: String?) -> String? {
+        guard let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmedNote.isEmpty
+        else {
+            return nil
+        }
+
+        return String(trimmedNote.prefix(Self.noteCharacterLimit))
     }
 
     @objc private func durationDisplayDidChange() {
