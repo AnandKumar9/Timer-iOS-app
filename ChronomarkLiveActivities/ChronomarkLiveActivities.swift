@@ -39,6 +39,7 @@ struct ChronomarkLiveActivityWidget: Widget {
     }
 
     private static let timerURL = URL(string: "chronomark://timer")
+    static let activityNameFontSize: CGFloat = 20
 
     static func formattedTime(_ seconds: Int) -> String {
         let hours = seconds / 3_600
@@ -87,8 +88,9 @@ private struct ChronomarkLiveActivityRow: View {
                 .layoutPriority(3)
 
             Text(context.state.activityName)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: ChronomarkLiveActivityWidget.activityNameFontSize, weight: .semibold))
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .truncationMode(.tail)
                 .layoutPriority(0)
 
