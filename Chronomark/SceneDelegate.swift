@@ -33,6 +33,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 #endif
         let modelContext = (UIApplication.shared.delegate as? AppDelegate)?.modelContainer.mainContext
         let restoredTimerCount = TimerViewController.restoreCachedTimersIfNeeded(modelContext: modelContext)
+        let shouldOpenTimerViewController = containsTimerURL(connectionOptions.urlContexts)
         let navigationController = UINavigationController(
             rootViewController: makeInitialViewController(modelContext: modelContext)
         )
@@ -47,10 +48,30 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
         self.modelContext = modelContext
 
-        presentRestoredTimersAlertIfNeeded(
-            restoredTimerCount: restoredTimerCount,
-            on: navigationController
-        )
+        if shouldOpenTimerViewController {
+            DispatchQueue.main.async { [weak self] in
+                self?.presentTimerViewController()
+            }
+        } else {
+            presentRestoredTimersAlertIfNeeded(
+                restoredTimerCount: restoredTimerCount,
+                on: navigationController
+            )
+        }
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard containsTimerURL(URLContexts) else {
+            return
+        }
+
+        presentTimerViewController()
+    }
+
+    private func containsTimerURL(_ URLContexts: Set<UIOpenURLContext>) -> Bool {
+        URLContexts.contains { urlContext in
+            urlContext.url.scheme == "chronomark" && urlContext.url.host == "timer"
+        }
     }
 
     private func makeInitialViewController(modelContext: ModelContext?) -> UIViewController {
@@ -60,6 +81,23 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         )
         activityTypesViewController.modelContext = modelContext
         return activityTypesViewController
+    }
+
+    private func presentTimerViewController() {
+        guard let rootViewController = window?.rootViewController else {
+            return
+        }
+
+        topPresentedViewController(from: rootViewController)
+            .presentTimerViewController(modelContext: modelContext)
+    }
+
+    private func topPresentedViewController(from viewController: UIViewController) -> UIViewController {
+        var topViewController = viewController
+        while let presentedViewController = topViewController.presentedViewController {
+            topViewController = presentedViewController
+        }
+        return topViewController
     }
 
     private func presentRestoredTimersAlertIfNeeded(

@@ -6,6 +6,7 @@ struct ChronomarkLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
             ActivityConfiguration(for: ChronomarkTimerAttributes.self) { context in
                 ChronomarkLockScreenLiveActivityView(context: context)
+                    .widgetURL(Self.timerURL)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
@@ -33,8 +34,11 @@ struct ChronomarkLiveActivityWidget: Widget {
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
             .keylineTint(Self.timerTextColor(for: context.state))
+            .widgetURL(Self.timerURL)
         }
     }
+
+    private static let timerURL = URL(string: "chronomark://timer")
 
     static func formattedTime(_ seconds: Int) -> String {
         let hours = seconds / 3_600
