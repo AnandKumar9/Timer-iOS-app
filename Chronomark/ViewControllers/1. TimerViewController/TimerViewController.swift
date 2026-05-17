@@ -370,6 +370,7 @@ final class TimerViewController: UIViewController {
             restoredState: restoredState
         )
         updateTimerCache(from: timerControlsView, isRunning: cache.isRunning)
+        restoreLiveActivity(from: timerControlsView)
     }
 
     @discardableResult
@@ -397,18 +398,115 @@ final class TimerViewController: UIViewController {
         timerControlsView.onActivityStopped = { [weak self] activity in
             self?.applyFinalElapsedTime(to: activity)
             self?.deleteTimerCache(activityTypeID: activity.activityType.uniqueID)
+            self?.endLiveActivity(activityTypeID: activity.activityType.uniqueID, elapsedTime: activity.timeTaken)
             self?.saveTimerActivity(activity)
         }
         timerControlsView.onTimerStarted = { [weak self] timerControlsView in
             self?.createOrReplaceTimerCache(from: timerControlsView)
+            self?.startLiveActivity(from: timerControlsView)
         }
         timerControlsView.onTimerResumed = { [weak self] timerControlsView in
             self?.updateTimerCache(from: timerControlsView, isRunning: true)
+            self?.resumeLiveActivity(from: timerControlsView)
         }
         timerControlsView.onTimerPaused = { [weak self] timerControlsView in
             self?.updateTimerCache(from: timerControlsView, isRunning: false)
+            self?.pauseLiveActivity(from: timerControlsView)
         }
         return timerControlsView
+    }
+
+    private func startLiveActivity(from timerControlsView: TimerControlsView) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+        guard let startTime = timerControlsView.activityStartTime else {
+            return
+        }
+
+        do {
+            try ChronomarkLiveActivityController.startActivity(
+                activityTypeID: timerControlsView.activityTypeID,
+                name: timerControlsView.activityTypeName,
+                elapsedSeconds: 0,
+                status: "Running",
+                timerStartDate: startTime,
+                relevanceScore: 100
+            )
+        } catch {
+            print("Failed to start Live Activity: \(error)")
+        }
+    }
+
+    private func restoreLiveActivity(from timerControlsView: TimerControlsView) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+        guard timerControlsView.hasActiveTimer else {
+            return
+        }
+
+        let elapsedTime = timerControlsView.activeElapsedTime
+        let isRunning = timerControlsView.activityTimerState == .running
+
+        do {
+            try ChronomarkLiveActivityController.startOrUpdateActivity(
+                activityTypeID: timerControlsView.activityTypeID,
+                name: timerControlsView.activityTypeName,
+                elapsedSeconds: Int(elapsedTime),
+                status: isRunning ? "Running" : "Paused",
+                timerStartDate: isRunning ? Date().addingTimeInterval(-elapsedTime) : nil,
+                relevanceScore: isRunning ? 100 : 50
+            )
+        } catch {
+            print("Failed to restore Live Activity: \(error)")
+        }
+    }
+
+    private func resumeLiveActivity(from timerControlsView: TimerControlsView) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+        let elapsedTime = timerControlsView.activeElapsedTime
+        ChronomarkLiveActivityController.updateActivity(
+            activityTypeID: timerControlsView.activityTypeID,
+            elapsedSeconds: Int(elapsedTime),
+            status: "Running",
+            timerStartDate: Date().addingTimeInterval(-elapsedTime)
+        )
+    }
+
+    private func pauseLiveActivity(from timerControlsView: TimerControlsView) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+        ChronomarkLiveActivityController.updateActivity(
+            activityTypeID: timerControlsView.activityTypeID,
+            elapsedSeconds: Int(timerControlsView.activeElapsedTime),
+            status: "Paused",
+            timerStartDate: nil,
+            relevanceScore: 50
+        )
+    }
+
+    private func endLiveActivity(activityTypeID: UUID, elapsedTime: TimeInterval?) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+        ChronomarkLiveActivityController.endActivity(
+            activityTypeID: activityTypeID,
+            elapsedSeconds: Int(elapsedTime ?? 0)
+        )
     }
 
     private func reusableTimerControlsView(activityType: ActivityType) -> TimerControlsView? {
@@ -457,6 +555,7 @@ final class TimerViewController: UIViewController {
         timerControlsStackView.removeArrangedSubview(timerControlsView)
         timerControlsView.removeFromSuperview()
         timerControlsViews.removeAll { $0 === timerControlsView }
+        endLiveActivity(activityTypeID: activityTypeID, elapsedTime: timerControlsView.activeElapsedTime)
         deleteTimerCache(activityTypeID: activityTypeID)
         TimerSessionState.notifyActiveTimersChanged()
     }

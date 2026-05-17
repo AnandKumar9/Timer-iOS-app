@@ -91,6 +91,9 @@ final class TimerControlsView: UIView {
     var activityTypeID: UUID {
         activity.activityType.uniqueID
     }
+    var activityTypeName: String {
+        activity.activityType.name
+    }
     var hasStartedTimer: Bool {
         activity.activityStartTime != nil
     }

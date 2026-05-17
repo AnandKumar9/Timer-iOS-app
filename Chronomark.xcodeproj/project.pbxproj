@@ -15,6 +15,12 @@
 		440DE4A22FB1000000910C7F /* ScreenshotSampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4A12FB1000000910C7F /* ScreenshotSampleData.swift */; };
 		440DE4A42FB1000000910C7F /* ScreenshotSampleCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4A32FB1000000910C7F /* ScreenshotSampleCoordinator.swift */; };
 		440DE4A62FB1000000910C7F /* ScreenshotSampleData.json in Resources */ = {isa = PBXBuildFile; fileRef = 440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */; };
+		B00000000000000000000001 /* ChronomarkLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003 /* ChronomarkLiveActivities.swift */; };
+		B00000000000000000000002 /* ChronomarkLiveActivities.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* ChronomarkLiveActivities.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B00000000000000000000011 /* ChronomarkTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* ChronomarkTimerAttributes.swift */; };
+		B00000000000000000000012 /* ChronomarkTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* ChronomarkTimerAttributes.swift */; };
+		B00000000000000000000014 /* ChronomarkLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000015 /* ChronomarkLiveActivityController.swift */; };
+		B00000000000000000000017 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* Assets.xcassets */; };
 		9A0000010000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000011 /* AppDelegate.swift */; };
 		9A0000010000000000000002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000012 /* SceneDelegate.swift */; };
 		9A0000010000000000000003 /* ActivityDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000013 /* ActivityDetailsViewController.swift */; };
@@ -51,6 +57,30 @@
 		9A0000010000000000000062 /* Manrope[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000068 /* Manrope[wght].ttf */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		B0000000000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9A0000010000000000000029 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B0000000000000000000000B;
+			remoteInfo = ChronomarkLiveActivities;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B0000000000000000000000A /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B00000000000000000000002 /* ChronomarkLiveActivities.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		440DE4972FAF8EFF00910C7F /* AppFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFont.swift; sourceTree = "<group>"; };
 		440DE4992FAF8F3600910C7F /* AppPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPalette.swift; sourceTree = "<group>"; };
@@ -60,6 +90,12 @@
 		440DE4A12FB1000000910C7F /* ScreenshotSampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSampleData.swift; sourceTree = "<group>"; };
 		440DE4A32FB1000000910C7F /* ScreenshotSampleCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSampleCoordinator.swift; sourceTree = "<group>"; };
 		440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ScreenshotSampleData.json; sourceTree = "<group>"; };
+		B00000000000000000000003 /* ChronomarkLiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronomarkLiveActivities.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B00000000000000000000005 /* ChronomarkLiveActivities.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ChronomarkLiveActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000013 /* ChronomarkTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronomarkTimerAttributes.swift; sourceTree = "<group>"; };
+		B00000000000000000000015 /* ChronomarkLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronomarkLiveActivityController.swift; sourceTree = "<group>"; };
+		B00000000000000000000018 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9A0000010000000000000010 /* Chronomark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chronomark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A0000010000000000000011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9A0000010000000000000012 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -99,6 +135,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B00000000000000000000007 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9A0000010000000000000021 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -139,6 +182,25 @@
 				440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */,
 			);
 			path = ScreenshotSamples;
+			sourceTree = "<group>";
+		};
+		B00000000000000000000006 /* ChronomarkLiveActivities */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000003 /* ChronomarkLiveActivities.swift */,
+				B00000000000000000000018 /* Assets.xcassets */,
+				B00000000000000000000004 /* Info.plist */,
+			);
+			path = ChronomarkLiveActivities;
+			sourceTree = "<group>";
+		};
+		B00000000000000000000016 /* LiveActivities */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000013 /* ChronomarkTimerAttributes.swift */,
+				B00000000000000000000015 /* ChronomarkLiveActivityController.swift */,
+			);
+			path = LiveActivities;
 			sourceTree = "<group>";
 		};
 		4413A30D2FA432020005EE3C /* 4. ActivityDetailsViewController */ = {
@@ -183,6 +245,7 @@
 			isa = PBXGroup;
 			children = (
 				9A0000010000000000000023 /* Chronomark */,
+				B00000000000000000000006 /* ChronomarkLiveActivities */,
 				9A0000010000000000000024 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -196,6 +259,7 @@
 				9A000001000000000000001B /* ActivityTimerActionView.swift */,
 				9A000001000000000000001C /* FloatingTimerButtonController.swift */,
 				9A000001000000000000004D /* AppAppearanceController.swift */,
+				B00000000000000000000016 /* LiveActivities */,
 				440DE4962FAF8EE600910C7F /* AppTheme */,
 				9A0000010000000000000040 /* ViewControllers */,
 				9A0000010000000000000045 /* Models */,
@@ -211,6 +275,7 @@
 			isa = PBXGroup;
 			children = (
 				9A0000010000000000000010 /* Chronomark.app */,
+				B00000000000000000000005 /* ChronomarkLiveActivities.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -258,6 +323,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B0000000000000000000000B /* ChronomarkLiveActivities */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0000000000000000000000E /* Build configuration list for PBXNativeTarget "ChronomarkLiveActivities" */;
+			buildPhases = (
+				B00000000000000000000009 /* Sources */,
+				B00000000000000000000007 /* Frameworks */,
+				B00000000000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ChronomarkLiveActivities;
+			productName = ChronomarkLiveActivities;
+			productReference = B00000000000000000000005 /* ChronomarkLiveActivities.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		9A0000010000000000000025 /* Chronomark */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9A0000010000000000000026 /* Build configuration list for PBXNativeTarget "Chronomark" */;
@@ -265,10 +347,12 @@
 				9A0000010000000000000027 /* Sources */,
 				9A0000010000000000000021 /* Frameworks */,
 				9A0000010000000000000028 /* Resources */,
+				B0000000000000000000000A /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B0000000000000000000000D /* PBXTargetDependency */,
 			);
 			name = Chronomark;
 			productName = Chronomark;
@@ -285,6 +369,9 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					B0000000000000000000000B = {
+						CreatedOnToolsVersion = 26.4;
+					};
 					9A0000010000000000000025 = {
 						CreatedOnToolsVersion = 26.4;
 					};
@@ -304,11 +391,20 @@
 			projectRoot = "";
 			targets = (
 				9A0000010000000000000025 /* Chronomark */,
+				B0000000000000000000000B /* ChronomarkLiveActivities */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		B00000000000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B00000000000000000000017 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9A0000010000000000000028 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -339,6 +435,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B00000000000000000000009 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B00000000000000000000001 /* ChronomarkLiveActivities.swift in Sources */,
+				B00000000000000000000011 /* ChronomarkTimerAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9A0000010000000000000027 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -363,6 +468,8 @@
 				9A000001000000000000004A /* ActivityTimerCache.swift in Sources */,
 				9A000001000000000000004C /* AppAppearanceController.swift in Sources */,
 				9A000001000000000000004E /* AppTheme.swift in Sources */,
+				B00000000000000000000012 /* ChronomarkTimerAttributes.swift in Sources */,
+				B00000000000000000000014 /* ChronomarkLiveActivityController.swift in Sources */,
 				440DE4A22FB1000000910C7F /* ScreenshotSampleData.swift in Sources */,
 				440DE4A42FB1000000910C7F /* ScreenshotSampleCoordinator.swift in Sources */,
 			);
@@ -370,7 +477,73 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		B0000000000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B0000000000000000000000B /* ChronomarkLiveActivities */;
+			targetProxy = B0000000000000000000000C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		B0000000000000000000000F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7SPT8XUUFN;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ChronomarkLiveActivities/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.outonaweekend.chronomark.LiveActivities;
+				PRODUCT_NAME = ChronomarkLiveActivities;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B00000000000000000000010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7SPT8XUUFN;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ChronomarkLiveActivities/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.outonaweekend.chronomark.LiveActivities;
+				PRODUCT_NAME = ChronomarkLiveActivities;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		9A000001000000000000002B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -550,6 +723,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		B0000000000000000000000E /* Build configuration list for PBXNativeTarget "ChronomarkLiveActivities" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0000000000000000000000F /* Debug */,
+				B00000000000000000000010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		9A0000010000000000000026 /* Build configuration list for PBXNativeTarget "Chronomark" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
