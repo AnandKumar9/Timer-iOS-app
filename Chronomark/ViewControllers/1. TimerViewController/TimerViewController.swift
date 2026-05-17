@@ -128,6 +128,7 @@ final class TimerViewController: UIViewController {
             viewController.applyTheme()
         }
         registerForApplicationLifecycleNotifications()
+        registerForActivityTypeNotifications()
         configureTimerPersistence()
 
         if let initialActivityType {
@@ -159,6 +160,15 @@ final class TimerViewController: UIViewController {
         )
     }
 
+    private func registerForActivityTypeNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(activityTypeDidPersist),
+            name: TimerSessionState.didPersistActivityNotification,
+            object: nil
+        )
+    }
+
     @objc private func applicationDidBecomeActive() {
         refreshDisplayedTimers()
     }
@@ -166,6 +176,17 @@ final class TimerViewController: UIViewController {
     @objc private func applicationDidEnterBackground() {
         refreshDisplayedTimers()
         checkpointTimerCaches()
+    }
+
+    @objc private func activityTypeDidPersist(_ notification: Notification) {
+        guard
+            let activityTypeID = notification.userInfo?[TimerSessionState.activityTypeIDUserInfoKey] as? UUID,
+            let activityType = activityType(activityTypeID: activityTypeID)
+        else {
+            return
+        }
+
+        refreshActivityTypeName(activityType)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -476,6 +497,7 @@ final class TimerViewController: UIViewController {
         let elapsedTime = timerControlsView.activeElapsedTime
         ChronomarkLiveActivityController.updateActivity(
             activityTypeID: timerControlsView.activityTypeID,
+            name: timerControlsView.activityTypeName,
             elapsedSeconds: Int(elapsedTime),
             status: "Running",
             timerStartDate: Date().addingTimeInterval(-elapsedTime)
@@ -490,6 +512,7 @@ final class TimerViewController: UIViewController {
 #endif
         ChronomarkLiveActivityController.updateActivity(
             activityTypeID: timerControlsView.activityTypeID,
+            name: timerControlsView.activityTypeName,
             elapsedSeconds: Int(timerControlsView.activeElapsedTime),
             status: "Paused",
             timerStartDate: nil,
@@ -509,11 +532,67 @@ final class TimerViewController: UIViewController {
         )
     }
 
+    private func updateLiveActivityName(
+        from timerControlsView: TimerControlsView,
+        name: String
+    ) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+        guard timerControlsView.hasActiveTimer else {
+            return
+        }
+
+        let elapsedTime = timerControlsView.activeElapsedTime
+        let isRunning = timerControlsView.activityTimerState == .running
+        ChronomarkLiveActivityController.updateActivity(
+            activityTypeID: timerControlsView.activityTypeID,
+            name: name,
+            elapsedSeconds: Int(elapsedTime),
+            status: isRunning ? "Running" : "Paused",
+            timerStartDate: isRunning ? Date().addingTimeInterval(-elapsedTime) : nil,
+            relevanceScore: isRunning ? 100 : 50
+        )
+    }
+
     private func reusableTimerControlsView(activityType: ActivityType) -> TimerControlsView? {
         removeExpiredInactiveTimerControls()
 
         return timerControlsViews.first {
             $0.activityTypeID == activityType.uniqueID
+        }
+    }
+
+    private func activityType(activityTypeID: UUID) -> ActivityType? {
+#if DEBUG
+        if isUsingScreenshotSamples {
+            return screenshotSampleActivityTypes.first { $0.uniqueID == activityTypeID }
+        }
+#endif
+        guard let modelContext else {
+            return nil
+        }
+
+        do {
+            var descriptor = FetchDescriptor<ActivityType>(
+                predicate: #Predicate { activityType in
+                    activityType.uniqueID == activityTypeID
+                }
+            )
+            descriptor.fetchLimit = 1
+            return try modelContext.fetch(descriptor).first
+        } catch {
+            assertionFailure("Unable to fetch activity type: \(error)")
+            return nil
+        }
+    }
+
+    private func refreshActivityTypeName(_ activityType: ActivityType) {
+        for timerControlsView in timerControlsViews where timerControlsView.activityTypeID == activityType.uniqueID {
+            timerControlsView.updateActivityTypeName(activityType.name)
+            updateLiveActivityName(from: timerControlsView, name: activityType.name)
         }
     }
 

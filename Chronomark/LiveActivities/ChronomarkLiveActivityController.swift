@@ -22,6 +22,7 @@ enum ChronomarkLiveActivityController {
             ),
             content: ActivityContent(
                 state: ChronomarkTimerAttributes.ContentState(
+                    activityName: name,
                     elapsedSeconds: elapsedSeconds,
                     status: status,
                     timerStartDate: timerStartDate
@@ -35,22 +36,23 @@ enum ChronomarkLiveActivityController {
 
     static func updateActivity(
         activityTypeID: UUID,
+        name: String? = nil,
         elapsedSeconds: Int,
         status: String,
         timerStartDate: Date?,
         relevanceScore: Double = 100
     ) {
-        let content = ActivityContent(
-            state: ChronomarkTimerAttributes.ContentState(
-                elapsedSeconds: elapsedSeconds,
-                status: status,
-                timerStartDate: timerStartDate
-            ),
-            staleDate: nil,
-            relevanceScore: relevanceScore
-        )
-
         for activity in activities(activityTypeID: activityTypeID) {
+            let content = ActivityContent(
+                state: ChronomarkTimerAttributes.ContentState(
+                    activityName: name ?? activity.attributes.activityName,
+                    elapsedSeconds: elapsedSeconds,
+                    status: status,
+                    timerStartDate: timerStartDate
+                ),
+                staleDate: nil,
+                relevanceScore: relevanceScore
+            )
             Task {
                 await activity.update(content)
             }
@@ -70,6 +72,7 @@ enum ChronomarkLiveActivityController {
         guard matchingActivities.isEmpty else {
             updateActivity(
                 activityTypeID: activityTypeID,
+                name: name,
                 elapsedSeconds: elapsedSeconds,
                 status: status,
                 timerStartDate: timerStartDate,
@@ -93,17 +96,17 @@ enum ChronomarkLiveActivityController {
         elapsedSeconds: Int,
         status: String = "Paused"
     ) {
-        let content = ActivityContent(
-            state: ChronomarkTimerAttributes.ContentState(
-                elapsedSeconds: elapsedSeconds,
-                status: status,
-                timerStartDate: nil
-            ),
-            staleDate: nil,
-            relevanceScore: 0
-        )
-
         for activity in activities(activityTypeID: activityTypeID) {
+            let content = ActivityContent(
+                state: ChronomarkTimerAttributes.ContentState(
+                    activityName: activity.attributes.activityName,
+                    elapsedSeconds: elapsedSeconds,
+                    status: status,
+                    timerStartDate: nil
+                ),
+                staleDate: nil,
+                relevanceScore: 0
+            )
             Task {
                 await activity.end(content, dismissalPolicy: .immediate)
             }

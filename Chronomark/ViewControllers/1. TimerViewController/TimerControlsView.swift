@@ -108,6 +108,10 @@ final class TimerControlsView: UIView {
         return activeTimeTaken
     }
 
+    func updateActivityTypeName(_ name: String) {
+        activityTypeNameLabel.text = name
+    }
+
     func startIfNeeded() {
         guard timerState == .stopped else {
             return

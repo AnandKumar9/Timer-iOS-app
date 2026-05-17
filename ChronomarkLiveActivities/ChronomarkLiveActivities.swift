@@ -86,7 +86,7 @@ private struct ChronomarkLiveActivityRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                 .layoutPriority(3)
 
-            Text(context.attributes.activityName)
+            Text(context.state.activityName)
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -156,6 +156,7 @@ struct ChronomarkLiveActivitiesBundle: WidgetBundle {
     ChronomarkLiveActivityWidget()
 } contentStates: {
     ChronomarkTimerAttributes.ContentState(
+        activityName: "Focus Session",
         elapsedSeconds: 1_245,
         status: "Running",
         timerStartDate: Date().addingTimeInterval(-1_245)
@@ -166,6 +167,7 @@ struct ChronomarkLiveActivitiesBundle: WidgetBundle {
     ChronomarkLiveActivityWidget()
 } contentStates: {
     ChronomarkTimerAttributes.ContentState(
+        activityName: "Morning commut§e - Dranesville Road",
         elapsedSeconds: 1_245,
         status: "Running",
         timerStartDate: Date().addingTimeInterval(-1_245)
