@@ -44,12 +44,18 @@ k if a type is deleted, both the activies and its cache should be cleared
 k redesign theme, explore mode designs
 k settings for dark/light mode
 
+Can edit note be an icon instead
+start stop button in live activity + background run
+intents for app suggestions
+pin activity types
+fav activity type to start from app menu
+create tag button
+server side support
+more intelligent view when history screen has plenty of data
+does there need to be a watchOS app too
 
-watchOS app
-widgets/intents (easy start/stop)
-activityhistoryvc: Better UI when there are plenty of entries, may be year/month sections.
+
 locations
 insights
-background app
 telemetry (Telemetry deck)
 exception reporting
