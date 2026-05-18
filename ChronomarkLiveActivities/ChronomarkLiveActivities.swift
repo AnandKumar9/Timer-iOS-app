@@ -22,7 +22,7 @@ struct ChronomarkLiveActivityWidget: Widget {
                 }
                 compactTrailing: {
                     ChronomarkElapsedTimeText(state: context.state)
-                        .font(.caption2.monospacedDigit().weight(.bold))
+                        .font(.caption2.monospacedDigit().weight(.semibold))
                         .foregroundStyle(Self.timerTextColor(for: context.state))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -88,7 +88,7 @@ private struct ChronomarkLiveActivityRow: View {
                 .layoutPriority(3)
 
             Text(context.state.activityName)
-                .font(.system(size: ChronomarkLiveActivityWidget.activityNameFontSize, weight: .semibold))
+                .font(.system(size: ChronomarkLiveActivityWidget.activityNameFontSize, weight: .regular))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .truncationMode(.tail)
@@ -103,7 +103,7 @@ private struct ChronomarkLiveActivityRow: View {
                     .frame(width: 18, alignment: .center)
 
                 ChronomarkElapsedTimeText(state: context.state)
-                    .font(.system(size: 21, weight: .bold, design: .monospaced))
+                    .font(.system(size: 21, weight: .semibold, design: .monospaced))
                     .foregroundStyle(ChronomarkLiveActivityWidget.timerTextColor(for: context.state))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -112,7 +112,7 @@ private struct ChronomarkLiveActivityRow: View {
             .frame(width: ChronomarkLiveActivityWidget.timerTextWidth(for: context.state) + 23, alignment: .trailing)
             .layoutPriority(3)
         }
-        .font(.caption.weight(.semibold))
+        .font(.caption.weight(.regular))
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
