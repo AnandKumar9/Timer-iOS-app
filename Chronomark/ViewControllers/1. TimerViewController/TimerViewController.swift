@@ -129,6 +129,7 @@ final class TimerViewController: UIViewController {
         }
         registerForApplicationLifecycleNotifications()
         registerForActivityTypeNotifications()
+        registerForThemeChanges()
         configureTimerPersistence()
 
         if let initialActivityType {
@@ -169,6 +170,15 @@ final class TimerViewController: UIViewController {
         )
     }
 
+    private func registerForThemeChanges() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(themeDidChange),
+            name: AppTheme.didChangeNotification,
+            object: nil
+        )
+    }
+
     @objc private func applicationDidBecomeActive() {
         refreshDisplayedTimers()
     }
@@ -187,6 +197,11 @@ final class TimerViewController: UIViewController {
         }
 
         refreshActivityTypeName(activityType)
+    }
+
+    @objc private func themeDidChange() {
+        applyTheme()
+        publishLiveActivityFontChange()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -555,6 +570,26 @@ final class TimerViewController: UIViewController {
             timerStartDate: isRunning ? Date().addingTimeInterval(-elapsedTime) : nil,
             relevanceScore: isRunning ? 100 : 50
         )
+    }
+
+    private func publishLiveActivityFontChange() {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+        for timerControlsView in timerControlsViews where timerControlsView.hasActiveTimer {
+            let elapsedTime = timerControlsView.activeElapsedTime
+            let isRunning = timerControlsView.activityTimerState == .running
+            ChronomarkLiveActivityController.updateActivity(
+                activityTypeID: timerControlsView.activityTypeID,
+                name: timerControlsView.activityTypeName,
+                elapsedSeconds: Int(elapsedTime),
+                status: isRunning ? "Running" : "Paused",
+                timerStartDate: isRunning ? Date().addingTimeInterval(-elapsedTime) : nil,
+                relevanceScore: isRunning ? 100 : 50
+            )
+        }
     }
 
     private func reusableTimerControlsView(activityType: ActivityType) -> TimerControlsView? {

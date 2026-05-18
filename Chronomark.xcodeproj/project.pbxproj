@@ -55,6 +55,12 @@
 		B00000000000000000000012 /* ChronomarkTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* ChronomarkTimerAttributes.swift */; };
 		B00000000000000000000014 /* ChronomarkLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000015 /* ChronomarkLiveActivityController.swift */; };
 		B00000000000000000000017 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* Assets.xcassets */; };
+		B00000000000000000000019 /* JetBrainsMono-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000063 /* JetBrainsMono-Light.ttf */; };
+		B0000000000000000000001A /* JetBrainsMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000064 /* JetBrainsMono-Regular.ttf */; };
+		B0000000000000000000001B /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000065 /* JetBrainsMono-Medium.ttf */; };
+		B0000000000000000000001C /* JetBrainsMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000066 /* JetBrainsMono-SemiBold.ttf */; };
+		B0000000000000000000001D /* JetBrainsMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000067 /* JetBrainsMono-Bold.ttf */; };
+		B0000000000000000000001E /* Manrope[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000068 /* Manrope[wght].ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -429,6 +435,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				B00000000000000000000017 /* Assets.xcassets in Resources */,
+				B00000000000000000000019 /* JetBrainsMono-Light.ttf in Resources */,
+				B0000000000000000000001A /* JetBrainsMono-Regular.ttf in Resources */,
+				B0000000000000000000001B /* JetBrainsMono-Medium.ttf in Resources */,
+				B0000000000000000000001C /* JetBrainsMono-SemiBold.ttf in Resources */,
+				B0000000000000000000001D /* JetBrainsMono-Bold.ttf in Resources */,
+				B0000000000000000000001E /* Manrope[wght].ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

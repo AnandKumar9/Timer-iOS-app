@@ -22,7 +22,7 @@ struct ChronomarkLiveActivityWidget: Widget {
                 }
                 compactTrailing: {
                     ChronomarkElapsedTimeText(state: context.state)
-                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .font(Self.elapsedTimeFont(for: context.state, size: 11))
                         .foregroundStyle(Self.timerTextColor(for: context.state))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -63,6 +63,20 @@ struct ChronomarkLiveActivityWidget: Widget {
     static func timerTextWidth(for state: ChronomarkTimerAttributes.ContentState) -> CGFloat {
         state.elapsedSeconds >= 3_600 ? 98 : 68
     }
+
+    static func activityNameFont(for state: ChronomarkTimerAttributes.ContentState) -> Font {
+        ChronomarkLiveActivityFont.resolved(rawValue: state.fontRawValue)
+            .font(size: activityNameFontSize, weight: .regular)
+    }
+
+    static func elapsedTimeFont(
+        for state: ChronomarkTimerAttributes.ContentState,
+        size: CGFloat
+    ) -> Font {
+        ChronomarkLiveActivityFont.resolved(rawValue: state.fontRawValue)
+            .font(size: size, weight: .semibold)
+            .monospacedDigit()
+    }
 }
 
 private struct ChronomarkLockScreenLiveActivityView: View {
@@ -88,7 +102,7 @@ private struct ChronomarkLiveActivityRow: View {
                 .layoutPriority(3)
 
             Text(context.state.activityName)
-                .font(.system(size: ChronomarkLiveActivityWidget.activityNameFontSize, weight: .regular))
+                .font(ChronomarkLiveActivityWidget.activityNameFont(for: context.state))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .truncationMode(.tail)
@@ -103,7 +117,7 @@ private struct ChronomarkLiveActivityRow: View {
                     .frame(width: 18, alignment: .center)
 
                 ChronomarkElapsedTimeText(state: context.state)
-                    .font(.system(size: 21, weight: .semibold, design: .monospaced))
+                    .font(ChronomarkLiveActivityWidget.elapsedTimeFont(for: context.state, size: 21))
                     .foregroundStyle(ChronomarkLiveActivityWidget.timerTextColor(for: context.state))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -115,6 +129,37 @@ private struct ChronomarkLiveActivityRow: View {
         .font(.caption.weight(.regular))
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+}
+
+private enum ChronomarkLiveActivityFont: String {
+    case jetBrainsMono
+    case manrope
+
+    func font(size: CGFloat, weight: ChronomarkLiveActivityFontWeight) -> Font {
+        .custom(fontName(for: weight), size: size)
+    }
+
+    private func fontName(for weight: ChronomarkLiveActivityFontWeight) -> String {
+        switch (self, weight) {
+        case (.jetBrainsMono, .regular):
+            return "JetBrainsMono-Regular"
+        case (.jetBrainsMono, .semibold):
+            return "JetBrainsMono-SemiBold"
+        case (.manrope, .regular):
+            return "Manrope-Regular"
+        case (.manrope, .semibold):
+            return "Manrope-SemiBold"
+        }
+    }
+
+    static func resolved(rawValue: String) -> Self {
+        Self(rawValue: rawValue) ?? .manrope
+    }
+}
+
+private enum ChronomarkLiveActivityFontWeight {
+    case regular
+    case semibold
 }
 
 private struct ChronomarkElapsedTimeText: View {
@@ -161,7 +206,8 @@ struct ChronomarkLiveActivitiesBundle: WidgetBundle {
         activityName: "Focus Session",
         elapsedSeconds: 1_245,
         status: "Running",
-        timerStartDate: Date().addingTimeInterval(-1_245)
+        timerStartDate: Date().addingTimeInterval(-1_245),
+        fontRawValue: "manrope"
     )
 }
 
@@ -172,6 +218,7 @@ struct ChronomarkLiveActivitiesBundle: WidgetBundle {
         activityName: "Morning commut§e - Dranesville Road",
         elapsedSeconds: 1_245,
         status: "Running",
-        timerStartDate: Date().addingTimeInterval(-1_245)
+        timerStartDate: Date().addingTimeInterval(-1_245),
+        fontRawValue: "jetBrainsMono"
     )
 }

@@ -7,6 +7,7 @@ struct ChronomarkTimerAttributes: ActivityAttributes {
         var elapsedSeconds: Int
         var status: String
         var timerStartDate: Date?
+        var fontRawValue: String
     }
 
     var activityTypeUniqueID: UUID
