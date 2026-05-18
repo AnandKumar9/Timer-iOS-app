@@ -2,7 +2,7 @@ import UIKit
 import SwiftData
 
 final class ActivityDetailsViewController: UIViewController {
-    private static let noteCharacterLimit = 25
+    private static let noteCharacterLimit = 35
     private static let editControlForegroundColor = UIColor { traitCollection in
         traitCollection.userInterfaceStyle == .light ? .black : AppTheme.accent
     }
@@ -64,6 +64,122 @@ final class ActivityDetailsViewController: UIViewController {
                 textStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
                 textStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
             ])
+        }
+    }
+
+    private final class EditableNoteRowView: UIControl {
+        private let iconView = UIImageView()
+        private let titleLabel = UILabel()
+        private let valueLabel = UILabel()
+        private let accessoryImageView = UIImageView()
+
+        init(
+            note: String?,
+            placeholderColor: UIColor = AppTheme.metadataText,
+            accessorySystemName: String? = "chevron.right",
+            accessibilityLabel: String? = nil
+        ) {
+            super.init(frame: .zero)
+            configure(
+                note: note,
+                placeholderColor: placeholderColor,
+                accessorySystemName: accessorySystemName,
+                accessibilityLabel: accessibilityLabel
+            )
+        }
+
+        required init?(coder: NSCoder) {
+            super.init(coder: coder)
+            configure(
+                note: nil,
+                placeholderColor: AppTheme.metadataText,
+                accessorySystemName: "chevron.right",
+                accessibilityLabel: nil
+            )
+        }
+
+        override var isHighlighted: Bool {
+            didSet {
+                alpha = isHighlighted ? 0.65 : 1
+            }
+        }
+
+        private func configure(
+            note: String?,
+            placeholderColor: UIColor,
+            accessorySystemName: String?,
+            accessibilityLabel: String?
+        ) {
+            let textStackView = UIStackView()
+            let contentStackView = UIStackView()
+            let value = note ?? "Add a note"
+
+            backgroundColor = .clear
+            accessibilityTraits.insert(.button)
+            self.accessibilityLabel = accessibilityLabel ?? (note == nil ? "Add a note" : "Edit note")
+
+            iconView.image = UIImage(systemName: "text.bubble")
+            iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            iconView.tintColor = AppTheme.metadataText
+            iconView.contentMode = .scaleAspectFit
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+
+            titleLabel.text = "Note"
+            titleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+            titleLabel.textColor = AppTheme.metadataText
+            titleLabel.numberOfLines = 1
+
+            valueLabel.text = value
+            valueLabel.font = AppTheme.roundedFont(ofSize: 17, weight: .medium)
+            valueLabel.textColor = note == nil ? placeholderColor : AppTheme.primaryText
+            valueLabel.numberOfLines = 0
+            valueLabel.lineBreakMode = .byWordWrapping
+
+            if let accessorySystemName {
+                accessoryImageView.image = UIImage(systemName: accessorySystemName)
+                accessoryImageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+                accessoryImageView.tintColor = AppTheme.metadataText
+                accessoryImageView.contentMode = .scaleAspectFit
+                accessoryImageView.translatesAutoresizingMaskIntoConstraints = false
+            }
+
+            textStackView.axis = .vertical
+            textStackView.spacing = 3
+            textStackView.isUserInteractionEnabled = false
+            textStackView.addArrangedSubview(titleLabel)
+            textStackView.addArrangedSubview(valueLabel)
+
+            contentStackView.axis = .horizontal
+            contentStackView.alignment = .center
+            contentStackView.spacing = 10
+            contentStackView.isUserInteractionEnabled = false
+            contentStackView.translatesAutoresizingMaskIntoConstraints = false
+            contentStackView.addArrangedSubview(textStackView)
+            if accessorySystemName != nil {
+                contentStackView.addArrangedSubview(accessoryImageView)
+            }
+
+            addSubview(iconView)
+            addSubview(contentStackView)
+
+            NSLayoutConstraint.activate([
+                iconView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                iconView.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+                iconView.widthAnchor.constraint(equalToConstant: 26),
+                iconView.heightAnchor.constraint(equalToConstant: 26),
+
+                contentStackView.topAnchor.constraint(equalTo: topAnchor),
+                contentStackView.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
+                contentStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                contentStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+
+            if accessorySystemName != nil {
+                NSLayoutConstraint.activate([
+                    accessoryImageView.widthAnchor.constraint(equalToConstant: 16),
+                    accessoryImageView.heightAnchor.constraint(equalToConstant: 16)
+                ])
+            }
         }
     }
 
@@ -231,6 +347,20 @@ final class ActivityDetailsViewController: UIViewController {
             setEditingActivityDetails(true)
         }
 #endif
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        updateBackNavigationBehavior()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if isMovingFromParent || isBeingDismissed {
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        }
     }
 
     deinit {
@@ -500,11 +630,7 @@ final class ActivityDetailsViewController: UIViewController {
                 completionDateRow
             ]
 
-            if let notes = currentNotesText(for: activity) {
-                rows.append(DetailRowView(iconName: "text.bubble", title: "Note", value: notes))
-            }
-
-            rows.append(makeAddNoteButton())
+            rows.append(makeEditableNoteRow(note: currentNotesText(for: activity)))
             rows.append(makeDeleteActivityButton())
             setDetailRows(rows)
             return
@@ -521,6 +647,8 @@ final class ActivityDetailsViewController: UIViewController {
 
         if let notes = currentNotesText(for: activity) {
             rows.append(DetailRowView(iconName: "text.bubble", title: "Note", value: notes))
+        } else {
+            rows.append(makeAddNoteCTAView())
         }
 
         setDetailRows(rows)
@@ -592,31 +720,34 @@ final class ActivityDetailsViewController: UIViewController {
         return button
     }
 
-    private func makeAddNoteButton() -> UIButton {
-        var configuration = UIButton.Configuration.tinted()
-        configuration.title = activity.flatMap(currentNotesText) == nil ? "Add a Note" : "Edit Note"
-        configuration.image = UIImage(systemName: "note.text")
-        configuration.imagePadding = 8
-        configuration.baseForegroundColor = Self.editControlForegroundColor
-        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
-
-        let button = UIButton(type: .system)
-        button.configuration = configuration
-        button.layer.cornerRadius = 8
-        button.layer.cornerCurve = .continuous
-        button.clipsToBounds = true
-        button.heightAnchor.constraint(equalToConstant: 48).isActive = true
-        button.accessibilityLabel = configuration.title
-        button.addAction(
+    private func makeEditableNoteRow(note: String?) -> EditableNoteRowView {
+        let row = EditableNoteRowView(note: note, placeholderColor: Self.editControlForegroundColor)
+        row.addAction(
             UIAction { [weak self] _ in
-                self?.presentNoteEditor()
+                self?.presentNoteEditor(savesImmediately: false)
             },
             for: .touchUpInside
         )
-        return button
+        return row
     }
 
-    private func presentNoteEditor() {
+    private func makeAddNoteCTAView() -> EditableNoteRowView {
+        let row = EditableNoteRowView(
+            note: nil,
+            placeholderColor: Self.editControlForegroundColor,
+            accessorySystemName: nil,
+            accessibilityLabel: "Add note"
+        )
+        row.addAction(
+            UIAction { [weak self] _ in
+                self?.presentNoteEditor(savesImmediately: true)
+            },
+            for: .touchUpInside
+        )
+        return row
+    }
+
+    private func presentNoteEditor(savesImmediately: Bool) {
         guard let activity else {
             return
         }
@@ -654,7 +785,11 @@ final class ActivityDetailsViewController: UIViewController {
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alertController.addAction(
             UIAlertAction(title: "Done", style: .default) { [weak self, weak noteTextField] _ in
-                self?.stageActivityNote(noteTextField?.text)
+                if savesImmediately {
+                    self?.saveActivityNoteImmediately(noteTextField?.text)
+                } else {
+                    self?.stageActivityNote(noteTextField?.text)
+                }
             }
         )
 
@@ -699,8 +834,31 @@ final class ActivityDetailsViewController: UIViewController {
         }
 
         isEditingActivityDetails = isEditing
+        updateBackNavigationBehavior()
         updateEditSaveButtonAppearance()
         populateActivityDetails()
+    }
+
+    private func updateBackNavigationBehavior() {
+        navigationItem.leftBarButtonItem = isEditingActivityDetails
+            ? UIBarButtonItem(
+                image: UIImage(systemName: "chevron.left"),
+                style: .plain,
+                target: self,
+                action: #selector(backButtonTapped)
+            )
+            : nil
+        navigationItem.leftBarButtonItem?.accessibilityLabel = "Back"
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = !isEditingActivityDetails
+    }
+
+    @objc private func backButtonTapped() {
+        guard isEditingActivityDetails, hasEditedActivityDetails else {
+            navigationController?.popViewController(animated: true)
+            return
+        }
+
+        presentUnsavedChangesBeforeBackAlert()
     }
 
     private func updateEditSaveButtonAppearance() {
@@ -761,6 +919,30 @@ final class ActivityDetailsViewController: UIViewController {
         }
     }
 
+    private func saveActivityNoteImmediately(_ note: String?) {
+#if DEBUG
+        guard screenshotSampleActivityTypes.isEmpty else {
+            activity?.activityNotes = normalizedNote(note)
+            populateActivityDetails()
+            return
+        }
+#endif
+        guard let activity, let modelContext else {
+            return
+        }
+
+        activity.activityNotes = normalizedNote(note)
+
+        do {
+            try modelContext.save()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activity.activityType.uniqueID)
+            populateActivityDetails()
+        } catch {
+            assertionFailure("Unable to save activity note: \(error)")
+            presentSaveActivityDetailsErrorAlert()
+        }
+    }
+
     private func stageActivityNote(_ note: String?) {
         let currentStartDate = startDatePicker?.date
         let currentCompletionDate = completionDatePicker?.date
@@ -806,6 +988,23 @@ final class ActivityDetailsViewController: UIViewController {
                 self?.saveActivityDetails()
             }
         )
+
+        present(alertController, animated: true)
+    }
+
+    private func presentUnsavedChangesBeforeBackAlert() {
+        let alertController = UIAlertController(
+            title: "Discard Unsaved Changes?",
+            message: "Your edits to this activity will be lost.",
+            preferredStyle: .alert
+        )
+
+        alertController.addAction(
+            UIAlertAction(title: "Discard", style: .destructive) { [weak self] _ in
+                self?.navigationController?.popViewController(animated: true)
+            }
+        )
+        alertController.addAction(UIAlertAction(title: "Keep Editing", style: .cancel))
 
         present(alertController, animated: true)
     }
