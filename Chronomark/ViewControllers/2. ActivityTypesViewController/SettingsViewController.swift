@@ -1,13 +1,50 @@
 import UIKit
 
+enum ActivityTypesSortOrder: String, CaseIterable {
+    case latestActivity
+    case activityName
+
+    var displayName: String {
+        switch self {
+        case .activityName:
+            return "Alphabetically by activity name"
+        case .latestActivity:
+            return "Latest activity first"
+        }
+    }
+}
+
 enum AppSettings {
+    static let activityTypesSortOrderDidChangeNotification = Notification.Name("AppSettings.activityTypesSortOrderDidChangeNotification")
     static let durationDisplayDidChangeNotification = Notification.Name("AppSettings.durationDisplayDidChangeNotification")
 
+    private static let activityTypesSortOrderKey = "activityTypesSortOrder"
     private static let alertWhenTimersRestoredKey = "alertWhenTimersRestored"
     private static let restoreWindowHoursKey = "restoreWindowHours"
     private static let showDurationSecondsKey = "showDurationSeconds"
     private static let defaultRestoreWindowHours = 8
     static let restoreWindowHourOptions = [4, 8, 24]
+
+    static var activityTypesSortOrder: ActivityTypesSortOrder {
+        get {
+            guard
+                let rawValue = UserDefaults.standard.string(forKey: activityTypesSortOrderKey),
+                let sortOrder = ActivityTypesSortOrder(rawValue: rawValue)
+            else {
+                return .activityName
+            }
+
+            return sortOrder
+        }
+        set {
+            guard newValue != activityTypesSortOrder else {
+                return
+            }
+
+            UserDefaults.standard.set(newValue.rawValue, forKey: activityTypesSortOrderKey)
+            NotificationCenter.default.post(name: activityTypesSortOrderDidChangeNotification, object: nil)
+        }
+    }
 
     static var alertWhenTimersRestored: Bool {
         get {
@@ -351,8 +388,10 @@ final class SettingsViewController: UIViewController {
     )
     private var fontButtons: [AppFont: OptionButton] = [:]
     private var accentButtons: [AppAccentColor: AccentSwatchButton] = [:]
+    private var sortOrderButtons: [ActivityTypesSortOrder: OptionButton] = [:]
     private var settingsRows: [SettingsRow] = []
     private var sectionTitleLabels: [UILabel] = []
+    private var sectionDescriptionLabels: [UILabel] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -415,6 +454,7 @@ final class SettingsViewController: UIViewController {
         contentStackView.addArrangedSubview(makeAppearanceSection())
         contentStackView.addArrangedSubview(makeSection(title: "Font", contentView: makeFontOptionsView()))
         contentStackView.addArrangedSubview(makeSection(title: "Accent Color", contentView: makeAccentOptionsView()))
+        contentStackView.addArrangedSubview(makeSortOrderSection())
         contentStackView.addArrangedSubview(makeTimeDisplaySection())
         contentStackView.addArrangedSubview(makeTimerBehaviorSection())
         contentStackView.addArrangedSubview(makeFooterSection())
@@ -461,6 +501,37 @@ final class SettingsViewController: UIViewController {
                 trailingView: alertWhenRestoredSwitch
             )
         )
+
+        return stackView
+    }
+
+    private func makeSortOrderSection() -> UIView {
+        let titleLabel = makeSectionTitleLabel("Sort Order")
+        let descriptionLabel = makeSectionDescriptionLabel("Display order of activity types.")
+        let stackView = UIStackView(arrangedSubviews: [titleLabel, descriptionLabel, makeSortOrderOptionsView()])
+        stackView.axis = .vertical
+        stackView.spacing = 10
+        return stackView
+    }
+
+    private func makeSortOrderOptionsView() -> UIView {
+        let stackView = makeOptionsStackView()
+
+        ActivityTypesSortOrder.allCases.forEach { sortOrder in
+            let button = OptionButton()
+            button.title = sortOrder.displayName
+            button.titleFont = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
+            button.addAction(
+                UIAction { [weak self] _ in
+                    AppSettings.activityTypesSortOrder = sortOrder
+                    self?.updateSelections()
+                    self?.applyTheme()
+                },
+                for: .touchUpInside
+            )
+            sortOrderButtons[sortOrder] = button
+            stackView.addArrangedSubview(button)
+        }
 
         return stackView
     }
@@ -659,6 +730,17 @@ final class SettingsViewController: UIViewController {
         return titleLabel
     }
 
+    private func makeSectionDescriptionLabel(_ text: String) -> UILabel {
+        let descriptionLabel = UILabel()
+        descriptionLabel.text = text
+        descriptionLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+        descriptionLabel.textColor = AppTheme.metadataText
+        descriptionLabel.textAlignment = .natural
+        descriptionLabel.numberOfLines = 0
+        sectionDescriptionLabels.append(descriptionLabel)
+        return descriptionLabel
+    }
+
     private func makeAppearanceButton(
         systemImageName: String,
         accessibilityLabel: String,
@@ -724,6 +806,10 @@ final class SettingsViewController: UIViewController {
         accentButtons.forEach { accentColor, button in
             button.isSelected = accentColor == AppTheme.selectedAccentColor
         }
+
+        sortOrderButtons.forEach { sortOrder, button in
+            button.isSelected = sortOrder == AppSettings.activityTypesSortOrder
+        }
     }
 
     private func applyTheme() {
@@ -747,12 +833,22 @@ final class SettingsViewController: UIViewController {
             titleLabel.textColor = AppTheme.metadataText
         }
 
+        sectionDescriptionLabels.forEach { descriptionLabel in
+            descriptionLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+            descriptionLabel.textColor = AppTheme.metadataText
+        }
+
         fontButtons.forEach { font, button in
             button.titleFont = AppTheme.font(font, ofSize: 17, weight: .semibold)
             button.applyTheme()
         }
 
         accentButtons.forEach { _, button in button.applyTheme() }
+
+        sortOrderButtons.forEach { _, button in
+            button.titleFont = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
+            button.applyTheme()
+        }
 
         settingsRows.forEach { $0.applyTheme() }
     }

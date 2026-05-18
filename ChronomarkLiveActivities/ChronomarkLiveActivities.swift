@@ -22,7 +22,13 @@ struct ChronomarkLiveActivityWidget: Widget {
                 }
                 compactTrailing: {
                     ChronomarkElapsedTimeText(state: context.state)
-                        .font(.caption2.monospacedDigit().weight(.bold))
+                        .font(
+                            context.state.liveActivityFont.swiftUIFont(
+                                size: 11,
+                                weight: .semibold,
+                                relativeTo: .caption2
+                            )
+                        )
                         .foregroundStyle(Self.timerTextColor(for: context.state))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -88,7 +94,12 @@ private struct ChronomarkLiveActivityRow: View {
                 .layoutPriority(3)
 
             Text(context.state.activityName)
-                .font(.system(size: ChronomarkLiveActivityWidget.activityNameFontSize, weight: .semibold))
+                .font(
+                    context.state.liveActivityFont.swiftUIFont(
+                        size: ChronomarkLiveActivityWidget.activityNameFontSize,
+                        weight: .regular
+                    )
+                )
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .truncationMode(.tail)
@@ -103,7 +114,12 @@ private struct ChronomarkLiveActivityRow: View {
                     .frame(width: 18, alignment: .center)
 
                 ChronomarkElapsedTimeText(state: context.state)
-                    .font(.system(size: 21, weight: .bold, design: .monospaced))
+                    .font(
+                        context.state.liveActivityFont.swiftUIFont(
+                            size: 21,
+                            weight: .semibold
+                        )
+                    )
                     .foregroundStyle(ChronomarkLiveActivityWidget.timerTextColor(for: context.state))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -112,7 +128,13 @@ private struct ChronomarkLiveActivityRow: View {
             .frame(width: ChronomarkLiveActivityWidget.timerTextWidth(for: context.state) + 23, alignment: .trailing)
             .layoutPriority(3)
         }
-        .font(.caption.weight(.semibold))
+        .font(
+            context.state.liveActivityFont.swiftUIFont(
+                size: 12,
+                weight: .regular,
+                relativeTo: .caption
+            )
+        )
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -132,6 +154,27 @@ private struct ChronomarkElapsedTimeText: View {
                 .monospacedDigit()
                 .contentTransition(.numericText())
         }
+    }
+}
+
+private extension ChronomarkTimerAttributes.ContentState {
+    var liveActivityFont: ChronomarkLiveActivityFont {
+        ChronomarkLiveActivityFont(rawValueOrDefault: fontRawValue)
+    }
+}
+
+private extension ChronomarkLiveActivityFont {
+    func swiftUIFont(
+        size: CGFloat,
+        weight: ChronomarkLiveActivityFontWeight,
+        relativeTo textStyle: Font.TextStyle? = nil
+    ) -> Font {
+        let fontName = fontName(for: weight)
+        guard let textStyle else {
+            return .custom(fontName, size: size)
+        }
+
+        return .custom(fontName, size: size, relativeTo: textStyle)
     }
 }
 

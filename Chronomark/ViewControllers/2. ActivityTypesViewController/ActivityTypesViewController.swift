@@ -371,6 +371,12 @@ final class ActivityTypesViewController: UIViewController {
             name: AppSettings.durationDisplayDidChangeNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(activityTypesSortOrderDidChange),
+            name: AppSettings.activityTypesSortOrderDidChangeNotification,
+            object: nil
+        )
     }
 
     private func registerForThemeChanges() {
@@ -465,6 +471,25 @@ final class ActivityTypesViewController: UIViewController {
         _ lhs: ActivityTypeRow,
         _ rhs: ActivityTypeRow
     ) -> Bool {
+        switch AppSettings.activityTypesSortOrder {
+        case .activityName:
+            return activityTypeNameSort(lhs, rhs)
+        case .latestActivity:
+            return latestActivitySort(lhs, rhs)
+        }
+    }
+
+    private func activityTypeNameSort(
+        _ lhs: ActivityTypeRow,
+        _ rhs: ActivityTypeRow
+    ) -> Bool {
+        lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+    }
+
+    private func latestActivitySort(
+        _ lhs: ActivityTypeRow,
+        _ rhs: ActivityTypeRow
+    ) -> Bool {
         switch (lhs.latestActivityStartTime, rhs.latestActivityStartTime) {
         case let (lhsDate?, rhsDate?) where lhsDate != rhsDate:
             return lhsDate > rhsDate
@@ -473,7 +498,7 @@ final class ActivityTypesViewController: UIViewController {
         case (.none, .some):
             return false
         default:
-            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            return activityTypeNameSort(lhs, rhs)
         }
     }
 
@@ -507,6 +532,10 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     @objc private func durationDisplayDidChange() {
+        loadActivityTypes()
+    }
+
+    @objc private func activityTypesSortOrderDidChange() {
         loadActivityTypes()
     }
 

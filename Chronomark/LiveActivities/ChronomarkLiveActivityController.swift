@@ -25,7 +25,8 @@ enum ChronomarkLiveActivityController {
                     activityName: name,
                     elapsedSeconds: elapsedSeconds,
                     status: status,
-                    timerStartDate: timerStartDate
+                    timerStartDate: timerStartDate,
+                    fontRawValue: AppTheme.selectedFont.rawValue
                 ),
                 staleDate: nil,
                 relevanceScore: relevanceScore
@@ -48,7 +49,8 @@ enum ChronomarkLiveActivityController {
                     activityName: name ?? activity.attributes.activityName,
                     elapsedSeconds: elapsedSeconds,
                     status: status,
-                    timerStartDate: timerStartDate
+                    timerStartDate: timerStartDate,
+                    fontRawValue: AppTheme.selectedFont.rawValue
                 ),
                 staleDate: nil,
                 relevanceScore: relevanceScore
@@ -91,6 +93,26 @@ enum ChronomarkLiveActivityController {
         )
     }
 
+    static func updateAllActivitiesFont(fontRawValue: String = AppTheme.selectedFont.rawValue) {
+        for activity in ActivityKit.Activity<ChronomarkTimerAttributes>.activities {
+            var state = activity.content.state
+            guard state.fontRawValue != fontRawValue else {
+                continue
+            }
+
+            state.fontRawValue = fontRawValue
+            let content = ActivityContent(
+                state: state,
+                staleDate: activity.content.staleDate,
+                relevanceScore: activity.content.relevanceScore
+            )
+
+            Task {
+                await activity.update(content)
+            }
+        }
+    }
+
     static func endActivity(
         activityTypeID: UUID,
         elapsedSeconds: Int,
@@ -102,7 +124,8 @@ enum ChronomarkLiveActivityController {
                     activityName: activity.attributes.activityName,
                     elapsedSeconds: elapsedSeconds,
                     status: status,
-                    timerStartDate: nil
+                    timerStartDate: nil,
+                    fontRawValue: AppTheme.selectedFont.rawValue
                 ),
                 staleDate: nil,
                 relevanceScore: 0

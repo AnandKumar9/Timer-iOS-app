@@ -21,6 +21,7 @@ enum AppTheme: AppPalette {
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: selectedFontKey)
             applyThemeChange()
+            ChronomarkLiveActivityController.updateAllActivitiesFont(fontRawValue: newValue.rawValue)
         }
     }
 
