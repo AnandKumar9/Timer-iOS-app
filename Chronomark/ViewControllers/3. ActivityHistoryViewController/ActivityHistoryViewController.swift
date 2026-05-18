@@ -645,6 +645,10 @@ final class ActivityHistoryViewController: UIViewController {
         do {
             try modelContext.save()
             TimerSessionState.notifyActivityPersisted(activityTypeID: activityType.uniqueID)
+            NotificationCenter.default.post(
+                name: ActivityTagFilterPersistence.activityTypeTagsDidChangeNotification,
+                object: nil
+            )
         } catch {
             assertionFailure("Unable to attach created tag: \(error)")
             presentSaveTagsErrorAlert()
@@ -664,6 +668,10 @@ final class ActivityHistoryViewController: UIViewController {
 
             try modelContext.save()
             TimerSessionState.notifyActivityPersisted(activityTypeID: activityType.uniqueID)
+            NotificationCenter.default.post(
+                name: ActivityTagFilterPersistence.activityTypeTagsDidChangeNotification,
+                object: nil
+            )
         } catch {
             assertionFailure("Unable to save activity type tags: \(error)")
             presentSaveTagsErrorAlert()

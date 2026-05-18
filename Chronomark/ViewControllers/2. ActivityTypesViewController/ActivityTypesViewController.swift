@@ -1,6 +1,82 @@
 import UIKit
 import SwiftData
 
+enum ActivityTagFilterPersistence {
+    static let activityTypeTagsDidChangeNotification = Notification.Name("ActivityTagFilterPersistence.activityTypeTagsDidChangeNotification")
+
+    private static let selectedTagNamesKey = "ActivityTypesViewController.selectedTagNames"
+
+    static func reconcilePersistedSelection(modelContext: ModelContext) -> Set<UUID> {
+        let selectedTagIDs = selectedTagIDsMatchingPersistedNames(modelContext: modelContext)
+        persistSelectedTagIDs(selectedTagIDs, modelContext: modelContext)
+        return selectedTagIDs
+    }
+
+    static func persistSelectedTagIDs(_ selectedTagIDs: Set<UUID>, modelContext: ModelContext?) {
+        guard !selectedTagIDs.isEmpty else {
+            UserDefaults.standard.removeObject(forKey: selectedTagNamesKey)
+            return
+        }
+
+        guard let modelContext else {
+            return
+        }
+
+        do {
+            let tags = try modelContext.fetch(FetchDescriptor<ActivityTag>())
+            let selectedNames = tags
+                .filter { selectedTagIDs.contains($0.uniqueID) }
+                .map(\.name)
+            persistSelectedTagNames(selectedNames)
+        } catch {
+            assertionFailure("Unable to persist selected tag names: \(error)")
+        }
+    }
+
+    private static func selectedTagIDsMatchingPersistedNames(modelContext: ModelContext) -> Set<UUID> {
+        let persistedNames = Set(selectedTagNames().map(normalizeTagName))
+        guard !persistedNames.isEmpty else {
+            return []
+        }
+
+        do {
+            let tags = try modelContext.fetch(FetchDescriptor<ActivityTag>())
+            return Set(
+                tags
+                    .filter { persistedNames.contains(normalizeTagName($0.name)) }
+                    .map(\.uniqueID)
+            )
+        } catch {
+            assertionFailure("Unable to restore selected tag names: \(error)")
+            return []
+        }
+    }
+
+    private static func selectedTagNames() -> [String] {
+        UserDefaults.standard.stringArray(forKey: selectedTagNamesKey) ?? []
+    }
+
+    private static func persistSelectedTagNames(_ names: [String]) {
+        let trimmedNames = names
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let uniqueNames = Array(Set(trimmedNames))
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+
+        if uniqueNames.isEmpty {
+            UserDefaults.standard.removeObject(forKey: selectedTagNamesKey)
+        } else {
+            UserDefaults.standard.set(uniqueNames, forKey: selectedTagNamesKey)
+        }
+    }
+
+    private static func normalizeTagName(_ name: String) -> String {
+        name
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .localizedLowercase
+    }
+}
+
 final class ActivityTypesViewController: UIViewController {
     private struct ActivityTypeRow {
         let activityType: ActivityType
@@ -252,6 +328,8 @@ final class ActivityTypesViewController: UIViewController {
         registerForThemeChanges()
         configureTimerNotifications()
         configureSettingsNotifications()
+        configureTagFilterNotifications()
+        restoreSelectedTagFilterFromDefaults()
         loadActivityTypes()
     }
 
@@ -259,6 +337,7 @@ final class ActivityTypesViewController: UIViewController {
         super.viewWillAppear(animated)
 
         applyTheme()
+        restoreSelectedTagFilterFromDefaults()
         loadActivityTypes()
     }
 
@@ -379,6 +458,15 @@ final class ActivityTypesViewController: UIViewController {
         )
     }
 
+    private func configureTagFilterNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(activityTypeTagsDidChange),
+            name: ActivityTagFilterPersistence.activityTypeTagsDidChangeNotification,
+            object: nil
+        )
+    }
+
     private func registerForThemeChanges() {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
             viewController.applyTheme()
@@ -422,6 +510,37 @@ final class ActivityTypesViewController: UIViewController {
         }
     }
 
+    private func restoreSelectedTagFilterFromDefaults() {
+#if DEBUG
+        guard screenshotSampleActivityTypes.isEmpty else {
+            return
+        }
+#endif
+        guard let modelContext else {
+            selectedTagIDs = []
+            return
+        }
+
+        selectedTagIDs = ActivityTagFilterPersistence.reconcilePersistedSelection(modelContext: modelContext)
+    }
+
+    private func persistSelectedTagFilter() {
+        ActivityTagFilterPersistence.persistSelectedTagIDs(selectedTagIDs, modelContext: modelContext)
+    }
+
+    private func reconcileSelectedTagFilterAfterTagsChanged() {
+#if DEBUG
+        guard screenshotSampleActivityTypes.isEmpty else {
+            return
+        }
+#endif
+        guard let modelContext else {
+            return
+        }
+
+        selectedTagIDs = ActivityTagFilterPersistence.reconcilePersistedSelection(modelContext: modelContext)
+    }
+
     private func makeActivityTypeRow(from activityType: ActivityType) -> ActivityTypeRow {
         let latestActivity = latestCompletedActivity(for: activityType)
 
@@ -447,7 +566,7 @@ final class ActivityTypesViewController: UIViewController {
         }
 
         let activityTypeTagIDs = Set(activityType.tags?.map(\.uniqueID) ?? [])
-        return selectedTagIDs.allSatisfy { activityTypeTagIDs.contains($0) }
+        return selectedTagIDs.contains { activityTypeTagIDs.contains($0) }
     }
 
     private func latestCompletedActivity(for activityType: ActivityType) -> Activity? {
@@ -529,6 +648,11 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     @objc private func activityTypeDisplayOrderDidChange() {
+        loadActivityTypes()
+    }
+
+    @objc private func activityTypeTagsDidChange() {
+        reconcileSelectedTagFilterAfterTagsChanged()
         loadActivityTypes()
     }
 
@@ -675,7 +799,7 @@ final class ActivityTypesViewController: UIViewController {
         tagsButton.translatesAutoresizingMaskIntoConstraints = false
         tagsButton.contentHorizontalAlignment = .center
         tagsButton.contentVerticalAlignment = .center
-        tagsButton.widthAnchor.constraint(equalToConstant: 48).isActive = true
+        tagsButton.widthAnchor.constraint(equalToConstant: 58).isActive = true
         tagsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
         tagsButton.addAction(
             UIAction { [weak self] _ in
@@ -721,9 +845,11 @@ final class ActivityTypesViewController: UIViewController {
         tagsManagementViewController.selectedTagIDs = selectedTagIDs
         tagsManagementViewController.onSelectionChange = { [weak self] selectedTagIDs in
             self?.selectedTagIDs = selectedTagIDs
+            self?.persistSelectedTagFilter()
             self?.loadActivityTypes()
         }
         tagsManagementViewController.onTagsChange = { [weak self] in
+            self?.persistSelectedTagFilter()
             self?.loadActivityTypes()
         }
         tagsManagementViewController.modalPresentationStyle = .pageSheet
