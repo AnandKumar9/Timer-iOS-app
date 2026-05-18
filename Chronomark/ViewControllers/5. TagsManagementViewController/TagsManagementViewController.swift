@@ -110,6 +110,11 @@ final class TagsManagementViewController: UIViewController {
     private let emptyStateLabel = UILabel()
     private let tagLimitMessageLabel = UILabel()
     private let createTagButton = UIButton(type: .system)
+    private let primaryActionButton = UIButton(type: .system)
+    private var collectionViewTopToTitleConstraint: NSLayoutConstraint?
+    private var collectionViewTopToTagLimitConstraint: NSLayoutConstraint?
+    private var collectionViewBottomToSafeAreaConstraint: NSLayoutConstraint?
+    private var collectionViewBottomToPrimaryActionConstraint: NSLayoutConstraint?
     private var tagRows: [TagRow] = []
     private var initialSelectedTagIDs: Set<UUID> = []
 
@@ -186,42 +191,65 @@ final class TagsManagementViewController: UIViewController {
         tagLimitMessageLabel.text = "Up to 7 tags for now"
         tagLimitMessageLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .regular)
         tagLimitMessageLabel.textColor = AppTheme.metadataText
-        tagLimitMessageLabel.textAlignment = .right
+        tagLimitMessageLabel.textAlignment = .left
         tagLimitMessageLabel.numberOfLines = 2
         tagLimitMessageLabel.isHidden = true
         tagLimitMessageLabel.translatesAutoresizingMaskIntoConstraints = false
 
         configureCreateTagButton()
+        configurePrimaryActionButton()
 
         view.addSubview(titleLabel)
+        view.addSubview(createTagButton)
         view.addSubview(collectionView)
         view.addSubview(emptyStateLabel)
         view.addSubview(tagLimitMessageLabel)
-        view.addSubview(createTagButton)
+        view.addSubview(primaryActionButton)
+
+        collectionViewBottomToSafeAreaConstraint = collectionView.bottomAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+            constant: -16
+        )
+        collectionViewBottomToPrimaryActionConstraint = collectionView.bottomAnchor.constraint(
+            equalTo: primaryActionButton.topAnchor,
+            constant: -12
+        )
+        collectionViewTopToTitleConstraint = collectionView.topAnchor.constraint(
+            equalTo: titleLabel.bottomAnchor,
+            constant: 12
+        )
+        collectionViewTopToTagLimitConstraint = collectionView.topAnchor.constraint(
+            equalTo: tagLimitMessageLabel.bottomAnchor,
+            constant: 12
+        )
+        collectionViewTopToTitleConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
             titleLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.layoutMarginsGuide.trailingAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: createTagButton.leadingAnchor, constant: -12),
 
-            collectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
+            createTagButton.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            createTagButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            createTagButton.widthAnchor.constraint(equalToConstant: 36),
+            createTagButton.heightAnchor.constraint(equalToConstant: 36),
+
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: createTagButton.topAnchor, constant: -12),
 
             emptyStateLabel.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
             emptyStateLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
 
-            tagLimitMessageLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.layoutMarginsGuide.leadingAnchor),
-            tagLimitMessageLabel.trailingAnchor.constraint(equalTo: createTagButton.leadingAnchor, constant: -12),
-            tagLimitMessageLabel.centerYAnchor.constraint(equalTo: createTagButton.centerYAnchor),
+            tagLimitMessageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
+            tagLimitMessageLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            tagLimitMessageLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.layoutMarginsGuide.trailingAnchor),
 
-            createTagButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            createTagButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            createTagButton.heightAnchor.constraint(equalToConstant: 50),
-            createTagButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 150)
+            primaryActionButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            primaryActionButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            primaryActionButton.heightAnchor.constraint(equalToConstant: 50),
+            primaryActionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 150)
         ])
     }
 
@@ -232,30 +260,49 @@ final class TagsManagementViewController: UIViewController {
         emptyStateLabel.textColor = AppTheme.metadataText
         tagLimitMessageLabel.textColor = AppTheme.metadataText
         collectionView.reloadData()
+        updateCreateTagButton()
     }
 
     private func configureCreateTagButton() {
+        var configuration = UIButton.Configuration.plain()
+        configuration.image = UIImage(systemName: "plus")
+        configuration.cornerStyle = .capsule
+        configuration.baseForegroundColor = AppTheme.primaryText
+        configuration.background.backgroundColor = AppTheme.controlBackground
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+        createTagButton.configuration = configuration
+        createTagButton.accessibilityLabel = "Create Tag"
+        createTagButton.translatesAutoresizingMaskIntoConstraints = false
+        createTagButton.addAction(
+            UIAction { [weak self] _ in
+                self?.presentCreateTagAlert()
+            },
+            for: .touchUpInside
+        )
+    }
+
+    private func configurePrimaryActionButton() {
         var configuration = UIButton.Configuration.filled()
-        configuration.title = "Create Tag"
+        configuration.title = "Save"
         configuration.buttonSize = .large
         configuration.cornerStyle = .fixed
         configuration.baseBackgroundColor = AppTheme.accent
         configuration.baseForegroundColor = .white
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 13, leading: 20, bottom: 13, trailing: 20)
-        configuration.titleTextAttributesTransformer = createTagButtonTitleAttributesTransformer()
+        configuration.titleTextAttributesTransformer = primaryActionButtonTitleAttributesTransformer()
 
-        createTagButton.configuration = configuration
-        createTagButton.layer.cornerRadius = 12
-        createTagButton.layer.cornerCurve = .continuous
-        createTagButton.clipsToBounds = true
-        createTagButton.layer.shadowColor = UIColor.black.cgColor
-        createTagButton.layer.shadowOpacity = 0.16
-        createTagButton.layer.shadowRadius = 10
-        createTagButton.layer.shadowOffset = CGSize(width: 0, height: 4)
-        createTagButton.translatesAutoresizingMaskIntoConstraints = false
-        createTagButton.addAction(
+        primaryActionButton.configuration = configuration
+        primaryActionButton.layer.cornerRadius = 12
+        primaryActionButton.layer.cornerCurve = .continuous
+        primaryActionButton.clipsToBounds = true
+        primaryActionButton.layer.shadowColor = UIColor.black.cgColor
+        primaryActionButton.layer.shadowOpacity = 0.16
+        primaryActionButton.layer.shadowRadius = 10
+        primaryActionButton.layer.shadowOffset = CGSize(width: 0, height: 4)
+        primaryActionButton.translatesAutoresizingMaskIntoConstraints = false
+        primaryActionButton.addAction(
             UIAction { [weak self] _ in
-                self?.primaryButtonTapped()
+                self?.saveSelection()
             },
             for: .touchUpInside
         )
@@ -286,44 +333,39 @@ final class TagsManagementViewController: UIViewController {
     }
 
     private func updateCreateTagButton() {
-        guard primaryActionMode == .createTag else {
-            tagLimitMessageLabel.isHidden = true
-            createTagButton.isEnabled = selectedTagIDs != initialSelectedTagIDs
-            var configuration = createTagButton.configuration
-            configuration?.title = "Save"
-            configuration?.baseBackgroundColor = createTagButton.isEnabled ? AppTheme.accent : AppTheme.controlBackground
-            configuration?.baseForegroundColor = createTagButton.isEnabled ? .white : AppTheme.metadataText
-            configuration?.titleTextAttributesTransformer = createTagButtonTitleAttributesTransformer()
-            createTagButton.configuration = configuration
+        let canCreateTag = tagRows.count < Self.maximumTagCount
+        createTagButton.isEnabled = canCreateTag
+        var configuration = createTagButton.configuration
+        configuration?.baseForegroundColor = canCreateTag ? AppTheme.primaryText : AppTheme.metadataText
+        configuration?.background.backgroundColor = canCreateTag ? AppTheme.controlBackground : .clear
+        createTagButton.configuration = configuration
+
+        let showsPrimaryAction = primaryActionMode == .saveSelection
+        let showsTagLimitMessage = !canCreateTag
+        tagLimitMessageLabel.isHidden = !showsTagLimitMessage
+        primaryActionButton.isHidden = !showsPrimaryAction
+        collectionViewTopToTitleConstraint?.isActive = !showsTagLimitMessage
+        collectionViewTopToTagLimitConstraint?.isActive = showsTagLimitMessage
+        collectionViewBottomToSafeAreaConstraint?.isActive = !showsPrimaryAction
+        collectionViewBottomToPrimaryActionConstraint?.isActive = showsPrimaryAction
+
+        guard showsPrimaryAction else {
             return
         }
 
-        let canCreateTag = tagRows.count < Self.maximumTagCount
-        tagLimitMessageLabel.isHidden = canCreateTag
-        createTagButton.isEnabled = canCreateTag
-
-        var configuration = createTagButton.configuration
-        configuration?.title = "Create Tag"
-        configuration?.baseBackgroundColor = canCreateTag ? AppTheme.accent : AppTheme.controlBackground
-        configuration?.baseForegroundColor = canCreateTag ? .white : AppTheme.metadataText
-        configuration?.titleTextAttributesTransformer = createTagButtonTitleAttributesTransformer()
-        createTagButton.configuration = configuration
+        primaryActionButton.isEnabled = selectedTagIDs != initialSelectedTagIDs
+        var primaryConfiguration = primaryActionButton.configuration
+        primaryConfiguration?.baseBackgroundColor = primaryActionButton.isEnabled ? AppTheme.accent : AppTheme.controlBackground
+        primaryConfiguration?.baseForegroundColor = primaryActionButton.isEnabled ? .white : AppTheme.metadataText
+        primaryConfiguration?.titleTextAttributesTransformer = primaryActionButtonTitleAttributesTransformer()
+        primaryActionButton.configuration = primaryConfiguration
     }
 
-    private func createTagButtonTitleAttributesTransformer() -> UIConfigurationTextAttributesTransformer {
+    private func primaryActionButtonTitleAttributesTransformer() -> UIConfigurationTextAttributesTransformer {
         UIConfigurationTextAttributesTransformer { attributes in
             var updatedAttributes = attributes
             updatedAttributes.font = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
             return updatedAttributes
-        }
-    }
-
-    private func primaryButtonTapped() {
-        switch primaryActionMode {
-        case .createTag:
-            presentCreateTagAlert()
-        case .saveSelection:
-            saveSelection()
         }
     }
 

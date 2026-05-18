@@ -2,10 +2,27 @@ import UIKit
 
 enum AppSettings {
     static let durationDisplayDidChangeNotification = Notification.Name("AppSettings.durationDisplayDidChangeNotification")
+    static let activityTypeDisplayOrderDidChangeNotification = Notification.Name("AppSettings.activityTypeDisplayOrderDidChangeNotification")
+
+    enum ActivityTypeDisplayOrder: String, CaseIterable {
+        case name
+        case latestActivity
+
+        var displayName: String {
+            switch self {
+            case .name:
+                return "Sort by Name"
+            case .latestActivity:
+                return "Sort by Latest Activity"
+            }
+        }
+    }
 
     private static let alertWhenTimersRestoredKey = "alertWhenTimersRestored"
     private static let restoreWindowHoursKey = "restoreWindowHours"
     private static let showDurationSecondsKey = "showDurationSeconds"
+    private static let activityTypeDisplayOrderKey = "activityTypeDisplayOrder"
+    private static let defaultActivityTypeDisplayOrder: ActivityTypeDisplayOrder = .name
     private static let defaultRestoreWindowHours = 8
     static let restoreWindowHourOptions = [4, 8, 24]
 
@@ -54,6 +71,27 @@ enum AppSettings {
 
             UserDefaults.standard.set(newValue, forKey: showDurationSecondsKey)
             NotificationCenter.default.post(name: durationDisplayDidChangeNotification, object: nil)
+        }
+    }
+
+    static var activityTypeDisplayOrder: ActivityTypeDisplayOrder {
+        get {
+            guard
+                let rawValue = UserDefaults.standard.string(forKey: activityTypeDisplayOrderKey),
+                let displayOrder = ActivityTypeDisplayOrder(rawValue: rawValue)
+            else {
+                return defaultActivityTypeDisplayOrder
+            }
+
+            return displayOrder
+        }
+        set {
+            guard newValue != activityTypeDisplayOrder else {
+                return
+            }
+
+            UserDefaults.standard.set(newValue.rawValue, forKey: activityTypeDisplayOrderKey)
+            NotificationCenter.default.post(name: activityTypeDisplayOrderDidChangeNotification, object: nil)
         }
     }
 }
@@ -351,6 +389,7 @@ final class SettingsViewController: UIViewController {
     )
     private var fontButtons: [AppFont: OptionButton] = [:]
     private var accentButtons: [AppAccentColor: AccentSwatchButton] = [:]
+    private var displayOrderButtons: [AppSettings.ActivityTypeDisplayOrder: OptionButton] = [:]
     private var settingsRows: [SettingsRow] = []
     private var sectionTitleLabels: [UILabel] = []
 
@@ -415,6 +454,7 @@ final class SettingsViewController: UIViewController {
         contentStackView.addArrangedSubview(makeAppearanceSection())
         contentStackView.addArrangedSubview(makeSection(title: "Font", contentView: makeFontOptionsView()))
         contentStackView.addArrangedSubview(makeSection(title: "Accent Color", contentView: makeAccentOptionsView()))
+        contentStackView.addArrangedSubview(makeSection(title: "Display Order", contentView: makeDisplayOrderOptionsView()))
         contentStackView.addArrangedSubview(makeTimeDisplaySection())
         contentStackView.addArrangedSubview(makeTimerBehaviorSection())
         contentStackView.addArrangedSubview(makeFooterSection())
@@ -611,6 +651,28 @@ final class SettingsViewController: UIViewController {
         return stackView
     }
 
+    private func makeDisplayOrderOptionsView() -> UIView {
+        let stackView = makeOptionsStackView()
+
+        AppSettings.ActivityTypeDisplayOrder.allCases.forEach { displayOrder in
+            let button = OptionButton()
+            button.title = displayOrder.displayName
+            button.titleFont = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
+            button.addAction(
+                UIAction { [weak self] _ in
+                    AppSettings.activityTypeDisplayOrder = displayOrder
+                    self?.updateSelections()
+                    self?.applyTheme()
+                },
+                for: .touchUpInside
+            )
+            displayOrderButtons[displayOrder] = button
+            stackView.addArrangedSubview(button)
+        }
+
+        return stackView
+    }
+
     private func makeOptionsStackView() -> UIStackView {
         let stackView = UIStackView()
         stackView.axis = .vertical
@@ -724,6 +786,10 @@ final class SettingsViewController: UIViewController {
         accentButtons.forEach { accentColor, button in
             button.isSelected = accentColor == AppTheme.selectedAccentColor
         }
+
+        displayOrderButtons.forEach { displayOrder, button in
+            button.isSelected = displayOrder == AppSettings.activityTypeDisplayOrder
+        }
     }
 
     private func applyTheme() {
@@ -753,6 +819,11 @@ final class SettingsViewController: UIViewController {
         }
 
         accentButtons.forEach { _, button in button.applyTheme() }
+
+        displayOrderButtons.forEach { _, button in
+            button.titleFont = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
+            button.applyTheme()
+        }
 
         settingsRows.forEach { $0.applyTheme() }
     }
