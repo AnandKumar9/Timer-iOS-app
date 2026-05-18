@@ -672,6 +672,11 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func configureTagsButton() {
+        tagsButton.translatesAutoresizingMaskIntoConstraints = false
+        tagsButton.contentHorizontalAlignment = .center
+        tagsButton.contentVerticalAlignment = .center
+        tagsButton.widthAnchor.constraint(equalToConstant: 48).isActive = true
+        tagsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
         tagsButton.addAction(
             UIAction { [weak self] _ in
                 self?.presentTagsManagementSheet()
@@ -704,6 +709,9 @@ final class ActivityTypesViewController: UIViewController {
         tagsButton.accessibilityLabel = isFiltering
             ? "Filtered by \(selectedTagIDs.count) tags. Manage Tags"
             : "Manage Tags"
+        tagsButton.invalidateIntrinsicContentSize()
+        tagsButton.setNeedsLayout()
+        navigationController?.navigationBar.setNeedsLayout()
     }
 
     private func presentTagsManagementSheet() {

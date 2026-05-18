@@ -43,13 +43,13 @@ k if a type is deleted, both the activies and its cache should be cleared
 
 k redesign theme, explore mode designs
 k settings for dark/light mode
+k create tag button
 
-Can edit note be an icon instead
 start stop button in live activity + background run
 intents for app suggestions
 pin activity types
 fav activity type to start from app menu
-create tag button
+
 server side support
 more intelligent view when history screen has plenty of data
 does there need to be a watchOS app too
