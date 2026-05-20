@@ -63,6 +63,8 @@ final class TimerControlsView: UIView {
     private let lastActivityRowView = UIView()
     private let lastActivityDateLabel = UILabel()
     private let lastActivityDurationLabel = UILabel()
+    private let lastActivityNoteLabel = UILabel()
+    private let addLastActivityNoteButton = UIButton(type: .system)
 
     private var timer: Timer?
     private var elapsedSeconds = 0
@@ -75,6 +77,7 @@ final class TimerControlsView: UIView {
     var onTimerStarted: ((TimerControlsView) -> Void)?
     var onTimerResumed: ((TimerControlsView) -> Void)?
     var onTimerPaused: ((TimerControlsView) -> Void)?
+    var onAddNoteTapped: ((Activity) -> Void)?
     var hasActiveTimer: Bool {
         timerState != .stopped
     }
@@ -110,6 +113,11 @@ final class TimerControlsView: UIView {
 
     func updateActivityTypeName(_ name: String) {
         activityTypeNameLabel.text = name
+        updateLastActivityRow()
+    }
+
+    func refreshLastActivityRow() {
+        updateLastActivityRow()
     }
 
     func startIfNeeded() {
@@ -196,10 +204,44 @@ final class TimerControlsView: UIView {
         lastActivityDurationLabel.setContentHuggingPriority(.required, for: .horizontal)
         lastActivityDurationLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let stackView = UIStackView(arrangedSubviews: [lastActivityDateLabel, lastActivityDurationLabel])
-        stackView.axis = .horizontal
-        stackView.alignment = .center
-        stackView.spacing = 12
+        lastActivityNoteLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .regular)
+        lastActivityNoteLabel.textColor = AppTheme.metadataText
+        lastActivityNoteLabel.numberOfLines = 1
+        lastActivityNoteLabel.lineBreakMode = .byTruncatingTail
+
+        var addNoteConfiguration = UIButton.Configuration.plain()
+        addNoteConfiguration.image = UIImage(systemName: "plus.bubble")
+        addNoteConfiguration.baseForegroundColor = AppTheme.accent
+        addNoteConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
+        addNoteConfiguration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        addLastActivityNoteButton.configuration = addNoteConfiguration
+        addLastActivityNoteButton.accessibilityLabel = "Add note to last activity"
+        addLastActivityNoteButton.setContentHuggingPriority(.required, for: .horizontal)
+        addLastActivityNoteButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        addLastActivityNoteButton.addAction(
+            UIAction { [weak self] _ in
+                guard let self, let lastActivity = self.latestCompletedActivity() else {
+                    return
+                }
+
+                self.onAddNoteTapped?(lastActivity)
+            },
+            for: .touchUpInside
+        )
+
+        let summaryStackView = UIStackView(arrangedSubviews: [
+            lastActivityDateLabel,
+            lastActivityDurationLabel,
+            addLastActivityNoteButton
+        ])
+        summaryStackView.axis = .horizontal
+        summaryStackView.alignment = .center
+        summaryStackView.spacing = 8
+
+        let stackView = UIStackView(arrangedSubviews: [summaryStackView, lastActivityNoteLabel])
+        stackView.axis = .vertical
+        stackView.alignment = .fill
+        stackView.spacing = 6
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
         lastActivityRowView.addSubview(stackView)
@@ -451,6 +493,15 @@ final class TimerControlsView: UIView {
 
         lastActivityDateLabel.text = "Last: \(formattedDate(startTime))"
         lastActivityDurationLabel.text = formattedDuration(for: lastActivity)
+        if let note = noteText(for: lastActivity) {
+            lastActivityNoteLabel.text = note
+            lastActivityNoteLabel.isHidden = false
+            addLastActivityNoteButton.isHidden = true
+        } else {
+            lastActivityNoteLabel.text = nil
+            lastActivityNoteLabel.isHidden = true
+            addLastActivityNoteButton.isHidden = false
+        }
         lastActivityRowView.isHidden = false
     }
 
@@ -497,5 +548,15 @@ final class TimerControlsView: UIView {
         }
 
         return ActivityDisplayFormatter.roundedHistoryDurationText(for: duration)
+    }
+
+    private func noteText(for activity: Activity) -> String? {
+        guard let note = activity.activityNotes?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !note.isEmpty
+        else {
+            return nil
+        }
+
+        return note
     }
 }

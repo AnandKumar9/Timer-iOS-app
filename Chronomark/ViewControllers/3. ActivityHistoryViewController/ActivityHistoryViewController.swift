@@ -2,6 +2,8 @@ import UIKit
 import SwiftData
 
 final class ActivityHistoryViewController: UIViewController {
+    private static let noteCharacterLimit = 35
+
     private final class PillLabel: UILabel {
         private let contentInsets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
 
@@ -23,6 +25,8 @@ final class ActivityHistoryViewController: UIViewController {
 
         private let activitySummaryLabel = UILabel()
         private let noteLabel = UILabel()
+        private let addNoteButton = UIButton(type: .system)
+        var onAddNoteTapped: (() -> Void)?
 
         override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
             super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -32,6 +36,11 @@ final class ActivityHistoryViewController: UIViewController {
         required init?(coder: NSCoder) {
             super.init(coder: coder)
             configureCell()
+        }
+
+        override func prepareForReuse() {
+            super.prepareForReuse()
+            onAddNoteTapped = nil
         }
 
         func configure(with row: ActivityHistoryRow) {
@@ -45,9 +54,11 @@ final class ActivityHistoryViewController: UIViewController {
             if let note = noteText(for: row.activity) {
                 noteLabel.text = note
                 noteLabel.isHidden = false
+                addNoteButton.isHidden = true
             } else {
                 noteLabel.text = nil
                 noteLabel.isHidden = true
+                addNoteButton.isHidden = false
             }
         }
 
@@ -65,6 +76,23 @@ final class ActivityHistoryViewController: UIViewController {
             noteLabel.numberOfLines = 1
             noteLabel.lineBreakMode = .byTruncatingTail
 
+            var addNoteConfiguration = UIButton.Configuration.plain()
+            addNoteConfiguration.image = UIImage(systemName: "plus.bubble")
+            addNoteConfiguration.baseForegroundColor = AppTheme.accent
+            addNoteConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 6)
+            addNoteConfiguration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            addNoteButton.configuration = addNoteConfiguration
+            addNoteButton.accessibilityLabel = "Add note"
+            addNoteButton.setContentHuggingPriority(.required, for: .horizontal)
+            addNoteButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+            addNoteButton.addAction(
+                UIAction { [weak self] _ in
+                    self?.onAddNoteTapped?()
+                },
+                for: .touchUpInside
+            )
+            addNoteButton.translatesAutoresizingMaskIntoConstraints = false
+
             let stackView = UIStackView(arrangedSubviews: [
                 activitySummaryLabel,
                 noteLabel
@@ -72,15 +100,27 @@ final class ActivityHistoryViewController: UIViewController {
             stackView.axis = .vertical
             stackView.alignment = .fill
             stackView.spacing = 4
-            stackView.translatesAutoresizingMaskIntoConstraints = false
 
-            contentView.addSubview(stackView)
+            let rowStackView = UIStackView(arrangedSubviews: [
+                stackView,
+                addNoteButton
+            ])
+            rowStackView.axis = .horizontal
+            rowStackView.alignment = .center
+            rowStackView.spacing = 12
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+            rowStackView.translatesAutoresizingMaskIntoConstraints = false
+
+            contentView.addSubview(rowStackView)
 
             NSLayoutConstraint.activate([
-                stackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-                stackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.layoutMarginsGuide.trailingAnchor),
-                stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
-                stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -14)
+                addNoteButton.widthAnchor.constraint(equalToConstant: 36),
+                addNoteButton.heightAnchor.constraint(equalToConstant: 36),
+
+                rowStackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+                rowStackView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+                rowStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+                rowStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -14)
             ])
         }
 
@@ -724,9 +764,96 @@ final class ActivityHistoryViewController: UIViewController {
         loadActivities()
     }
 
+    private func presentNoteEditor(for activity: Activity?) {
+        guard let activity else {
+            return
+        }
+
+        let alertController = UIAlertController(
+            title: "Add a Note",
+            message: "Notes can be up to \(Self.noteCharacterLimit) characters.",
+            preferredStyle: .alert
+        )
+
+        var noteTextField: UITextField?
+
+        alertController.addTextField { textField in
+            textField.placeholder = "Add a note"
+            textField.clearButtonMode = .whileEditing
+            textField.autocapitalizationType = .sentences
+            textField.returnKeyType = .done
+            textField.addAction(
+                UIAction { [weak textField] _ in
+                    guard let textField else {
+                        return
+                    }
+
+                    if textField.text?.count ?? 0 > Self.noteCharacterLimit {
+                        textField.text = String(textField.text?.prefix(Self.noteCharacterLimit) ?? "")
+                    }
+                },
+                for: .editingChanged
+            )
+            noteTextField = textField
+        }
+
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alertController.addAction(
+            UIAlertAction(title: "Done", style: .default) { [weak self, weak noteTextField] _ in
+                self?.saveActivityNote(noteTextField?.text, for: activity)
+            }
+        )
+
+        present(alertController, animated: true)
+    }
+
+    private func saveActivityNote(_ note: String?, for activity: Activity) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            activity.activityNotes = normalizedNote(note)
+            loadActivities()
+            return
+        }
+#endif
+        guard let modelContext else {
+            return
+        }
+
+        activity.activityNotes = normalizedNote(note)
+
+        do {
+            try modelContext.save()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activity.activityType.uniqueID)
+            loadActivities()
+        } catch {
+            assertionFailure("Unable to save activity note: \(error)")
+            presentSaveActivityNoteErrorAlert()
+        }
+    }
+
+    private func normalizedNote(_ note: String?) -> String? {
+        guard let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmedNote.isEmpty
+        else {
+            return nil
+        }
+
+        return String(trimmedNote.prefix(Self.noteCharacterLimit))
+    }
+
     private func presentDeleteActivityErrorAlert() {
         let alertController = UIAlertController(
             title: "Unable to Delete Activity",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
+    private func presentSaveActivityNoteErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Save Note",
             message: "Please try again.",
             preferredStyle: .alert
         )
@@ -849,7 +976,11 @@ extension ActivityHistoryViewController: UITableViewDataSource {
             withIdentifier: ActivityHistoryCell.reuseIdentifier,
             for: indexPath
         ) as? ActivityHistoryCell
+        let activity = activityRows[indexPath.row].activity
         cell?.configure(with: activityRows[indexPath.row])
+        cell?.onAddNoteTapped = { [weak self] in
+            self?.presentNoteEditor(for: activity)
+        }
         return cell ?? UITableViewCell()
     }
 }

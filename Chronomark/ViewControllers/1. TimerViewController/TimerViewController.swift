@@ -5,6 +5,7 @@ final class TimerViewController: UIViewController {
     fileprivate static var activeInstance: TimerViewController?
     fileprivate static var activeNavigationController: UINavigationController?
     private static let inactiveTimerControlsRetentionInterval: TimeInterval = 5
+    private static let noteCharacterLimit = 35
     private static let timerCacheCheckpointInterval: TimeInterval = 300
 
     static func hasRunningOrPausedTimer(for activityType: ActivityType) -> Bool {
@@ -448,6 +449,9 @@ final class TimerViewController: UIViewController {
         timerControlsView.onTimerPaused = { [weak self] timerControlsView in
             self?.updateTimerCache(from: timerControlsView, isRunning: false)
             self?.pauseLiveActivity(from: timerControlsView)
+        }
+        timerControlsView.onAddNoteTapped = { [weak self] activity in
+            self?.presentNoteEditor(for: activity)
         }
         return timerControlsView
     }
@@ -1059,6 +1063,95 @@ final class TimerViewController: UIViewController {
             modelContext.delete(activity)
             assertionFailure("Unable to save timer activity: \(error)")
         }
+    }
+
+    private func presentNoteEditor(for activity: Activity) {
+        let alertController = UIAlertController(
+            title: "Add a Note",
+            message: "Notes can be up to \(Self.noteCharacterLimit) characters.",
+            preferredStyle: .alert
+        )
+
+        var noteTextField: UITextField?
+
+        alertController.addTextField { textField in
+            textField.placeholder = "Add a note"
+            textField.clearButtonMode = .whileEditing
+            textField.autocapitalizationType = .sentences
+            textField.returnKeyType = .done
+            textField.addAction(
+                UIAction { [weak textField] _ in
+                    guard let textField else {
+                        return
+                    }
+
+                    if textField.text?.count ?? 0 > Self.noteCharacterLimit {
+                        textField.text = String(textField.text?.prefix(Self.noteCharacterLimit) ?? "")
+                    }
+                },
+                for: .editingChanged
+            )
+            noteTextField = textField
+        }
+
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alertController.addAction(
+            UIAlertAction(title: "Done", style: .default) { [weak self, weak noteTextField] _ in
+                self?.saveActivityNote(noteTextField?.text, for: activity)
+            }
+        )
+
+        present(alertController, animated: true)
+    }
+
+    private func saveActivityNote(_ note: String?, for activity: Activity) {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            activity.activityNotes = normalizedNote(note)
+            refreshTimerControls(for: activity.activityType.uniqueID)
+            return
+        }
+#endif
+        guard let modelContext else {
+            return
+        }
+
+        activity.activityNotes = normalizedNote(note)
+
+        do {
+            try modelContext.save()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activity.activityType.uniqueID)
+            refreshTimerControls(for: activity.activityType.uniqueID)
+        } catch {
+            assertionFailure("Unable to save activity note: \(error)")
+            presentSaveActivityNoteErrorAlert()
+        }
+    }
+
+    private func refreshTimerControls(for activityTypeID: UUID) {
+        for timerControlsView in timerControlsViews where timerControlsView.activityTypeID == activityTypeID {
+            timerControlsView.refreshLastActivityRow()
+        }
+    }
+
+    private func normalizedNote(_ note: String?) -> String? {
+        guard let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmedNote.isEmpty
+        else {
+            return nil
+        }
+
+        return String(trimmedNote.prefix(Self.noteCharacterLimit))
+    }
+
+    private func presentSaveActivityNoteErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Save Note",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
     }
 
 #if DEBUG
