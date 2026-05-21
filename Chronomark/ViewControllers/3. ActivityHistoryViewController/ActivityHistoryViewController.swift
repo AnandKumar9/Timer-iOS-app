@@ -619,23 +619,24 @@ final class ActivityHistoryViewController: UIViewController {
             return
         }
 
-        let hasTags = hasExistingTags()
         let tagsViewController = TagsManagementViewController()
         tagsViewController.modelContext = modelContext
         tagsViewController.sheetTitle = "Tags for \(activityType.name)"
         tagsViewController.emptyStateMessage = TagsManagementViewController.activityTypeEmptyStateMessage
         tagsViewController.selectedTagIDs = Set(activityType.tags?.map(\.uniqueID) ?? [])
-        tagsViewController.primaryActionMode = hasTags ? .saveSelection : .createTag
-        tagsViewController.groupsSelectedTagsFirst = hasTags
-        tagsViewController.commitsSelectionImmediately = !hasTags
-        tagsViewController.allowsTagManagement = !hasTags
-        tagsViewController.selectsCreatedTags = !hasTags
-        tagsViewController.switchesToSaveSelectionAfterCreatingTag = !hasTags
+        tagsViewController.primaryActionMode = .createTag
+        tagsViewController.groupsSelectedTagsFirst = true
+        tagsViewController.commitsSelectionImmediately = true
+        tagsViewController.allowsTagManagement = true
+        tagsViewController.selectsCreatedTags = true
+        tagsViewController.treatsCreatedTagsAsSaved = true
+        tagsViewController.switchesToSaveSelectionAfterCreatingTag = false
+        tagsViewController.showsSelectedCountWhenTagLimitReached = true
+        tagsViewController.onSelectionChange = { [weak self] selectedTagIDs in
+            self?.saveTags(selectedTagIDs)
+        }
         tagsViewController.onTagCreate = { [weak self] tag in
             self?.attachCreatedTag(tag)
-        }
-        tagsViewController.onSaveSelection = { [weak self] selectedTagIDs in
-            self?.saveTags(selectedTagIDs)
         }
         tagsViewController.modalPresentationStyle = .pageSheet
 
@@ -651,19 +652,6 @@ final class ActivityHistoryViewController: UIViewController {
         }
 
         present(tagsViewController, animated: true)
-    }
-
-    private func hasExistingTags() -> Bool {
-        guard let modelContext else {
-            return false
-        }
-
-        do {
-            return try !modelContext.fetch(FetchDescriptor<ActivityTag>()).isEmpty
-        } catch {
-            assertionFailure("Unable to fetch tags: \(error)")
-            return false
-        }
     }
 
     private func attachCreatedTag(_ tag: ActivityTag) {

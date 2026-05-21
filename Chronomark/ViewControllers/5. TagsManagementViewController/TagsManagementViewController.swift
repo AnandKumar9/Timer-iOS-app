@@ -127,7 +127,9 @@ final class TagsManagementViewController: UIViewController {
     var commitsSelectionImmediately = true
     var allowsTagManagement = true
     var selectsCreatedTags = false
+    var treatsCreatedTagsAsSaved = false
     var switchesToSaveSelectionAfterCreatingTag = false
+    var showsSelectedCountWhenTagLimitReached = false
     var onSelectionChange: ((Set<UUID>) -> Void)?
     var onTagsChange: (() -> Void)?
     var onTagCreate: ((ActivityTag) -> Void)?
@@ -341,7 +343,8 @@ final class TagsManagementViewController: UIViewController {
         createTagButton.configuration = configuration
 
         let showsPrimaryAction = primaryActionMode == .saveSelection
-        let showsTagLimitMessage = !canCreateTag
+        let showsTagLimitMessage = !canCreateTag || showsSelectedCountWhenTagLimitReached
+        tagLimitMessageLabel.text = tagLimitMessageText(canCreateTag: canCreateTag)
         tagLimitMessageLabel.isHidden = !showsTagLimitMessage
         primaryActionButton.isHidden = !showsPrimaryAction
         collectionViewTopToTitleConstraint?.isActive = !showsTagLimitMessage
@@ -367,6 +370,16 @@ final class TagsManagementViewController: UIViewController {
             updatedAttributes.font = AppTheme.roundedFont(ofSize: 17, weight: .semibold)
             return updatedAttributes
         }
+    }
+
+    private func tagLimitMessageText(canCreateTag: Bool) -> String {
+        guard showsSelectedCountWhenTagLimitReached else {
+            return "Up to 7 tags for now"
+        }
+
+        let selectedTagCount = selectedTagIDs.count
+        let selectedCountText = selectedTagCount == 1 ? "1 tag selected" : "\(selectedTagCount) tags selected"
+        return canCreateTag ? selectedCountText : "Up to 7 tags for now. \(selectedCountText)."
     }
 
     private func saveSelection() {
@@ -456,6 +469,9 @@ final class TagsManagementViewController: UIViewController {
                 selectedTagIDs.insert(tag.uniqueID)
             }
             onTagCreate?(tag)
+            if treatsCreatedTagsAsSaved {
+                initialSelectedTagIDs = selectedTagIDs
+            }
             if switchesToSaveSelectionAfterCreatingTag {
                 primaryActionMode = .saveSelection
                 groupsSelectedTagsFirst = true
