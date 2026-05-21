@@ -15,6 +15,7 @@
 		440DE4A22FB1000000910C7F /* ScreenshotSampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4A12FB1000000910C7F /* ScreenshotSampleData.swift */; };
 		440DE4A42FB1000000910C7F /* ScreenshotSampleCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4A32FB1000000910C7F /* ScreenshotSampleCoordinator.swift */; };
 		440DE4A62FB1000000910C7F /* ScreenshotSampleData.json in Resources */ = {isa = PBXBuildFile; fileRef = 440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */; };
+		440DE4A82FB2000000910C7F /* SummarizeMyDayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4A92FB2000000910C7F /* SummarizeMyDayViewController.swift */; };
 		9A0000010000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000011 /* AppDelegate.swift */; };
 		9A0000010000000000000002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000012 /* SceneDelegate.swift */; };
 		9A0000010000000000000003 /* ActivityDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000013 /* ActivityDetailsViewController.swift */; };
@@ -96,6 +97,7 @@
 		440DE4A12FB1000000910C7F /* ScreenshotSampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSampleData.swift; sourceTree = "<group>"; };
 		440DE4A32FB1000000910C7F /* ScreenshotSampleCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSampleCoordinator.swift; sourceTree = "<group>"; };
 		440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ScreenshotSampleData.json; sourceTree = "<group>"; };
+		440DE4A92FB2000000910C7F /* SummarizeMyDayViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummarizeMyDayViewController.swift; sourceTree = "<group>"; };
 		9A0000010000000000000010 /* Chronomark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chronomark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A0000010000000000000011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9A0000010000000000000012 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -190,6 +192,14 @@
 			path = ScreenshotSamples;
 			sourceTree = "<group>";
 		};
+		440DE4AA2FB2000000910C7F /* 6. SummarizeMyDayViewController */ = {
+			isa = PBXGroup;
+			children = (
+				440DE4A92FB2000000910C7F /* SummarizeMyDayViewController.swift */,
+			);
+			path = "6. SummarizeMyDayViewController";
+			sourceTree = "<group>";
+		};
 		4413A30D2FA432020005EE3C /* 4. ActivityDetailsViewController */ = {
 			isa = PBXGroup;
 			children = (
@@ -275,6 +285,7 @@
 				4413A3102FA4322D0005EE3C /* 3. ActivityHistoryViewController */,
 				4413A30D2FA432020005EE3C /* 4. ActivityDetailsViewController */,
 				440DE4952FAABA0800910C7F /* 5. TagsManagementViewController */,
+				440DE4AA2FB2000000910C7F /* 6. SummarizeMyDayViewController */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -471,6 +482,7 @@
 				9A000001000000000000004A /* ActivityTimerCache.swift in Sources */,
 				9A000001000000000000004C /* AppAppearanceController.swift in Sources */,
 				9A000001000000000000004E /* AppTheme.swift in Sources */,
+				440DE4A82FB2000000910C7F /* SummarizeMyDayViewController.swift in Sources */,
 				B00000000000000000000012 /* ChronomarkTimerAttributes.swift in Sources */,
 				B00000000000000000000014 /* ChronomarkLiveActivityController.swift in Sources */,
 				440DE4A22FB1000000910C7F /* ScreenshotSampleData.swift in Sources */,

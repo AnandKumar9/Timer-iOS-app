@@ -691,13 +691,9 @@ final class ActivityTypesViewController: UIViewController {
     }
 
     private func summarizeDayButtonTapped() {
-        let alertController = UIAlertController(
-            title: "Summarize My Day",
-            message: "Daily activity summaries are coming soon.",
-            preferredStyle: .alert
-        )
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alertController, animated: true)
+        let summarizeMyDayViewController = SummarizeMyDayViewController()
+        summarizeMyDayViewController.modelContext = modelContext
+        navigationController?.pushViewController(summarizeMyDayViewController, animated: true)
     }
 
     private func startActivityType(_ activityType: ActivityType) {
