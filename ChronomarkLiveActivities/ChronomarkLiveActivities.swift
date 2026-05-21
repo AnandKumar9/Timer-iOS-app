@@ -15,25 +15,23 @@ struct ChronomarkLiveActivityWidget: Widget {
                 }
             }
                 compactLeading: {
-                    Image("LiveActivityAppIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    Image(systemName: Self.iconName(for: context.state.status))
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(Self.timerTextColor(for: context.state))
                 }
                 compactTrailing: {
                     ChronomarkElapsedTimeText(state: context.state)
-                        .font(Self.elapsedTimeFont(for: context.state, size: 11))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded).monospacedDigit())
                         .foregroundStyle(Self.timerTextColor(for: context.state))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
+                        .frame(width: 46, alignment: .trailing)
                 }
                 minimal: {
-                    Image("LiveActivityAppIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    Image(systemName: Self.iconName(for: context.state.status))
+                        .foregroundStyle(Self.timerTextColor(for: context.state))
                 }
-            .keylineTint(Self.timerTextColor(for: context.state))
+            .keylineTint(Color.chronomarkClockOrange)
             .widgetURL(Self.timerURL)
         }
     }
@@ -93,7 +91,7 @@ private struct ChronomarkLiveActivityRow: View {
     let context: ActivityViewContext<ChronomarkTimerAttributes>
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 12) {
             Image("LiveActivityAppIcon")
                 .resizable()
                 .scaledToFit()
@@ -112,7 +110,7 @@ private struct ChronomarkLiveActivityRow: View {
 
             HStack(spacing: 5) {
                 Image(systemName: ChronomarkLiveActivityWidget.iconName(for: context.state.status))
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(ChronomarkLiveActivityWidget.timerTextColor(for: context.state))
                     .frame(width: 18, alignment: .center)
 
@@ -182,6 +180,7 @@ private struct ChronomarkElapsedTimeText: View {
 
 private extension Color {
     static let chronomarkLiveActivityBackground = Color(red: 0.07, green: 0.08, blue: 0.10)
+    static let chronomarkClockOrange = Color(red: 1.0, green: 0.64, blue: 0.20)
     static let chronomarkRunningTimer = Color(red: 0x7C / 255, green: 0xFF / 255, blue: 0xA4 / 255)
     static let chronomarkPausedTimer = Color(red: 0xF5 / 255, green: 0xA6 / 255, blue: 0x23 / 255)
 }
