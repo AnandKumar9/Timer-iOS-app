@@ -2,6 +2,25 @@ import UIKit
 import SwiftData
 
 final class SummarizeMyDayViewController: UIViewController {
+    private static let earlyTodayEmptyStateText = "Your day has just started"
+    private static let emptyStateQuotes = [
+        "How we spend our days is, of course, how we spend our lives.",
+        "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
+        "First we make our habits, then our habits make us.",
+        "Motivation is what gets you started. Habit is what keeps you going.",
+        "The secret of your future is hidden in your daily routine.",
+        "A schedule defends from chaos and whim.",
+        "Success is nothing more than a few simple disciplines, practiced every day.",
+        "Men’s natures are alike; it is their habits that separate them.",
+        "I always wanted to be somebody, but now I realize I should have been more specific.",
+        "My routine is basically just trying to remember why I walked into a room.",
+        "The road to success is dotted with many tempting parking spaces.",
+        "If at first you don’t succeed, then skydiving definitely isn’t for you.",
+        "A day without sunshine is like, you know, night.",
+        "My life has a superb cast, but I can’t figure out the plot.",
+        "My favorite exercise is a cross between a lunge and a crunch. I call it lunch."
+    ]
+
     private final class DaySummaryCell: UITableViewCell {
         static let reuseIdentifier = "DaySummaryCell"
 
@@ -229,7 +248,7 @@ final class SummarizeMyDayViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             emptyStateLabel.centerXAnchor.constraint(equalTo: tableView.centerXAnchor),
-            emptyStateLabel.centerYAnchor.constraint(equalTo: tableView.centerYAnchor),
+            emptyStateLabel.topAnchor.constraint(equalTo: headerStackView.bottomAnchor, constant: 48),
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
             emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)
         ])
@@ -323,9 +342,10 @@ final class SummarizeMyDayViewController: UIViewController {
     }
 
     private func configureEmptyStateLabel() {
-        emptyStateLabel.text = "No activities for this day"
+        emptyStateLabel.text = emptyStateText()
         emptyStateLabel.font = AppTheme.roundedFont(ofSize: 17, weight: .regular)
         emptyStateLabel.textAlignment = .center
+        emptyStateLabel.numberOfLines = 0
         emptyStateLabel.isHidden = true
     }
 
@@ -539,7 +559,16 @@ final class SummarizeMyDayViewController: UIViewController {
     private func updateContent() {
         updateSummary()
         tableView.reloadData()
+        emptyStateLabel.text = emptyStateText()
         emptyStateLabel.isHidden = !activityRows.isEmpty
+    }
+
+    private func emptyStateText() -> String {
+        if isSelectedDayToday(), Calendar.current.component(.hour, from: Date()) < 10 {
+            return Self.earlyTodayEmptyStateText
+        }
+
+        return Self.emptyStateQuotes.randomElement() ?? Self.earlyTodayEmptyStateText
     }
 
     private func updateSummary() {
