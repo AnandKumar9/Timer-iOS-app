@@ -7,6 +7,7 @@ final class SummarizeMyDayViewController: UIViewController {
 
         private let timeLabel = UILabel()
         private let activityNameLabel = UILabel()
+        private let statusImageView = UIImageView()
         private let durationLabel = UILabel()
         private let noteLabel = UILabel()
 
@@ -29,6 +30,7 @@ final class SummarizeMyDayViewController: UIViewController {
             timeLabel.textColor = AppTheme.metadataText
             activityNameLabel.text = row.activityTypeName
             activityNameLabel.textColor = AppTheme.primaryText
+            configureStatusIcon(row.timerState)
             durationLabel.text = row.durationText
             durationLabel.textColor = AppTheme.durationText
 
@@ -57,6 +59,12 @@ final class SummarizeMyDayViewController: UIViewController {
             activityNameLabel.adjustsFontSizeToFitWidth = true
             activityNameLabel.minimumScaleFactor = 0.8
 
+            statusImageView.contentMode = .scaleAspectFit
+            statusImageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+            statusImageView.setContentHuggingPriority(.required, for: .horizontal)
+            statusImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+            statusImageView.isHidden = true
+
             durationLabel.font = AppTheme.roundedFont(ofSize: 15, weight: .semibold)
             durationLabel.numberOfLines = 1
             durationLabel.textAlignment = .right
@@ -68,9 +76,16 @@ final class SummarizeMyDayViewController: UIViewController {
             noteLabel.numberOfLines = 2
             noteLabel.lineBreakMode = .byTruncatingTail
 
-            let titleStackView = UIStackView(arrangedSubviews: [activityNameLabel, durationLabel])
+            let durationStackView = UIStackView(arrangedSubviews: [statusImageView, durationLabel])
+            durationStackView.axis = .horizontal
+            durationStackView.alignment = .center
+            durationStackView.spacing = 5
+            durationStackView.setContentHuggingPriority(.required, for: .horizontal)
+            durationStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+            let titleStackView = UIStackView(arrangedSubviews: [activityNameLabel, durationStackView])
             titleStackView.axis = .horizontal
-            titleStackView.alignment = .firstBaseline
+            titleStackView.alignment = .center
             titleStackView.spacing = 12
 
             let detailStackView = UIStackView(arrangedSubviews: [titleStackView, noteLabel])
@@ -88,12 +103,40 @@ final class SummarizeMyDayViewController: UIViewController {
 
             NSLayoutConstraint.activate([
                 timeLabel.widthAnchor.constraint(equalToConstant: 76),
+                statusImageView.widthAnchor.constraint(equalToConstant: 18),
+                statusImageView.heightAnchor.constraint(equalToConstant: 18),
 
                 rowStackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
                 rowStackView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
                 rowStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
                 rowStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -14)
             ])
+        }
+
+        private func configureStatusIcon(_ timerState: ActivityTimerState?) {
+            guard let timerState else {
+                statusImageView.image = nil
+                statusImageView.accessibilityLabel = nil
+                statusImageView.isHidden = true
+                return
+            }
+
+            switch timerState {
+            case .none:
+                statusImageView.image = nil
+                statusImageView.accessibilityLabel = nil
+                statusImageView.isHidden = true
+            case .running:
+                statusImageView.image = UIImage(systemName: "timer")
+                statusImageView.tintColor = AppTheme.accent
+                statusImageView.accessibilityLabel = "Timer running"
+                statusImageView.isHidden = false
+            case .paused:
+                statusImageView.image = UIImage(systemName: "pause.circle.fill")
+                statusImageView.tintColor = AppTheme.paused
+                statusImageView.accessibilityLabel = "Timer paused"
+                statusImageView.isHidden = false
+            }
         }
     }
 
@@ -108,6 +151,7 @@ final class SummarizeMyDayViewController: UIViewController {
         let activityTypeName: String
         let timeRangeText: String
         let durationText: String
+        let timerState: ActivityTimerState?
         let noteText: String?
     }
 
@@ -377,16 +421,31 @@ final class SummarizeMyDayViewController: UIViewController {
     private func isCompletedActivityInDay(_ activity: Activity) -> Bool {
         guard
             let startTime = activity.activityStartTime,
-            activity.activityCompletionTime != nil
+            let completionTime = activity.activityCompletionTime
         else {
             return false
         }
 
-        return Calendar.current.isDate(startTime, inSameDayAs: selectedDay)
+        return intervalOverlapsSelectedDay(startTime: startTime, endTime: completionTime)
     }
 
     private func isCachedTimerInDay(_ cache: ActivityTimerCache) -> Bool {
-        Calendar.current.isDate(cache.startTime, inSameDayAs: selectedDay)
+        intervalOverlapsSelectedDay(
+            startTime: cache.startTime,
+            endTime: cachedTimerEndTime(for: cache)
+        )
+    }
+
+    private func intervalOverlapsSelectedDay(startTime: Date, endTime: Date) -> Bool {
+        let bounds = selectedDayBounds()
+        return startTime < bounds.end && endTime >= bounds.start
+    }
+
+    private func selectedDayBounds() -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: selectedDay)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
+        return (start, end)
     }
 
     private func makeDaySummaryRow(from activity: Activity) -> DaySummaryRow? {
@@ -405,6 +464,7 @@ final class SummarizeMyDayViewController: UIViewController {
             activityTypeName: activity.activityType.name,
             timeRangeText: timeRangeText(startTime: startTime, completionTime: completionTime),
             durationText: ActivityDisplayFormatter.roundedHistoryDurationText(for: duration),
+            timerState: nil,
             noteText: normalizedNote(activity.activityNotes)
         )
     }
@@ -425,7 +485,8 @@ final class SummarizeMyDayViewController: UIViewController {
             durationText: ActivityDisplayFormatter.roundedHistoryDurationText(
                 for: cachedTimerDuration(for: cache)
             ),
-            noteText: cache.isRunning ? "Running" : "Paused"
+            timerState: cache.isRunning ? .running : .paused,
+            noteText: nil
         )
     }
 
@@ -459,6 +520,10 @@ final class SummarizeMyDayViewController: UIViewController {
         }
 
         return cache.timeElapsed + Date().timeIntervalSince(cache.lastUpdateTime)
+    }
+
+    private func cachedTimerEndTime(for cache: ActivityTimerCache) -> Date {
+        cache.isRunning ? Date() : cache.lastUpdateTime
     }
 
     private func normalizedNote(_ note: String?) -> String? {

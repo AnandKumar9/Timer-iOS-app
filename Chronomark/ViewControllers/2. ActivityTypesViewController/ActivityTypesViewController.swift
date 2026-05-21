@@ -304,17 +304,15 @@ final class ActivityTypesViewController: UIViewController {
 
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
-    private lazy var settingsButton = UIBarButtonItem(
-        image: UIImage(systemName: "gearshape"),
+    private lazy var navigationAddActivityTypeButton = UIBarButtonItem(
+        systemItem: .add,
         primaryAction: UIAction { [weak self] _ in
-            self?.settingsButtonTapped()
+            self?.addButtonTapped()
         }
     )
-    private lazy var summarizeDayButton = UIBarButtonItem(
-        image: UIImage(systemName: "calendar"),
-        primaryAction: UIAction { [weak self] _ in
-            self?.summarizeDayButtonTapped()
-        }
+    private lazy var moreButton = UIBarButtonItem(
+        image: UIImage(systemName: "ellipsis.circle"),
+        menu: makeMoreMenu()
     )
     private let tagsButton = UIButton(type: .system)
     private lazy var navigationTagsButton = UIBarButtonItem(customView: tagsButton)
@@ -359,20 +357,13 @@ final class ActivityTypesViewController: UIViewController {
 
     private func configureAppearance() {
         title = "Activity Types"
-        let navigationAddActivityTypeButton = UIBarButtonItem(
-            systemItem: .add,
-            primaryAction: UIAction { [weak self] _ in
-                self?.addButtonTapped()
-            }
-        )
         configureTagsButton()
-        summarizeDayButton.accessibilityLabel = "Summarize My Day"
-        settingsButton.accessibilityLabel = "Settings"
+        navigationAddActivityTypeButton.accessibilityLabel = "Add Activity"
+        moreButton.accessibilityLabel = "More"
         navigationItem.rightBarButtonItems = [
             navigationAddActivityTypeButton,
             navigationTagsButton,
-            summarizeDayButton,
-            settingsButton
+            moreButton
         ]
 
         configureTableView()
@@ -693,7 +684,17 @@ final class ActivityTypesViewController: UIViewController {
     private func summarizeDayButtonTapped() {
         let summarizeMyDayViewController = SummarizeMyDayViewController()
         summarizeMyDayViewController.modelContext = modelContext
-        navigationController?.pushViewController(summarizeMyDayViewController, animated: true)
+        let navigationController = UINavigationController(rootViewController: summarizeMyDayViewController)
+        navigationController.modalPresentationStyle = .pageSheet
+
+        if let sheetPresentationController = navigationController.sheetPresentationController {
+            sheetPresentationController.detents = [.medium(), .large()]
+            sheetPresentationController.selectedDetentIdentifier = .large
+            sheetPresentationController.prefersGrabberVisible = true
+            sheetPresentationController.preferredCornerRadius = 18
+        }
+
+        present(navigationController, animated: true)
     }
 
     private func startActivityType(_ activityType: ActivityType) {
@@ -811,6 +812,26 @@ final class ActivityTypesViewController: UIViewController {
 
     private func addButtonTapped() {
         presentCreateActivityTypeAlert()
+    }
+
+    private func makeMoreMenu() -> UIMenu {
+        UIMenu(
+            title: "",
+            children: [
+                UIAction(
+                    title: "Summarize My Day",
+                    image: UIImage(systemName: "sparkles")
+                ) { [weak self] _ in
+                    self?.summarizeDayButtonTapped()
+                },
+                UIAction(
+                    title: "Settings",
+                    image: UIImage(systemName: "gearshape")
+                ) { [weak self] _ in
+                    self?.settingsButtonTapped()
+                }
+            ]
+        )
     }
 
     private func configureTagsButton() {
