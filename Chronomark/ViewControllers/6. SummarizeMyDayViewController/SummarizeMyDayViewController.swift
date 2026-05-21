@@ -366,11 +366,23 @@ final class SummarizeMyDayViewController: UIViewController {
         }
     }
 
-    private let tagSummarySectionTitleLabel = UILabel()
-    private let activityTagSummaryTableView = UITableView(frame: .zero, style: .plain)
-    private let summarySectionTitleLabel = UILabel()
-    private let activityTypeSummaryTableView = UITableView(frame: .zero, style: .plain)
-    private let activitiesSectionTitleLabel = UILabel()
+    private enum SummarySection {
+        case tagTotals
+        case activityTypeTotals
+        case activities
+
+        var title: String {
+            switch self {
+            case .tagTotals:
+                return "Activity tag totals"
+            case .activityTypeTotals:
+                return "Activity type totals"
+            case .activities:
+                return "Activities"
+            }
+        }
+    }
+
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let headerStackView = UIStackView()
     private let previousDayButton = UIButton(type: .system)
@@ -381,14 +393,25 @@ final class SummarizeMyDayViewController: UIViewController {
     private var activityRows: [DaySummaryRow] = []
     private var activityTagSummaryRows: [ActivityTagSummaryRow] = []
     private var activityTypeSummaryRows: [ActivityTypeSummaryRow] = []
-    private var activityTagSummaryTableHeightConstraint: NSLayoutConstraint?
-    private var activityTypeSummaryTableHeightConstraint: NSLayoutConstraint?
-    private var activityTypeSectionTopToTagConstraint: NSLayoutConstraint?
-    private var activityTypeSectionTopToHeaderConstraint: NSLayoutConstraint?
-    private var activitiesSectionTopToSummaryConstraint: NSLayoutConstraint?
-    private var activitiesSectionTopToTagConstraint: NSLayoutConstraint?
-    private var activitiesSectionTopToHeaderConstraint: NSLayoutConstraint?
     private var selectedDay: Date
+
+    private var visibleSections: [SummarySection] {
+        var sections: [SummarySection] = []
+
+        if !activityTagSummaryRows.isEmpty {
+            sections.append(.tagTotals)
+        }
+
+        if !activityTypeSummaryRows.isEmpty {
+            sections.append(.activityTypeTotals)
+        }
+
+        if !activityRows.isEmpty {
+            sections.append(.activities)
+        }
+
+        return sections
+    }
 
     var modelContext: ModelContext?
 
@@ -431,91 +454,24 @@ final class SummarizeMyDayViewController: UIViewController {
         configureDayPickerButton()
         configureNextDayButton()
         configureHeaderStackView()
-        configureTagSummarySectionTitleLabel()
-        configureActivityTagSummaryTableView()
-        configureSummarySectionTitleLabel()
-        configureActivityTypeSummaryTableView()
-        configureActivitiesSectionTitleLabel()
         configureTableView()
         configureEmptyStateLabel()
         applyTheme()
 
         headerStackView.translatesAutoresizingMaskIntoConstraints = false
-        tagSummarySectionTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        activityTagSummaryTableView.translatesAutoresizingMaskIntoConstraints = false
-        summarySectionTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        activityTypeSummaryTableView.translatesAutoresizingMaskIntoConstraints = false
-        activitiesSectionTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(headerStackView)
-        view.addSubview(tagSummarySectionTitleLabel)
-        view.addSubview(activityTagSummaryTableView)
-        view.addSubview(summarySectionTitleLabel)
-        view.addSubview(activityTypeSummaryTableView)
-        view.addSubview(activitiesSectionTitleLabel)
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
-
-        let activityTagSummaryTableHeightConstraint = activityTagSummaryTableView.heightAnchor.constraint(equalToConstant: 0)
-        let activityTypeSummaryTableHeightConstraint = activityTypeSummaryTableView.heightAnchor.constraint(equalToConstant: 0)
-        self.activityTagSummaryTableHeightConstraint = activityTagSummaryTableHeightConstraint
-        self.activityTypeSummaryTableHeightConstraint = activityTypeSummaryTableHeightConstraint
-        let activityTypeSectionTopToTagConstraint = summarySectionTitleLabel.topAnchor.constraint(
-            equalTo: activityTagSummaryTableView.bottomAnchor,
-            constant: 32
-        )
-        let activityTypeSectionTopToHeaderConstraint = summarySectionTitleLabel.topAnchor.constraint(
-            equalTo: headerStackView.bottomAnchor,
-            constant: 18
-        )
-        let activitiesSectionTopToSummaryConstraint = activitiesSectionTitleLabel.topAnchor.constraint(
-            equalTo: activityTypeSummaryTableView.bottomAnchor,
-            constant: 32
-        )
-        let activitiesSectionTopToTagConstraint = activitiesSectionTitleLabel.topAnchor.constraint(
-            equalTo: activityTagSummaryTableView.bottomAnchor,
-            constant: 32
-        )
-        let activitiesSectionTopToHeaderConstraint = activitiesSectionTitleLabel.topAnchor.constraint(
-            equalTo: headerStackView.bottomAnchor,
-            constant: 28
-        )
-        self.activityTypeSectionTopToTagConstraint = activityTypeSectionTopToTagConstraint
-        self.activityTypeSectionTopToHeaderConstraint = activityTypeSectionTopToHeaderConstraint
-        self.activitiesSectionTopToSummaryConstraint = activitiesSectionTopToSummaryConstraint
-        self.activitiesSectionTopToTagConstraint = activitiesSectionTopToTagConstraint
-        self.activitiesSectionTopToHeaderConstraint = activitiesSectionTopToHeaderConstraint
 
         NSLayoutConstraint.activate([
             headerStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             headerStackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
             headerStackView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
 
-            tagSummarySectionTitleLabel.topAnchor.constraint(equalTo: headerStackView.bottomAnchor, constant: 18),
-            tagSummarySectionTitleLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            tagSummarySectionTitleLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
-
-            activityTagSummaryTableView.topAnchor.constraint(equalTo: tagSummarySectionTitleLabel.bottomAnchor, constant: 8),
-            activityTagSummaryTableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            activityTagSummaryTableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            activityTagSummaryTableHeightConstraint,
-
-            activityTypeSectionTopToHeaderConstraint,
-            summarySectionTitleLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            summarySectionTitleLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
-
-            activityTypeSummaryTableView.topAnchor.constraint(equalTo: summarySectionTitleLabel.bottomAnchor, constant: 8),
-            activityTypeSummaryTableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            activityTypeSummaryTableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            activityTypeSummaryTableHeightConstraint,
-
-            activitiesSectionTopToSummaryConstraint,
-            activitiesSectionTitleLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            activitiesSectionTitleLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
-
-            tableView.topAnchor.constraint(equalTo: activitiesSectionTitleLabel.bottomAnchor, constant: 8),
+            tableView.topAnchor.constraint(equalTo: headerStackView.bottomAnchor, constant: 18),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -605,57 +561,18 @@ final class SummarizeMyDayViewController: UIViewController {
         headerStackView.addArrangedSubview(nextDayButton)
     }
 
-    private func configureTagSummarySectionTitleLabel() {
-        tagSummarySectionTitleLabel.text = "Activity tag totals"
-        tagSummarySectionTitleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
-        tagSummarySectionTitleLabel.textColor = AppTheme.metadataText
-        tagSummarySectionTitleLabel.numberOfLines = 1
-    }
-
-    private func configureActivityTagSummaryTableView() {
-        activityTagSummaryTableView.dataSource = self
-        activityTagSummaryTableView.delegate = self
-        activityTagSummaryTableView.rowHeight = UITableView.automaticDimension
-        activityTagSummaryTableView.estimatedRowHeight = 48
-        activityTagSummaryTableView.separatorInset = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
-        activityTagSummaryTableView.register(
-            ActivityTypeSummaryCell.self,
-            forCellReuseIdentifier: ActivityTypeSummaryCell.reuseIdentifier
-        )
-    }
-
-    private func configureSummarySectionTitleLabel() {
-        summarySectionTitleLabel.text = "Activity type totals"
-        summarySectionTitleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
-        summarySectionTitleLabel.textColor = AppTheme.metadataText
-        summarySectionTitleLabel.numberOfLines = 1
-    }
-
-    private func configureActivityTypeSummaryTableView() {
-        activityTypeSummaryTableView.dataSource = self
-        activityTypeSummaryTableView.delegate = self
-        activityTypeSummaryTableView.rowHeight = UITableView.automaticDimension
-        activityTypeSummaryTableView.estimatedRowHeight = 48
-        activityTypeSummaryTableView.separatorInset = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
-        activityTypeSummaryTableView.register(
-            ActivityTypeSummaryCell.self,
-            forCellReuseIdentifier: ActivityTypeSummaryCell.reuseIdentifier
-        )
-    }
-
-    private func configureActivitiesSectionTitleLabel() {
-        activitiesSectionTitleLabel.text = "Activities"
-        activitiesSectionTitleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
-        activitiesSectionTitleLabel.textColor = AppTheme.metadataText
-        activitiesSectionTitleLabel.numberOfLines = 1
-    }
-
     private func configureTableView() {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 68
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
+        tableView.sectionHeaderTopPadding = 0
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+        tableView.register(
+            ActivityTypeSummaryCell.self,
+            forCellReuseIdentifier: ActivityTypeSummaryCell.reuseIdentifier
+        )
         tableView.register(DaySummaryCell.self, forCellReuseIdentifier: DaySummaryCell.reuseIdentifier)
     }
 
@@ -669,15 +586,8 @@ final class SummarizeMyDayViewController: UIViewController {
 
     private func applyTheme() {
         view.backgroundColor = AppTheme.screenBackground
-        activityTagSummaryTableView.backgroundColor = AppTheme.screenBackground
-        activityTagSummaryTableView.separatorColor = AppTheme.separator
-        activityTypeSummaryTableView.backgroundColor = AppTheme.screenBackground
-        activityTypeSummaryTableView.separatorColor = AppTheme.separator
         tableView.backgroundColor = AppTheme.screenBackground
         tableView.separatorColor = AppTheme.separator
-        tagSummarySectionTitleLabel.textColor = AppTheme.metadataText
-        summarySectionTitleLabel.textColor = AppTheme.metadataText
-        activitiesSectionTitleLabel.textColor = AppTheme.metadataText
         summaryLabel.textColor = AppTheme.metadataText
         previousDayButton.tintColor = AppTheme.accent
         dayPickerButton.tintColor = AppTheme.accent
@@ -702,8 +612,6 @@ final class SummarizeMyDayViewController: UIViewController {
     private func registerForThemeChanges() {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (viewController: Self, _) in
             viewController.applyTheme()
-            viewController.activityTagSummaryTableView.reloadData()
-            viewController.activityTypeSummaryTableView.reloadData()
             viewController.tableView.reloadData()
         }
     }
@@ -978,39 +886,9 @@ final class SummarizeMyDayViewController: UIViewController {
 
     private func updateContent() {
         updateSummary()
-        activityTagSummaryTableView.reloadData()
-        activityTypeSummaryTableView.reloadData()
         tableView.reloadData()
         emptyStateLabel.text = emptyStateText()
-        emptyStateLabel.isHidden = !activityRows.isEmpty
-        updateSummarySectionVisibility()
-    }
-
-    private func updateSummarySectionVisibility() {
-        let shouldShowTagSummary = !activityRows.isEmpty && !activityTagSummaryRows.isEmpty
-        let shouldShowTypeSummary = !activityRows.isEmpty && !activityTypeSummaryRows.isEmpty
-        tagSummarySectionTitleLabel.isHidden = !shouldShowTagSummary
-        activityTagSummaryTableView.isHidden = !shouldShowTagSummary
-        summarySectionTitleLabel.isHidden = !shouldShowTypeSummary
-        activityTypeSummaryTableView.isHidden = !shouldShowTypeSummary
-        activitiesSectionTitleLabel.isHidden = activityRows.isEmpty
-
-        activityTypeSectionTopToTagConstraint?.isActive = shouldShowTypeSummary && shouldShowTagSummary
-        activityTypeSectionTopToHeaderConstraint?.isActive = shouldShowTypeSummary && !shouldShowTagSummary
-        activitiesSectionTopToSummaryConstraint?.isActive = !activityRows.isEmpty && shouldShowTypeSummary
-        activitiesSectionTopToTagConstraint?.isActive = !activityRows.isEmpty && !shouldShowTypeSummary && shouldShowTagSummary
-        activitiesSectionTopToHeaderConstraint?.isActive = activityRows.isEmpty || (!shouldShowTypeSummary && !shouldShowTagSummary)
-
-        let rowHeight: CGFloat = 48
-        let maximumHeight: CGFloat = 220
-        activityTagSummaryTableHeightConstraint?.constant = shouldShowTagSummary
-            ? min(CGFloat(activityTagSummaryRows.count) * rowHeight, maximumHeight)
-            : 0
-        activityTypeSummaryTableHeightConstraint?.constant = shouldShowTypeSummary
-            ? min(CGFloat(activityTypeSummaryRows.count) * rowHeight, maximumHeight)
-            : 0
-        activityTagSummaryTableView.isScrollEnabled = CGFloat(activityTagSummaryRows.count) * rowHeight > maximumHeight
-        activityTypeSummaryTableView.isScrollEnabled = CGFloat(activityTypeSummaryRows.count) * rowHeight > maximumHeight
+        emptyStateLabel.isHidden = !visibleSections.isEmpty
     }
 
     private func emptyStateText() -> String {
@@ -1112,46 +990,48 @@ final class SummarizeMyDayViewController: UIViewController {
 }
 
 extension SummarizeMyDayViewController: UITableViewDataSource {
+    func numberOfSections(in tableView: UITableView) -> Int {
+        visibleSections.count
+    }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if tableView === activityTagSummaryTableView {
+        switch visibleSections[section] {
+        case .tagTotals:
             return activityTagSummaryRows.count
-        }
-
-        if tableView === activityTypeSummaryTableView {
+        case .activityTypeTotals:
             return activityTypeSummaryRows.count
+        case .activities:
+            return activityRows.count
         }
-
-        return activityRows.count
     }
 
     func tableView(
         _ tableView: UITableView,
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
-        if tableView === activityTagSummaryTableView {
+        switch visibleSections[indexPath.section] {
+        case .tagTotals:
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: ActivityTypeSummaryCell.reuseIdentifier,
                 for: indexPath
             ) as? ActivityTypeSummaryCell
             cell?.configure(with: activityTagSummaryRows[indexPath.row])
             return cell ?? UITableViewCell()
-        }
-
-        if tableView === activityTypeSummaryTableView {
+        case .activityTypeTotals:
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: ActivityTypeSummaryCell.reuseIdentifier,
                 for: indexPath
             ) as? ActivityTypeSummaryCell
             cell?.configure(with: activityTypeSummaryRows[indexPath.row])
             return cell ?? UITableViewCell()
+        case .activities:
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: DaySummaryCell.reuseIdentifier,
+                for: indexPath
+            ) as? DaySummaryCell
+            cell?.configure(with: activityRows[indexPath.row])
+            return cell ?? UITableViewCell()
         }
-
-        let cell = tableView.dequeueReusableCell(
-            withIdentifier: DaySummaryCell.reuseIdentifier,
-            for: indexPath
-        ) as? DaySummaryCell
-        cell?.configure(with: activityRows[indexPath.row])
-        return cell ?? UITableViewCell()
     }
 }
 
@@ -1159,11 +1039,7 @@ extension SummarizeMyDayViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        guard tableView !== activityTagSummaryTableView else {
-            return
-        }
-
-        guard tableView !== activityTypeSummaryTableView else {
+        guard visibleSections[indexPath.section] == .activities else {
             return
         }
 
@@ -1172,6 +1048,32 @@ extension SummarizeMyDayViewController: UITableViewDelegate {
         }
 
         showActivityDetails(for: activity)
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let containerView = UIView()
+        containerView.backgroundColor = AppTheme.screenBackground
+
+        let label = UILabel()
+        label.text = visibleSections[section].title
+        label.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+        label.textColor = AppTheme.metadataText
+        label.numberOfLines = 1
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        containerView.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),
+            label.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
+            label.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 18),
+            label.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -8)
+        ])
+
+        return containerView
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        44
     }
 
     private func showActivityDetails(for activity: Activity) {
