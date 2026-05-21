@@ -213,6 +213,7 @@ final class ActivityDetailsViewController: UIViewController {
 
             datePicker.date = date
             datePicker.datePickerMode = .dateAndTime
+            datePicker.maximumDate = Date()
             datePicker.preferredDatePickerStyle = .compact
             datePicker.tintColor = AppTheme.accent
             datePicker.translatesAutoresizingMaskIntoConstraints = false
@@ -623,6 +624,8 @@ final class ActivityDetailsViewController: UIViewController {
             )
             startDatePicker = startDateRow.datePicker
             completionDatePicker = completionDateRow.datePicker
+            configureTimestampDatePicker(startDatePicker)
+            configureTimestampDatePicker(completionDatePicker)
 
             var rows: [UIView] = [
                 activityTypeRow,
@@ -694,6 +697,50 @@ final class ActivityDetailsViewController: UIViewController {
             }
         )
         return row
+    }
+
+    private func configureTimestampDatePicker(_ datePicker: UIDatePicker?) {
+        guard let datePicker else {
+            return
+        }
+
+        datePicker.maximumDate = Date()
+        clampDatePickerToPresent(datePicker)
+        datePicker.addAction(
+            UIAction { [weak self, weak datePicker] _ in
+                guard let datePicker else {
+                    return
+                }
+
+                self?.handleTimestampDatePickerValueChanged(datePicker)
+            },
+            for: .valueChanged
+        )
+    }
+
+    private func clampDatePickerToPresent(_ datePicker: UIDatePicker) {
+        let now = Date()
+        datePicker.maximumDate = now
+
+        if datePicker.date > now {
+            datePicker.date = now
+        }
+    }
+
+    private func handleTimestampDatePickerValueChanged(_ datePicker: UIDatePicker) {
+        clampDatePickerToPresent(datePicker)
+
+        let currentStartDate = startDatePicker?.date
+        let currentCompletionDate = completionDatePicker?.date
+        let currentSelectedActivityType = selectedActivityType
+
+        DispatchQueue.main.async { [weak self] in
+            self?.refreshActivityDetailsAfterStagingNote(
+                startDate: currentStartDate,
+                completionDate: currentCompletionDate,
+                selectedActivityType: currentSelectedActivityType
+            )
+        }
     }
 
     private func makeDeleteActivityButton() -> UIButton {
@@ -892,6 +939,11 @@ final class ActivityDetailsViewController: UIViewController {
             return
         }
 
+        guard startDate <= Date(), completionDate <= Date() else {
+            presentFutureDateAlert()
+            return
+        }
+
         let previousActivityType = activity.activityType
         let previousActivityTypeID = previousActivityType.uniqueID
 
@@ -965,9 +1017,15 @@ final class ActivityDetailsViewController: UIViewController {
         populateActivityDetails()
         if let startDate {
             startDatePicker?.date = startDate
+            if let startDatePicker {
+                clampDatePickerToPresent(startDatePicker)
+            }
         }
         if let completionDate {
             completionDatePicker?.date = completionDate
+            if let completionDatePicker {
+                clampDatePickerToPresent(completionDatePicker)
+            }
         }
     }
 
@@ -1107,6 +1165,16 @@ final class ActivityDetailsViewController: UIViewController {
         let alertController = UIAlertController(
             title: "Invalid Time Range",
             message: "Completion time must be after start time.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
+    private func presentFutureDateAlert() {
+        let alertController = UIAlertController(
+            title: "Invalid Time",
+            message: "Activity times cannot be in the future.",
             preferredStyle: .alert
         )
         alertController.addAction(UIAlertAction(title: "OK", style: .default))

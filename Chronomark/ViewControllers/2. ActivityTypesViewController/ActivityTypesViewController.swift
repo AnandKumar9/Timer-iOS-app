@@ -311,7 +311,7 @@ final class ActivityTypesViewController: UIViewController {
         }
     )
     private lazy var moreButton = UIBarButtonItem(
-        image: UIImage(systemName: "ellipsis.circle"),
+        image: UIImage(systemName: "wand.and.sparkles"),
         menu: makeMoreMenu()
     )
     private let tagsButton = UIButton(type: .system)
