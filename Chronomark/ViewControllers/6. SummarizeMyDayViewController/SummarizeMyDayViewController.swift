@@ -393,6 +393,7 @@ final class SummarizeMyDayViewController: UIViewController {
     private var activityRows: [DaySummaryRow] = []
     private var activityTagSummaryRows: [ActivityTagSummaryRow] = []
     private var activityTypeSummaryRows: [ActivityTypeSummaryRow] = []
+    private var remainingEmptyStateQuotes = SummarizeMyDayViewController.emptyStateQuotes.shuffled()
     private var selectedDay: Date
 
     private var visibleSections: [SummarySection] {
@@ -896,7 +897,11 @@ final class SummarizeMyDayViewController: UIViewController {
             return Self.earlyTodayEmptyStateText
         }
 
-        return Self.emptyStateQuotes.randomElement() ?? Self.earlyTodayEmptyStateText
+        if remainingEmptyStateQuotes.isEmpty {
+            remainingEmptyStateQuotes = Self.emptyStateQuotes.shuffled()
+        }
+
+        return remainingEmptyStateQuotes.popLast() ?? Self.earlyTodayEmptyStateText
     }
 
     private func updateSummary() {
