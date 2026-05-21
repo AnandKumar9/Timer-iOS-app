@@ -310,6 +310,12 @@ final class ActivityTypesViewController: UIViewController {
             self?.settingsButtonTapped()
         }
     )
+    private lazy var summarizeDayButton = UIBarButtonItem(
+        image: UIImage(systemName: "calendar"),
+        primaryAction: UIAction { [weak self] _ in
+            self?.summarizeDayButtonTapped()
+        }
+    )
     private let tagsButton = UIButton(type: .system)
     private lazy var navigationTagsButton = UIBarButtonItem(customView: tagsButton)
     private var activityTypeRows: [ActivityTypeRow] = []
@@ -360,8 +366,14 @@ final class ActivityTypesViewController: UIViewController {
             }
         )
         configureTagsButton()
+        summarizeDayButton.accessibilityLabel = "Summarize My Day"
         settingsButton.accessibilityLabel = "Settings"
-        navigationItem.rightBarButtonItems = [navigationAddActivityTypeButton, navigationTagsButton, settingsButton]
+        navigationItem.rightBarButtonItems = [
+            navigationAddActivityTypeButton,
+            navigationTagsButton,
+            summarizeDayButton,
+            settingsButton
+        ]
 
         configureTableView()
         configureEmptyStateLabel()
@@ -676,6 +688,16 @@ final class ActivityTypesViewController: UIViewController {
         }
 
         present(navigationController, animated: true)
+    }
+
+    private func summarizeDayButtonTapped() {
+        let alertController = UIAlertController(
+            title: "Summarize My Day",
+            message: "Daily activity summaries are coming soon.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
     }
 
     private func startActivityType(_ activityType: ActivityType) {
