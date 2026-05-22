@@ -50,7 +50,6 @@ final class SummarizeMyDayViewController: UIViewController {
         "I followed my heart. It led me to the fridge.",
         "Some people wake up productive. I wake up.",
         "My brain has too many tabs open.",
-        "I don’t trip over things. I do random gravity checks.",
         "I finally got eight hours of sleep. It took me three days.",
         "I’m not arguing. I’m just passionately explaining why I’m correct.",
         "I love pressing the snooze button like it’ll change my life.",
@@ -60,8 +59,11 @@ final class SummarizeMyDayViewController: UIViewController {
         "Start before you feel ready.",
         "Dream big. Start small. Complain less.",
         "Success is mostly just not quitting.",
-        "The secret ingredient is usually persistence."
-        
+        "The secret ingredient is usually persistence.",
+        "Not every hour has to be productive. Some are for playlists and vibes.",
+        "Spent the whole day chilling but the soundtrack was incredible.",
+        "Sometimes the most productive thing you can do is absolutely nothing with great music playing.",
+        "Some people track time. I track story arcs.",
     ]
 
     private final class DaySummaryCell: UITableViewCell {
