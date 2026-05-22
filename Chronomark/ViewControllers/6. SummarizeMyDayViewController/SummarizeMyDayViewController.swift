@@ -30,6 +30,38 @@ final class SummarizeMyDayViewController: UIViewController {
         "I’m not arguing. I’m just explaining why I’m right.",
         "Reality called, so I hung up.",
         "I came. I saw. I forgot what I was doing.",
+        "Organized chaos is still a system.",
+        "No roadmap, just momentum.",
+        "The plan is to adapt until it works.",
+        "Chaos, but with follow-through.",
+        "I prefer flexible ambition over rigid planning.",
+        "Winging it has surprisingly good results sometimes.",
+        "Direction matters more than detailed planning.",
+        "I’m less ‘master plan’ and more ‘continuous improvisation.’",
+        "Somehow, everything works out between procrastination and panic.",
+        "I believe in spontaneous productivity.",
+        "I like plans that leave room for better ideas.",
+        "I run on instincts, and caffeine.",
+        "Not all who wander are lost. Some are just figuring it out live.",
+        "My strategy is simple: start somewhere and adjust aggressively.",
+        "I don’t always have a plan, but things somehow get done.",
+        "I’m not lazy. I’m just highly motivated to do nothing.",
+        "My life feels like a test I didn’t study for.",
+        "I followed my heart. It led me to the fridge.",
+        "Some people wake up productive. I wake up.",
+        "My brain has too many tabs open.",
+        "I don’t trip over things. I do random gravity checks.",
+        "I finally got eight hours of sleep. It took me three days.",
+        "I’m not arguing. I’m just passionately explaining why I’m correct.",
+        "I love pressing the snooze button like it’ll change my life.",
+        "I’m at a place in my life where errands are considered going out.",
+        "The problem with the future is that it keeps turning into the present.",
+        "Done is better than perfect.",
+        "Start before you feel ready.",
+        "Dream big. Start small. Complain less.",
+        "Success is mostly just not quitting.",
+        "The secret ingredient is usually persistence."
+        
     ]
 
     private final class DaySummaryCell: UITableViewCell {
@@ -374,9 +406,9 @@ final class SummarizeMyDayViewController: UIViewController {
         var title: String {
             switch self {
             case .tagTotals:
-                return "Activity tag totals"
+                return "Activity Tags"
             case .activityTypeTotals:
-                return "Activity type totals"
+                return "Activity Types"
             case .activities:
                 return "Activities"
             }
