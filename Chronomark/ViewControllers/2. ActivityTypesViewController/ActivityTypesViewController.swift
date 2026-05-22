@@ -5,6 +5,13 @@ enum ActivityTagFilterPersistence {
     static let activityTypeTagsDidChangeNotification = Notification.Name("ActivityTagFilterPersistence.activityTypeTagsDidChangeNotification")
 
     private static let selectedTagNamesKey = "ActivityTypesViewController.selectedTagNames"
+    private static let selectedFilterModeKey = "ActivityTypesViewController.selectedFilterMode"
+
+    enum FilterMode: String {
+        case none
+        case favorites
+        case tags
+    }
 
     static func reconcilePersistedSelection(modelContext: ModelContext) -> Set<UUID> {
         let selectedTagIDs = selectedTagIDsMatchingPersistedNames(modelContext: modelContext)
@@ -31,6 +38,20 @@ enum ActivityTagFilterPersistence {
         } catch {
             assertionFailure("Unable to persist selected tag names: \(error)")
         }
+    }
+
+    static func persistedFilterMode(hasSelectedTags: Bool) -> FilterMode {
+        if
+            let rawValue = UserDefaults.standard.string(forKey: selectedFilterModeKey),
+            let mode = FilterMode(rawValue: rawValue) {
+            return mode
+        }
+
+        return hasSelectedTags ? .tags : .none
+    }
+
+    static func persistFilterMode(_ mode: FilterMode) {
+        UserDefaults.standard.set(mode.rawValue, forKey: selectedFilterModeKey)
     }
 
     private static func selectedTagIDsMatchingPersistedNames(modelContext: ModelContext) -> Set<UUID> {
@@ -314,9 +335,10 @@ final class ActivityTypesViewController: UIViewController {
         image: UIImage(systemName: "wand.and.sparkles"),
         menu: makeMoreMenu()
     )
-    private let tagsButton = UIButton(type: .system)
-    private lazy var navigationTagsButton = UIBarButtonItem(customView: tagsButton)
+    private let filterButton = UIButton(type: .system)
+    private lazy var navigationFilterButton = UIBarButtonItem(customView: filterButton)
     private var activityTypeRows: [ActivityTypeRow] = []
+    private var selectedFilterMode: ActivityTagFilterPersistence.FilterMode = .none
     private var selectedTagIDs: Set<UUID> = []
     private var didPromptForInitialActivityTypeCreation = false
 #if DEBUG
@@ -357,12 +379,12 @@ final class ActivityTypesViewController: UIViewController {
 
     private func configureAppearance() {
         title = "Activity Types"
-        configureTagsButton()
+        configureFilterButton()
         navigationAddActivityTypeButton.accessibilityLabel = "Add Activity"
         moreButton.accessibilityLabel = "More"
         navigationItem.rightBarButtonItems = [
             navigationAddActivityTypeButton,
-            navigationTagsButton,
+            navigationFilterButton,
             moreButton
         ]
 
@@ -419,7 +441,7 @@ final class ActivityTypesViewController: UIViewController {
         ]
         navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
         navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
-        updateTagsFilterIndicator()
+        updateFilterButton()
     }
 
     private func navigationBarAppearance() -> UINavigationBarAppearance {
@@ -488,7 +510,7 @@ final class ActivityTypesViewController: UIViewController {
 #if DEBUG
         if !screenshotSampleActivityTypes.isEmpty {
             activityTypeRows = screenshotSampleActivityTypes
-                .filter(matchesSelectedTags)
+                .filter(matchesSelectedFilter)
                 .map(makeActivityTypeRow)
                 .sorted(by: activityTypeSort)
             updateContent()
@@ -504,7 +526,7 @@ final class ActivityTypesViewController: UIViewController {
         do {
             let activityTypes = try modelContext.fetch(FetchDescriptor<ActivityType>())
             activityTypeRows = activityTypes
-                .filter(matchesSelectedTags)
+                .filter(matchesSelectedFilter)
                 .map(makeActivityTypeRow)
                 .sorted(by: activityTypeSort)
             updateContent()
@@ -525,9 +547,11 @@ final class ActivityTypesViewController: UIViewController {
         }
 
         selectedTagIDs = ActivityTagFilterPersistence.reconcilePersistedSelection(modelContext: modelContext)
+        selectedFilterMode = ActivityTagFilterPersistence.persistedFilterMode(hasSelectedTags: !selectedTagIDs.isEmpty)
     }
 
-    private func persistSelectedTagFilter() {
+    private func persistSelectedFilterState() {
+        ActivityTagFilterPersistence.persistFilterMode(selectedFilterMode)
         ActivityTagFilterPersistence.persistSelectedTagIDs(selectedTagIDs, modelContext: modelContext)
     }
 
@@ -563,13 +587,20 @@ final class ActivityTypesViewController: UIViewController {
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending } ?? []
     }
 
-    private func matchesSelectedTags(_ activityType: ActivityType) -> Bool {
-        guard !selectedTagIDs.isEmpty else {
+    private func matchesSelectedFilter(_ activityType: ActivityType) -> Bool {
+        switch selectedFilterMode {
+        case .none:
             return true
-        }
+        case .favorites:
+            return activityType.isFavorite
+        case .tags:
+            guard !selectedTagIDs.isEmpty else {
+                return true
+            }
 
-        let activityTypeTagIDs = Set(activityType.tags?.map(\.uniqueID) ?? [])
-        return selectedTagIDs.contains { activityTypeTagIDs.contains($0) }
+            let activityTypeTagIDs = Set(activityType.tags?.map(\.uniqueID) ?? [])
+            return selectedTagIDs.contains { activityTypeTagIDs.contains($0) }
+        }
     }
 
     private func latestCompletedActivity(for activityType: ActivityType) -> Activity? {
@@ -619,9 +650,20 @@ final class ActivityTypesViewController: UIViewController {
 
     private func updateContent() {
         tableView.reloadData()
-        emptyStateLabel.text = selectedTagIDs.isEmpty ? "No activity types" : "No activity types match the selected tags"
+        emptyStateLabel.text = emptyStateText()
         emptyStateLabel.isHidden = !activityTypeRows.isEmpty
-        updateTagsFilterIndicator()
+        updateFilterButton()
+    }
+
+    private func emptyStateText() -> String {
+        switch selectedFilterMode {
+        case .none:
+            return "No activity types"
+        case .favorites:
+            return "No favorite activity types"
+        case .tags:
+            return selectedTagIDs.isEmpty ? "No activity types" : "No activity types match the selected tags"
+        }
     }
 
     private func promptForInitialActivityTypeIfNeeded() {
@@ -630,6 +672,10 @@ final class ActivityTypesViewController: UIViewController {
             return
         }
 #endif
+        guard selectedFilterMode == .none else {
+            return
+        }
+
         guard !didPromptForInitialActivityTypeCreation else {
             return
         }
@@ -834,47 +880,93 @@ final class ActivityTypesViewController: UIViewController {
         )
     }
 
-    private func configureTagsButton() {
-        tagsButton.translatesAutoresizingMaskIntoConstraints = false
-        tagsButton.contentHorizontalAlignment = .center
-        tagsButton.contentVerticalAlignment = .center
-        tagsButton.widthAnchor.constraint(equalToConstant: 58).isActive = true
-        tagsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-        tagsButton.addAction(
-            UIAction { [weak self] _ in
-                self?.presentTagsManagementSheet()
-            },
-            for: .touchUpInside
-        )
-        updateTagsFilterIndicator()
+    private func configureFilterButton() {
+        filterButton.translatesAutoresizingMaskIntoConstraints = false
+        filterButton.contentHorizontalAlignment = .center
+        filterButton.contentVerticalAlignment = .center
+        filterButton.showsMenuAsPrimaryAction = true
+        filterButton.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        filterButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+        updateFilterButton()
     }
 
-    private func updateTagsFilterIndicator() {
-        let isFiltering = !selectedTagIDs.isEmpty
+    private func updateFilterButton() {
+        let isFiltering = selectedFilterMode != .none
         var configuration = UIButton.Configuration.plain()
-        configuration.image = UIImage(systemName: isFiltering ? "tag.fill" : "tag")
-        configuration.imagePadding = 4
+        configuration.image = UIImage(systemName: isFiltering ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
         configuration.cornerStyle = .capsule
         configuration.baseForegroundColor = AppTheme.accent
         configuration.background.backgroundColor = isFiltering ? AppTheme.controlBackground : .clear
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 7, bottom: 5, trailing: 7)
 
-        if isFiltering {
-            configuration.title = "\(selectedTagIDs.count)"
-            configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
-                var updatedAttributes = attributes
-                updatedAttributes.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
-                return updatedAttributes
-            }
-        }
-
-        tagsButton.configuration = configuration
-        tagsButton.accessibilityLabel = isFiltering
-            ? "Filtered by \(selectedTagIDs.count) tags. Manage Tags"
-            : "Manage Tags"
-        tagsButton.invalidateIntrinsicContentSize()
-        tagsButton.setNeedsLayout()
+        filterButton.configuration = configuration
+        filterButton.menu = makeFilterMenu()
+        filterButton.accessibilityLabel = filterButtonAccessibilityLabel()
+        filterButton.invalidateIntrinsicContentSize()
+        filterButton.setNeedsLayout()
         navigationController?.navigationBar.setNeedsLayout()
+    }
+
+    private func makeFilterMenu() -> UIMenu {
+        UIMenu(
+            title: "Filter",
+            options: .singleSelection,
+            children: [
+                UIAction(
+                    title: "Favorites",
+                    image: UIImage(systemName: "star.fill"),
+                    state: selectedFilterMode == .favorites ? .on : .off
+                ) { [weak self] _ in
+                    self?.selectFavoritesFilter()
+                },
+                UIAction(
+                    title: "Tags",
+                    image: UIImage(systemName: "tag"),
+                    state: selectedFilterMode == .tags ? .on : .off
+                ) { [weak self] _ in
+                    self?.selectTagsFilter()
+                },
+                UIAction(
+                    title: "None",
+                    state: selectedFilterMode == .none ? .on : .off
+                ) { [weak self] _ in
+                    self?.selectNoFilter()
+                }
+            ]
+        )
+    }
+
+    private func filterButtonAccessibilityLabel() -> String {
+        switch selectedFilterMode {
+        case .none:
+            return "Filter"
+        case .favorites:
+            return "Filtered by favorites"
+        case .tags:
+            return selectedTagIDs.isEmpty
+                ? "Filtered by tags"
+                : "Filtered by \(selectedTagIDs.count) tags"
+        }
+    }
+
+    private func selectNoFilter() {
+        selectedFilterMode = .none
+        selectedTagIDs = []
+        persistSelectedFilterState()
+        loadActivityTypes()
+    }
+
+    private func selectFavoritesFilter() {
+        selectedFilterMode = .favorites
+        persistSelectedFilterState()
+        loadActivityTypes()
+    }
+
+    private func selectTagsFilter() {
+        selectedFilterMode = .tags
+        persistSelectedFilterState()
+        loadActivityTypes()
+        presentTagsManagementSheet()
     }
 
     private func presentTagsManagementSheet() {
@@ -884,11 +976,12 @@ final class ActivityTypesViewController: UIViewController {
         tagsManagementViewController.selectedTagIDs = selectedTagIDs
         tagsManagementViewController.onSelectionChange = { [weak self] selectedTagIDs in
             self?.selectedTagIDs = selectedTagIDs
-            self?.persistSelectedTagFilter()
+            self?.selectedFilterMode = .tags
+            self?.persistSelectedFilterState()
             self?.loadActivityTypes()
         }
         tagsManagementViewController.onTagsChange = { [weak self] in
-            self?.persistSelectedTagFilter()
+            self?.persistSelectedFilterState()
             self?.loadActivityTypes()
         }
         tagsManagementViewController.modalPresentationStyle = .pageSheet
@@ -1014,6 +1107,7 @@ final class ActivityTypesViewController: UIViewController {
     ) {
         screenshotSampleActivityTypes = activityTypes
         self.selectedTagIDs = selectedTagIDs
+        selectedFilterMode = selectedTagIDs.isEmpty ? .none : .tags
         modelContext = nil
         didPromptForInitialActivityTypeCreation = true
 

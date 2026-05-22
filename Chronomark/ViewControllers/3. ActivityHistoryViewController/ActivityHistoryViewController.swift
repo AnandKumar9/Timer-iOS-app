@@ -174,6 +174,18 @@ final class ActivityHistoryViewController: UIViewController {
     private let activityStatsLabel = UILabel()
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
+    private lazy var favoriteButton = UIBarButtonItem(
+        image: UIImage(systemName: "star"),
+        primaryAction: UIAction { [weak self] _ in
+            self?.favoriteButtonTapped()
+        }
+    )
+    private lazy var tagsButton = UIBarButtonItem(
+        image: UIImage(systemName: "tag"),
+        primaryAction: UIAction { [weak self] _ in
+            self?.presentTagsSheet()
+        }
+    )
     private var activityRows: [ActivityHistoryRow] = []
     private let maximumVisibleTagCount = 4
 #if DEBUG
@@ -205,14 +217,9 @@ final class ActivityHistoryViewController: UIViewController {
 
     private func configureAppearance() {
         title = "Activity History"
-        let tagsButton = UIBarButtonItem(
-            image: UIImage(systemName: "tag"),
-            primaryAction: UIAction { [weak self] _ in
-                self?.presentTagsSheet()
-            }
-        )
+        favoriteButton.accessibilityLabel = "Favorite Activity Type"
         tagsButton.accessibilityLabel = "Edit Tags"
-        navigationItem.rightBarButtonItem = tagsButton
+        navigationItem.rightBarButtonItems = [favoriteButton, tagsButton]
 
         configureActivityNameLabel()
         configureTagPreviewStackView()
@@ -334,6 +341,7 @@ final class ActivityHistoryViewController: UIViewController {
         ]
         navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
         navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
+        updateFavoriteButton()
     }
 
     private func navigationBarAppearance() -> UINavigationBarAppearance {
@@ -378,6 +386,7 @@ final class ActivityHistoryViewController: UIViewController {
 
     private func loadActivities() {
         activityNameLabel.text = activityType?.name ?? "Activity"
+        updateFavoriteButton()
 
         guard let activityType else {
             activityRows = []
@@ -829,9 +838,60 @@ final class ActivityHistoryViewController: UIViewController {
         return String(trimmedNote.prefix(Self.noteCharacterLimit))
     }
 
+    private func updateFavoriteButton() {
+        let isFavorite = activityType?.isFavorite ?? false
+        favoriteButton.image = UIImage(systemName: isFavorite ? "star.fill" : "star")
+        favoriteButton.accessibilityLabel = isFavorite
+            ? "Unfavorite Activity Type"
+            : "Favorite Activity Type"
+        favoriteButton.isEnabled = activityType != nil
+    }
+
+    private func favoriteButtonTapped() {
+        guard let activityType else {
+            return
+        }
+
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            activityType.isFavorite.toggle()
+            updateFavoriteButton()
+            return
+        }
+#endif
+
+        guard let modelContext else {
+            return
+        }
+
+        let previousValue = activityType.isFavorite
+        activityType.isFavorite.toggle()
+
+        do {
+            try modelContext.save()
+            updateFavoriteButton()
+            TimerSessionState.notifyActivityPersisted(activityTypeID: activityType.uniqueID)
+        } catch {
+            activityType.isFavorite = previousValue
+            updateFavoriteButton()
+            assertionFailure("Unable to save activity type favorite state: \(error)")
+            presentSaveFavoriteErrorAlert()
+        }
+    }
+
     private func presentDeleteActivityErrorAlert() {
         let alertController = UIAlertController(
             title: "Unable to Delete Activity",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
+    private func presentSaveFavoriteErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Save Favorite",
             message: "Please try again.",
             preferredStyle: .alert
         )
