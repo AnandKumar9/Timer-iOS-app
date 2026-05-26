@@ -169,9 +169,10 @@ final class ActivityHistoryViewController: UIViewController {
 
     private let headerStackView = UIStackView()
     private let activityNameLabel = UILabel()
-    private let tagPreviewContainerView = UIView()
     private let tagPreviewStackView = UIStackView()
     private let activityStatsLabel = UILabel()
+    private let activityStatsRowStackView = UIStackView()
+    private let activityStatsSpacerView = UIView()
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
     private lazy var favoriteButton = UIBarButtonItem(
@@ -234,8 +235,7 @@ final class ActivityHistoryViewController: UIViewController {
         headerStackView.spacing = 8
         headerStackView.translatesAutoresizingMaskIntoConstraints = false
         headerStackView.addArrangedSubview(activityNameLabel)
-        headerStackView.addArrangedSubview(tagPreviewContainerView)
-        headerStackView.addArrangedSubview(activityStatsLabel)
+        headerStackView.addArrangedSubview(activityStatsRowStackView)
 
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -283,24 +283,27 @@ final class ActivityHistoryViewController: UIViewController {
         activityStatsLabel.adjustsFontSizeToFitWidth = true
         activityStatsLabel.minimumScaleFactor = 0.8
         activityStatsLabel.lineBreakMode = .byClipping
+        activityStatsLabel.setContentHuggingPriority(.required, for: .horizontal)
+        activityStatsLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        activityStatsRowStackView.axis = .horizontal
+        activityStatsRowStackView.alignment = .center
+        activityStatsRowStackView.spacing = 8
+        activityStatsRowStackView.addArrangedSubview(activityStatsLabel)
+        activityStatsRowStackView.addArrangedSubview(tagPreviewStackView)
+        activityStatsRowStackView.addArrangedSubview(activityStatsSpacerView)
+
+        activityStatsSpacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        activityStatsSpacerView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
     private func configureTagPreviewStackView() {
         tagPreviewStackView.axis = .horizontal
         tagPreviewStackView.alignment = .center
         tagPreviewStackView.spacing = 6
-        tagPreviewStackView.translatesAutoresizingMaskIntoConstraints = false
-
-        tagPreviewContainerView.addSubview(tagPreviewStackView)
-        tagPreviewContainerView.isHidden = true
-        tagPreviewContainerView.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            tagPreviewStackView.leadingAnchor.constraint(equalTo: tagPreviewContainerView.leadingAnchor),
-            tagPreviewStackView.topAnchor.constraint(equalTo: tagPreviewContainerView.topAnchor),
-            tagPreviewStackView.bottomAnchor.constraint(equalTo: tagPreviewContainerView.bottomAnchor),
-            tagPreviewStackView.trailingAnchor.constraint(equalTo: tagPreviewContainerView.trailingAnchor)
-        ])
+        tagPreviewStackView.isHidden = true
+        tagPreviewStackView.setContentHuggingPriority(.required, for: .horizontal)
+        tagPreviewStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     private func configureTableView() {
@@ -342,6 +345,7 @@ final class ActivityHistoryViewController: UIViewController {
         navigationController?.navigationBar.standardAppearance = navigationBarAppearance()
         navigationController?.navigationBar.scrollEdgeAppearance = navigationBarAppearance()
         updateFavoriteButton()
+        updateTagsButton()
     }
 
     private func navigationBarAppearance() -> UINavigationBarAppearance {
@@ -387,6 +391,7 @@ final class ActivityHistoryViewController: UIViewController {
     private func loadActivities() {
         activityNameLabel.text = activityType?.name ?? "Activity"
         updateFavoriteButton()
+        updateTagsButton()
 
         guard let activityType else {
             activityRows = []
@@ -445,7 +450,7 @@ final class ActivityHistoryViewController: UIViewController {
             view.removeFromSuperview()
         }
 
-        tagPreviewContainerView.isHidden = tags.isEmpty
+        tagPreviewStackView.isHidden = tags.isEmpty
 
         let visibleTags = Array(tags.prefix(maximumVisibleTagCount))
         let shouldShowOverflowPill = tags.count > visibleTags.count
@@ -473,10 +478,6 @@ final class ActivityHistoryViewController: UIViewController {
             )
         }
 
-        let spacerView = UIView()
-        spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        spacerView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        tagPreviewStackView.addArrangedSubview(spacerView)
     }
 
     private func makeTagPill(
@@ -492,6 +493,7 @@ final class ActivityHistoryViewController: UIViewController {
         label.layer.masksToBounds = true
         label.lineBreakMode = .byTruncatingTail
         label.numberOfLines = 1
+        label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(horizontalCompressionResistancePriority, for: .horizontal)
         label.widthAnchor.constraint(lessThanOrEqualToConstant: 120).isActive = true
         label.isUserInteractionEnabled = true
@@ -703,6 +705,7 @@ final class ActivityHistoryViewController: UIViewController {
                 name: ActivityTagFilterPersistence.activityTypeTagsDidChangeNotification,
                 object: nil
             )
+            updateTagsButton()
         } catch {
             assertionFailure("Unable to attach created tag: \(error)")
             presentSaveTagsErrorAlert()
@@ -728,6 +731,7 @@ final class ActivityHistoryViewController: UIViewController {
                 name: ActivityTagFilterPersistence.activityTypeTagsDidChangeNotification,
                 object: nil
             )
+            updateTagsButton()
         } catch {
             assertionFailure("Unable to save activity type tags: \(error)")
             presentSaveTagsErrorAlert()
@@ -864,6 +868,15 @@ final class ActivityHistoryViewController: UIViewController {
             ? "Unfavorite Activity Type"
             : "Favorite Activity Type"
         favoriteButton.isEnabled = activityType != nil
+    }
+
+    private func updateTagsButton() {
+        let hasCategory = activityType?.tags?.isEmpty == false
+        tagsButton.image = UIImage(systemName: hasCategory ? "tag.fill" : "tag")
+        tagsButton.accessibilityLabel = hasCategory
+            ? "Edit Selected Category"
+            : "Add Category"
+        tagsButton.isEnabled = activityType != nil
     }
 
     private func favoriteButtonTapped() {

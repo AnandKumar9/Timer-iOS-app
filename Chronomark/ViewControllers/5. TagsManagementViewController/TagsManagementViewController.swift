@@ -176,6 +176,9 @@ final class TagsManagementViewController: UIViewController {
         titleLabel.text = sheetTitle
         titleLabel.font = AppTheme.roundedFont(ofSize: 24, weight: .semibold)
         titleLabel.textColor = AppTheme.primaryText
+        titleLabel.numberOfLines = 1
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.72
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         collectionView.backgroundColor = .clear

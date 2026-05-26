@@ -32,6 +32,16 @@ final class ActivityTimerActionView: UIView {
         return button
     }()
 
+    override var intrinsicContentSize: CGSize {
+        switch currentTimerState {
+        case .none:
+            let buttonSize = recordButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+            return CGSize(width: ceil(buttonSize.width), height: max(36, ceil(buttonSize.height)))
+        case .running, .paused:
+            return CGSize(width: 36, height: 36)
+        }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         configureView()
@@ -128,5 +138,7 @@ final class ActivityTimerActionView: UIView {
             timerStatusButton.layer.borderWidth = 0
             timerStatusButton.accessibilityLabel = "Timer paused"
         }
+
+        invalidateIntrinsicContentSize()
     }
 }

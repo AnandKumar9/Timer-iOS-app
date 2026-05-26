@@ -130,9 +130,15 @@ final class ActivityTypesViewController: UIViewController {
         var onStartTapped: (() -> Void)?
         var onTimerStatusTapped: (() -> Void)?
 
+        private static var shouldOmitWeekdayInLatestActivityDate: Bool {
+            let nativeBounds = UIScreen.main.nativeBounds
+            let nativeWidth = min(nativeBounds.width, nativeBounds.height)
+            let nativeHeight = max(nativeBounds.width, nativeBounds.height)
+            return nativeWidth == 750 && nativeHeight == 1334
+        }
+
         private let nameLabel = UILabel()
         private let latestActivityLabel = UILabel()
-        private let tagPreviewContainerView = UIView()
         private let tagPreviewStackView = UIStackView()
         private let actionView = ActivityTimerActionView()
         private let maximumVisibleTagCount = 4
@@ -198,18 +204,28 @@ final class ActivityTypesViewController: UIViewController {
             latestActivityLabel.font = AppTheme.roundedFont(ofSize: 14, weight: .regular)
             latestActivityLabel.textColor = AppTheme.metadataText
             latestActivityLabel.numberOfLines = 1
+            latestActivityLabel.lineBreakMode = .byTruncatingTail
+            latestActivityLabel.setContentHuggingPriority(.required, for: .horizontal)
+            latestActivityLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
             tagPreviewStackView.axis = .horizontal
             tagPreviewStackView.alignment = .center
             tagPreviewStackView.spacing = 6
-            tagPreviewStackView.translatesAutoresizingMaskIntoConstraints = false
+            tagPreviewStackView.setContentHuggingPriority(.required, for: .horizontal)
+            tagPreviewStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-            tagPreviewContainerView.addSubview(tagPreviewStackView)
+            let metadataSpacerView = UIView()
+            metadataSpacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            metadataSpacerView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-            let activityMetadataStackView = UIStackView(arrangedSubviews: [latestActivityLabel, tagPreviewContainerView])
-            activityMetadataStackView.axis = .vertical
-            activityMetadataStackView.alignment = .fill
-            activityMetadataStackView.spacing = 5
+            let activityMetadataStackView = UIStackView(arrangedSubviews: [
+                latestActivityLabel,
+                tagPreviewStackView,
+                metadataSpacerView
+            ])
+            activityMetadataStackView.axis = .horizontal
+            activityMetadataStackView.alignment = .center
+            activityMetadataStackView.spacing = 8
 
             let labelStackView = UIStackView(arrangedSubviews: [nameLabel, activityMetadataStackView])
             labelStackView.axis = .vertical
@@ -227,11 +243,6 @@ final class ActivityTypesViewController: UIViewController {
                 labelStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
                 labelStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
                 labelStackView.trailingAnchor.constraint(equalTo: actionView.leadingAnchor, constant: -16),
-                tagPreviewStackView.leadingAnchor.constraint(equalTo: tagPreviewContainerView.leadingAnchor),
-                tagPreviewStackView.topAnchor.constraint(equalTo: tagPreviewContainerView.topAnchor),
-                tagPreviewStackView.bottomAnchor.constraint(equalTo: tagPreviewContainerView.bottomAnchor),
-                tagPreviewStackView.trailingAnchor.constraint(equalTo: tagPreviewContainerView.trailingAnchor),
-                tagPreviewStackView.trailingAnchor.constraint(lessThanOrEqualTo: actionView.leadingAnchor, constant: -16),
 
                 actionView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
                 actionView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor)
@@ -244,7 +255,7 @@ final class ActivityTypesViewController: UIViewController {
                 view.removeFromSuperview()
             }
 
-            tagPreviewContainerView.isHidden = tags.isEmpty
+            tagPreviewStackView.isHidden = tags.isEmpty
 
             let visibleTags = Array(tags.prefix(maximumVisibleTagCount))
             let shouldShowOverflowPill = tags.count > visibleTags.count
@@ -272,10 +283,6 @@ final class ActivityTypesViewController: UIViewController {
                 )
             }
 
-            let spacerView = UIView()
-            spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
-            spacerView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-            tagPreviewStackView.addArrangedSubview(spacerView)
         }
 
         private func makeTagPill(
@@ -291,6 +298,7 @@ final class ActivityTypesViewController: UIViewController {
             label.layer.masksToBounds = true
             label.lineBreakMode = .byTruncatingTail
             label.numberOfLines = 1
+            label.setContentHuggingPriority(.required, for: .horizontal)
             label.setContentCompressionResistancePriority(horizontalCompressionResistancePriority, for: .horizontal)
             label.widthAnchor.constraint(lessThanOrEqualToConstant: 120).isActive = true
             return label
@@ -300,7 +308,10 @@ final class ActivityTypesViewController: UIViewController {
             activity: Activity,
             startTime: Date
         ) -> String {
-            let dateText = ActivityDisplayFormatter.activityDateWithoutTimeText(for: startTime)
+            let dateText = ActivityDisplayFormatter.activityDateWithoutTimeText(
+                for: startTime,
+                includesWeekday: !Self.shouldOmitWeekdayInLatestActivityDate
+            )
             let durationText = ActivityDisplayFormatter.roundedHistoryDurationText(
                 for: activityDuration(for: activity)
             )

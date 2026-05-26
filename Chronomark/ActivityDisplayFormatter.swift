@@ -22,14 +22,18 @@ enum ActivityDisplayFormatter {
         return recentDateFormatter.string(from: date)
     }
 
-    static func activityDateWithoutTimeText(for date: Date, relativeTo referenceDate: Date = Date()) -> String {
+    static func activityDateWithoutTimeText(
+        for date: Date,
+        relativeTo referenceDate: Date = Date(),
+        includesWeekday: Bool = true
+    ) -> String {
         if let oneYearAgo = Calendar.current.date(byAdding: .year, value: -1, to: referenceDate),
            date < oneYearAgo {
             return olderDateFormatter.string(from: date)
         }
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "MM dd (EEE)"
+        formatter.dateFormat = includesWeekday ? "MM dd (EEE)" : "MM dd"
         return formatter.string(from: date)
     }
 
