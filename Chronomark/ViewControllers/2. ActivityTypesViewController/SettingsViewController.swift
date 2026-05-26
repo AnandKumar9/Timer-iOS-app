@@ -365,6 +365,7 @@ final class SettingsViewController: UIViewController {
     private let contentStackView = UIStackView()
     private let disclaimerLabel = UILabel()
     private let precisionDisclaimerLabel = UILabel()
+    private let displayOrderDescriptionLabel = UILabel()
     private let versionLabel = UILabel()
     private lazy var systemModeButton = makeAppearanceButton(
         systemImageName: "circle.lefthalf.filled",
@@ -428,6 +429,9 @@ final class SettingsViewController: UIViewController {
         precisionDisclaimerLabel.text = "Chronomark is designed for everyday stopwatch tasks, not precision-critical measurement."
         precisionDisclaimerLabel.numberOfLines = 0
         precisionDisclaimerLabel.textAlignment = .natural
+        displayOrderDescriptionLabel.text = "Activities are grouped by category first."
+        displayOrderDescriptionLabel.numberOfLines = 0
+        displayOrderDescriptionLabel.textAlignment = .natural
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
         versionLabel.text = appVersionText()
         versionLabel.textAlignment = .right
@@ -652,7 +656,7 @@ final class SettingsViewController: UIViewController {
     }
 
     private func makeDisplayOrderOptionsView() -> UIView {
-        let stackView = makeOptionsStackView()
+        let optionsStackView = makeOptionsStackView()
 
         AppSettings.ActivityTypeDisplayOrder.allCases.forEach { displayOrder in
             let button = OptionButton()
@@ -667,9 +671,12 @@ final class SettingsViewController: UIViewController {
                 for: .touchUpInside
             )
             displayOrderButtons[displayOrder] = button
-            stackView.addArrangedSubview(button)
+            optionsStackView.addArrangedSubview(button)
         }
 
+        let stackView = UIStackView(arrangedSubviews: [displayOrderDescriptionLabel, optionsStackView])
+        stackView.axis = .vertical
+        stackView.spacing = 10
         return stackView
     }
 
@@ -799,6 +806,8 @@ final class SettingsViewController: UIViewController {
         disclaimerLabel.textColor = AppTheme.metadataText
         precisionDisclaimerLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
         precisionDisclaimerLabel.textColor = AppTheme.metadataText
+        displayOrderDescriptionLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+        displayOrderDescriptionLabel.textColor = AppTheme.metadataText
         versionLabel.font = AppTheme.roundedFont(ofSize: 11, weight: .regular)
         versionLabel.textColor = AppTheme.metadataText
         navigationController?.navigationBar.tintColor = AppTheme.accent

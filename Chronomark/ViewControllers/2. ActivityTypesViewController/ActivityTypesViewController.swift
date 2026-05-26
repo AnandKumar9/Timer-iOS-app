@@ -106,6 +106,7 @@ final class ActivityTypesViewController: UIViewController {
         let latestActivityStartTime: Date?
         let timerState: ActivityTimerState
         let tagPreviewTexts: [String]
+        let categorySortName: String?
     }
 
     private final class ActivityTypeCell: UITableViewCell {
@@ -588,7 +589,8 @@ final class ActivityTypesViewController: UIViewController {
             latestActivity: latestActivity,
             latestActivityStartTime: latestActivity?.activityStartTime,
             timerState: TimerViewController.timerState(for: activityType),
-            tagPreviewTexts: tagPreviewTexts(for: activityType)
+            tagPreviewTexts: tagPreviewTexts(for: activityType),
+            categorySortName: categorySortName(for: activityType)
         )
     }
 
@@ -596,6 +598,13 @@ final class ActivityTypesViewController: UIViewController {
         activityType.tags?
             .map(\.name)
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending } ?? []
+    }
+
+    private func categorySortName(for activityType: ActivityType) -> String? {
+        activityType.tags?
+            .map(\.name)
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+            .first
     }
 
     private func matchesSelectedFilter(_ activityType: ActivityType) -> Bool {
@@ -635,11 +644,36 @@ final class ActivityTypesViewController: UIViewController {
         _ lhs: ActivityTypeRow,
         _ rhs: ActivityTypeRow
     ) -> Bool {
+        if let categorySort = categorySort(lhs, rhs) {
+            return categorySort
+        }
+
         switch AppSettings.activityTypeDisplayOrder {
         case .name:
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         case .latestActivity:
             return latestActivitySort(lhs, rhs)
+        }
+    }
+
+    private func categorySort(
+        _ lhs: ActivityTypeRow,
+        _ rhs: ActivityTypeRow
+    ) -> Bool? {
+        switch (lhs.categorySortName, rhs.categorySortName) {
+        case let (lhsCategory?, rhsCategory?):
+            let result = lhsCategory.localizedCaseInsensitiveCompare(rhsCategory)
+            guard result != .orderedSame else {
+                return nil
+            }
+
+            return result == .orderedAscending
+        case (.some, .none):
+            return true
+        case (.none, .some):
+            return false
+        case (.none, .none):
+            return nil
         }
     }
 
