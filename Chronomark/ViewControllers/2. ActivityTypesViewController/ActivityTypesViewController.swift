@@ -1107,11 +1107,20 @@ final class ActivityTypesViewController: UIViewController {
         do {
             try modelContext.save()
             loadActivityTypes()
+            if shouldOpenHistoryAfterCreatingActivityType {
+                DispatchQueue.main.async { [weak self] in
+                    self?.viewAllActivities(for: activityType)
+                }
+            }
         } catch {
             modelContext.delete(activityType)
             assertionFailure("Unable to save activity type: \(error)")
             presentCreateActivityTypeAlert()
         }
+    }
+
+    private var shouldOpenHistoryAfterCreatingActivityType: Bool {
+        selectedFilterMode == .favorites || (selectedFilterMode == .tags && !selectedTagIDs.isEmpty)
     }
 
     private func fetchExistingActivityTypeNames() -> Set<String> {
