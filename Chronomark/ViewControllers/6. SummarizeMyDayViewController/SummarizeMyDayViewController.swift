@@ -428,6 +428,7 @@ final class SummarizeMyDayViewController: UIViewController {
     private var activityTagSummaryRows: [ActivityTagSummaryRow] = []
     private var activityTypeSummaryRows: [ActivityTypeSummaryRow] = []
     private var remainingEmptyStateQuotes = SummarizeMyDayViewController.emptyStateQuotes.shuffled()
+    private var emptyStateQuotesByDay: [Date: String] = [:]
     private var selectedDay: Date
 
     private var visibleSections: [SummarySection] {
@@ -922,8 +923,9 @@ final class SummarizeMyDayViewController: UIViewController {
     private func updateContent() {
         updateSummary()
         tableView.reloadData()
-        emptyStateLabel.text = emptyStateText()
-        emptyStateLabel.isHidden = !visibleSections.isEmpty
+        let isEmpty = visibleSections.isEmpty
+        emptyStateLabel.text = isEmpty ? emptyStateText() : nil
+        emptyStateLabel.isHidden = !isEmpty
     }
 
     private func emptyStateText() -> String {
@@ -931,11 +933,18 @@ final class SummarizeMyDayViewController: UIViewController {
             return Self.earlyTodayEmptyStateText
         }
 
+        let selectedStartOfDay = Calendar.current.startOfDay(for: selectedDay)
+        if let cachedQuote = emptyStateQuotesByDay[selectedStartOfDay] {
+            return cachedQuote
+        }
+
         if remainingEmptyStateQuotes.isEmpty {
             remainingEmptyStateQuotes = Self.emptyStateQuotes.shuffled()
         }
 
-        return remainingEmptyStateQuotes.popLast() ?? Self.earlyTodayEmptyStateText
+        let quote = remainingEmptyStateQuotes.popLast() ?? Self.earlyTodayEmptyStateText
+        emptyStateQuotesByDay[selectedStartOfDay] = quote
+        return quote
     }
 
     private func updateSummary() {
