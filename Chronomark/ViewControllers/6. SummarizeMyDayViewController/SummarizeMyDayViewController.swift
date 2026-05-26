@@ -408,7 +408,7 @@ final class SummarizeMyDayViewController: UIViewController {
         var title: String {
             switch self {
             case .tagTotals:
-                return "Activity Tags"
+                return "Activity Categories"
             case .activityTypeTotals:
                 return "Activity Types"
             case .activities:

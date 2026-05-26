@@ -662,7 +662,7 @@ final class ActivityTypesViewController: UIViewController {
         case .favorites:
             return "No favorite activity types"
         case .tags:
-            return selectedTagIDs.isEmpty ? "No activity types" : "No activity types match the selected tags"
+            return selectedTagIDs.isEmpty ? "No activity types" : "No activity types match the selected categories"
         }
     }
 
@@ -920,7 +920,7 @@ final class ActivityTypesViewController: UIViewController {
                     self?.selectFavoritesFilter()
                 },
                 UIAction(
-                    title: "Tags",
+                    title: "Categories",
                     image: UIImage(systemName: "tag"),
                     state: selectedFilterMode == .tags ? .on : .off
                 ) { [weak self] _ in
@@ -944,8 +944,10 @@ final class ActivityTypesViewController: UIViewController {
             return "Filtered by favorites"
         case .tags:
             return selectedTagIDs.isEmpty
-                ? "Filtered by tags"
-                : "Filtered by \(selectedTagIDs.count) tags"
+                ? "Filtered by categories"
+                : selectedTagIDs.count == 1
+                    ? "Filtered by 1 category"
+                    : "Filtered by \(selectedTagIDs.count) categories"
         }
     }
 

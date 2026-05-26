@@ -7,9 +7,10 @@ final class TagsManagementViewController: UIViewController {
         case saveSelection
     }
 
-    static let activityTypeEmptyStateMessage = "Create tags for activity types, then attach them to types like Groceries, Morning commute, or Exercise.\n\nExamples: Chores, Commute, Fitness"
+    static let activityTypeEmptyStateMessage = "Create categories like Chores, Commute, or Fitness, then add one to any activity type."
+    static let currentActivityTypeEmptyStateMessage = "Create categories like Chores, Commute, or Fitness, then add one to this activity type."
 
-    private static let maximumTagCount = 7
+    private static let maximumTagCount = 10
     private static let maximumTagNameLength = 15
 
     private final class CompactChipFlowLayout: UICollectionViewFlowLayout {
@@ -119,13 +120,14 @@ final class TagsManagementViewController: UIViewController {
     private var initialSelectedTagIDs: Set<UUID> = []
 
     var modelContext: ModelContext?
-    var sheetTitle = "Tags"
-    var emptyStateMessage = "No tags"
+    var sheetTitle = "Categories"
+    var emptyStateMessage = "No categories"
     var selectedTagIDs: Set<UUID> = []
     var primaryActionMode: PrimaryActionMode = .createTag
     var groupsSelectedTagsFirst = false
     var commitsSelectionImmediately = true
     var allowsTagManagement = true
+    var allowsMultipleSelection = true
     var selectsCreatedTags = false
     var treatsCreatedTagsAsSaved = false
     var switchesToSaveSelectionAfterCreatingTag = false
@@ -190,7 +192,7 @@ final class TagsManagementViewController: UIViewController {
         emptyStateLabel.numberOfLines = 0
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        tagLimitMessageLabel.text = "Up to 7 tags for now"
+        tagLimitMessageLabel.text = "Up to \(Self.maximumTagCount) categories for now"
         tagLimitMessageLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .regular)
         tagLimitMessageLabel.textColor = AppTheme.metadataText
         tagLimitMessageLabel.textAlignment = .left
@@ -273,7 +275,7 @@ final class TagsManagementViewController: UIViewController {
         configuration.background.backgroundColor = AppTheme.controlBackground
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
         createTagButton.configuration = configuration
-        createTagButton.accessibilityLabel = "Create Tag"
+        createTagButton.accessibilityLabel = "Create Category"
         createTagButton.translatesAutoresizingMaskIntoConstraints = false
         createTagButton.addAction(
             UIAction { [weak self] _ in
@@ -373,13 +375,19 @@ final class TagsManagementViewController: UIViewController {
     }
 
     private func tagLimitMessageText(canCreateTag: Bool) -> String {
+        guard allowsMultipleSelection else {
+            return canCreateTag
+                ? "Choose one category for this activity type"
+                : "Choose one category for this activity type. You can keep up to \(Self.maximumTagCount) categories."
+        }
+
         guard showsSelectedCountWhenTagLimitReached else {
-            return "Up to 7 tags for now"
+            return "Up to \(Self.maximumTagCount) categories for now"
         }
 
         let selectedTagCount = selectedTagIDs.count
-        let selectedCountText = selectedTagCount == 1 ? "1 tag selected" : "\(selectedTagCount) tags selected"
-        return canCreateTag ? selectedCountText : "Up to 7 tags for now. \(selectedCountText)."
+        let selectedCountText = selectedTagCount == 1 ? "1 category selected" : "\(selectedTagCount) categories selected"
+        return canCreateTag ? selectedCountText : "Up to \(Self.maximumTagCount) categories for now. \(selectedCountText)."
     }
 
     private func saveSelection() {
@@ -399,8 +407,8 @@ final class TagsManagementViewController: UIViewController {
 
         let existingNames = fetchExistingTagNames(excluding: nil)
         let alertController = UIAlertController(
-            title: "New Tag",
-            message: "Enter a tag name up to \(Self.maximumTagNameLength) characters.",
+            title: "New Category",
+            message: "Enter a category name up to \(Self.maximumTagNameLength) characters.",
             preferredStyle: .alert
         )
         alertController.view.tintColor = AppTheme.primaryText
@@ -415,7 +423,7 @@ final class TagsManagementViewController: UIViewController {
         createAction.isEnabled = false
 
         alertController.addTextField { [weak self] textField in
-            textField.placeholder = "Tag name"
+            textField.placeholder = "Category name"
             textField.autocapitalizationType = .words
             textField.clearButtonMode = .whileEditing
             textField.addAction(
@@ -436,8 +444,8 @@ final class TagsManagementViewController: UIViewController {
 
     private func presentTagLimitReachedAlert() {
         let alertController = UIAlertController(
-            title: "Tags Are Full",
-            message: "You can keep up to \(Self.maximumTagCount) tags for now.",
+            title: "Categories Are Full",
+            message: "You can keep up to \(Self.maximumTagCount) categories for now.",
             preferredStyle: .alert
         )
         alertController.addAction(UIAlertAction(title: "OK", style: .default))
@@ -466,7 +474,11 @@ final class TagsManagementViewController: UIViewController {
         do {
             try modelContext.save()
             if selectsCreatedTags {
-                selectedTagIDs.insert(tag.uniqueID)
+                if allowsMultipleSelection {
+                    selectedTagIDs.insert(tag.uniqueID)
+                } else {
+                    selectedTagIDs = [tag.uniqueID]
+                }
             }
             onTagCreate?(tag)
             if treatsCreatedTagsAsSaved {
@@ -491,8 +503,8 @@ final class TagsManagementViewController: UIViewController {
     private func presentRenameTagAlert(for tag: ActivityTag) {
         let existingNames = fetchExistingTagNames(excluding: tag)
         let alertController = UIAlertController(
-            title: "Rename Tag",
-            message: "Enter a tag name up to \(Self.maximumTagNameLength) characters.",
+            title: "Rename Category",
+            message: "Enter a category name up to \(Self.maximumTagNameLength) characters.",
             preferredStyle: .alert
         )
 
@@ -509,7 +521,7 @@ final class TagsManagementViewController: UIViewController {
 
         alertController.addTextField { [weak self] textField in
             textField.text = tag.name
-            textField.placeholder = "Tag name"
+            textField.placeholder = "Category name"
             textField.autocapitalizationType = .words
             textField.clearButtonMode = .whileEditing
             textField.addAction(
@@ -554,7 +566,7 @@ final class TagsManagementViewController: UIViewController {
 
     private func presentDeleteTagAlert(for tag: ActivityTag) {
         let alertController = UIAlertController(
-            title: "Delete Tag?",
+            title: "Delete Category?",
             message: "This removes \(tag.name) from every activity type.",
             preferredStyle: .alert
         )
@@ -597,8 +609,10 @@ final class TagsManagementViewController: UIViewController {
     private func toggleSelection(for tag: ActivityTag) {
         if selectedTagIDs.contains(tag.uniqueID) {
             selectedTagIDs.remove(tag.uniqueID)
-        } else {
+        } else if allowsMultipleSelection {
             selectedTagIDs.insert(tag.uniqueID)
+        } else {
+            selectedTagIDs = [tag.uniqueID]
         }
 
         if commitsSelectionImmediately {

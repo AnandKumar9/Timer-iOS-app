@@ -218,7 +218,7 @@ final class ActivityHistoryViewController: UIViewController {
     private func configureAppearance() {
         title = "Activity History"
         favoriteButton.accessibilityLabel = "Favorite Activity Type"
-        tagsButton.accessibilityLabel = "Edit Tags"
+        tagsButton.accessibilityLabel = "Edit Categories"
         navigationItem.rightBarButtonItems = [favoriteButton, tagsButton]
 
         configureActivityNameLabel()
@@ -629,22 +629,35 @@ final class ActivityHistoryViewController: UIViewController {
         }
 
         let tagsViewController = TagsManagementViewController()
+        var shouldAutoAttachCreatedCategory = !hasExistingCategories()
         tagsViewController.modelContext = modelContext
-        tagsViewController.sheetTitle = "Tags for \(activityType.name)"
-        tagsViewController.emptyStateMessage = TagsManagementViewController.activityTypeEmptyStateMessage
-        tagsViewController.selectedTagIDs = Set(activityType.tags?.map(\.uniqueID) ?? [])
+        tagsViewController.sheetTitle = "Category for \(activityType.name)"
+        tagsViewController.emptyStateMessage = TagsManagementViewController.currentActivityTypeEmptyStateMessage
+        tagsViewController.selectedTagIDs = Set(
+            activityType.tags?
+                .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+                .prefix(1)
+                .map(\.uniqueID) ?? []
+        )
         tagsViewController.primaryActionMode = .createTag
         tagsViewController.groupsSelectedTagsFirst = true
         tagsViewController.commitsSelectionImmediately = true
         tagsViewController.allowsTagManagement = true
-        tagsViewController.selectsCreatedTags = true
+        tagsViewController.allowsMultipleSelection = false
+        tagsViewController.selectsCreatedTags = shouldAutoAttachCreatedCategory
         tagsViewController.treatsCreatedTagsAsSaved = true
         tagsViewController.switchesToSaveSelectionAfterCreatingTag = false
         tagsViewController.showsSelectedCountWhenTagLimitReached = true
         tagsViewController.onSelectionChange = { [weak self] selectedTagIDs in
             self?.saveTags(selectedTagIDs)
         }
-        tagsViewController.onTagCreate = { [weak self] tag in
+        tagsViewController.onTagCreate = { [weak self, weak tagsViewController] tag in
+            guard shouldAutoAttachCreatedCategory else {
+                return
+            }
+
+            shouldAutoAttachCreatedCategory = false
+            tagsViewController?.selectsCreatedTags = false
             self?.attachCreatedTag(tag)
         }
         tagsViewController.modalPresentationStyle = .pageSheet
@@ -663,21 +676,25 @@ final class ActivityHistoryViewController: UIViewController {
         present(tagsViewController, animated: true)
     }
 
+    private func hasExistingCategories() -> Bool {
+        guard let modelContext else {
+            return true
+        }
+
+        do {
+            return try !modelContext.fetch(FetchDescriptor<ActivityTag>()).isEmpty
+        } catch {
+            assertionFailure("Unable to inspect existing categories: \(error)")
+            return true
+        }
+    }
+
     private func attachCreatedTag(_ tag: ActivityTag) {
         guard let modelContext, let activityType else {
             return
         }
 
-        if activityType.tags == nil {
-            activityType.tags = []
-        }
-
-        guard activityType.tags?.contains(where: { $0.uniqueID == tag.uniqueID }) == false else {
-            return
-        }
-
-        activityType.tags?.append(tag)
-        activityType.tags?.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        activityType.tags = [tag]
 
         do {
             try modelContext.save()
@@ -702,6 +719,8 @@ final class ActivityHistoryViewController: UIViewController {
             activityType.tags = tags
                 .filter { selectedTagIDs.contains($0.uniqueID) }
                 .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+                .prefix(1)
+                .map { $0 }
 
             try modelContext.save()
             TimerSessionState.notifyActivityPersisted(activityTypeID: activityType.uniqueID)
@@ -921,7 +940,7 @@ final class ActivityHistoryViewController: UIViewController {
 
     private func presentSaveTagsErrorAlert() {
         let alertController = UIAlertController(
-            title: "Unable to Save Tags",
+            title: "Unable to Save Categories",
             message: "Please try again.",
             preferredStyle: .alert
         )
