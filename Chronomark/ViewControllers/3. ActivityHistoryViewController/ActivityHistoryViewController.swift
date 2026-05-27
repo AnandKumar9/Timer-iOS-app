@@ -3,6 +3,7 @@ import SwiftData
 
 final class ActivityHistoryViewController: UIViewController {
     private static let noteCharacterLimit = 35
+    private static let maximumActivityTypeNameLength = 25
 
     private final class PillLabel: UILabel {
         private let contentInsets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
@@ -586,7 +587,7 @@ final class ActivityHistoryViewController: UIViewController {
         let existingNames = fetchExistingActivityTypeNames(excluding: activityType)
         let alertController = UIAlertController(
             title: "Rename Activity Type",
-            message: nil,
+            message: "Enter an activity type name up to \(Self.maximumActivityTypeNameLength) characters.",
             preferredStyle: .alert
         )
 
@@ -600,12 +601,13 @@ final class ActivityHistoryViewController: UIViewController {
         renameAction.isEnabled = false
 
         alertController.addTextField { [weak self] textField in
-            textField.text = activityType.name
+            textField.text = String(activityType.name.prefix(Self.maximumActivityTypeNameLength))
             textField.placeholder = "Activity type name"
             textField.autocapitalizationType = .words
             textField.clearButtonMode = .whileEditing
             textField.addAction(
                 UIAction { [weak self, weak textField] _ in
+                    self?.limitActivityTypeNameLength(in: textField)
                     renameAction.isEnabled = self?.isValidActivityTypeName(
                         textField?.text,
                         existingNames: existingNames
@@ -984,13 +986,23 @@ final class ActivityHistoryViewController: UIViewController {
         existingNames: Set<String>
     ) -> Bool {
         let normalizedName = normalizeActivityTypeName(name)
-        return !normalizedName.isEmpty && !existingNames.contains(normalizedName)
+        return !normalizedName.isEmpty
+            && normalizedName.count <= Self.maximumActivityTypeNameLength
+            && !existingNames.contains(normalizedName)
     }
 
     private func normalizeActivityTypeName(_ name: String?) -> String {
         name?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .localizedLowercase ?? ""
+    }
+
+    private func limitActivityTypeNameLength(in textField: UITextField?) {
+        guard let text = textField?.text, text.count > Self.maximumActivityTypeNameLength else {
+            return
+        }
+
+        textField?.text = String(text.prefix(Self.maximumActivityTypeNameLength))
     }
 
 #if DEBUG

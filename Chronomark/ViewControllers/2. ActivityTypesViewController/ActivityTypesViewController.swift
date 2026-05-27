@@ -99,6 +99,8 @@ enum ActivityTagFilterPersistence {
 }
 
 final class ActivityTypesViewController: UIViewController {
+    private static let maximumActivityTypeNameLength = 25
+
     private struct ActivityTypeRow {
         let activityType: ActivityType
         let name: String
@@ -1056,7 +1058,7 @@ final class ActivityTypesViewController: UIViewController {
         let existingNames = fetchExistingActivityTypeNames()
         let alertController = UIAlertController(
             title: "New Activity Type",
-            message: "Enter an activity type name.",
+            message: "Enter an activity type name up to \(Self.maximumActivityTypeNameLength) characters.",
             preferredStyle: .alert
         )
         alertController.view.tintColor = AppTheme.primaryText
@@ -1076,6 +1078,7 @@ final class ActivityTypesViewController: UIViewController {
             textField.clearButtonMode = .whileEditing
             textField.addAction(
                 UIAction { [weak self, weak textField] _ in
+                    self?.limitActivityTypeNameLength(in: textField)
                     submitAction.isEnabled = self?.isUniqueActivityTypeName(
                         textField?.text,
                         existingNames: existingNames
@@ -1147,13 +1150,23 @@ final class ActivityTypesViewController: UIViewController {
         existingNames: Set<String>
     ) -> Bool {
         let normalizedName = normalizeActivityTypeName(name)
-        return !normalizedName.isEmpty && !existingNames.contains(normalizedName)
+        return !normalizedName.isEmpty
+            && normalizedName.count <= Self.maximumActivityTypeNameLength
+            && !existingNames.contains(normalizedName)
     }
 
     private func normalizeActivityTypeName(_ name: String?) -> String {
         name?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .localizedLowercase ?? ""
+    }
+
+    private func limitActivityTypeNameLength(in textField: UITextField?) {
+        guard let text = textField?.text, text.count > Self.maximumActivityTypeNameLength else {
+            return
+        }
+
+        textField?.text = String(text.prefix(Self.maximumActivityTypeNameLength))
     }
 
 #if DEBUG
