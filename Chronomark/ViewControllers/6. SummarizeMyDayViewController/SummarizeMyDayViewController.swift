@@ -541,6 +541,10 @@ final class SummarizeMyDayViewController: UIViewController {
         let totalDuration: TimeInterval
 
         var durationText: String {
+            guard totalDuration >= Self.minimumDisplayDuration else {
+                return "<15 min"
+            }
+
             if AppSettings.showDurationSeconds {
                 return ActivityDisplayFormatter.roundedHistoryDurationText(for: totalDuration)
             }
@@ -549,12 +553,10 @@ final class SummarizeMyDayViewController: UIViewController {
         }
 
         static func shouldShow(totalDuration: TimeInterval) -> Bool {
-            if AppSettings.showDurationSeconds {
-                return true
-            }
-
-            return totalDuration >= 15 * 60
+            return totalDuration > 0
         }
+
+        private static let minimumDisplayDuration: TimeInterval = 15 * 60
 
         private static func approximateCategoryDurationText(for duration: TimeInterval) -> String {
             let halfHourMinutes = 30
