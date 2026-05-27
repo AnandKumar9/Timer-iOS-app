@@ -396,7 +396,40 @@ final class SummarizeMyDayViewController: UIViewController {
         let totalDuration: TimeInterval
 
         var durationText: String {
-            ActivityDisplayFormatter.roundedHistoryDurationText(for: totalDuration)
+            if AppSettings.showDurationSeconds {
+                return ActivityDisplayFormatter.roundedHistoryDurationText(for: totalDuration)
+            }
+
+            return Self.approximateCategoryDurationText(for: totalDuration)
+        }
+
+        static func shouldShow(totalDuration: TimeInterval) -> Bool {
+            if AppSettings.showDurationSeconds {
+                return true
+            }
+
+            return totalDuration >= 15 * 60
+        }
+
+        private static func approximateCategoryDurationText(for duration: TimeInterval) -> String {
+            let halfHourMinutes = 30
+            let totalMinutes = max(0, duration / 60)
+            let roundedHalfHours = max(
+                1,
+                Int((totalMinutes / Double(halfHourMinutes)).rounded(.toNearestOrAwayFromZero))
+            )
+            let roundedMinutes = roundedHalfHours * halfHourMinutes
+
+            guard roundedMinutes > halfHourMinutes else {
+                return "30 min"
+            }
+
+            let hours = roundedMinutes / 60
+            if roundedMinutes.isMultiple(of: 60) {
+                return "\(hours) hr"
+            }
+
+            return "\(hours).5 hr"
         }
     }
 
@@ -413,6 +446,19 @@ final class SummarizeMyDayViewController: UIViewController {
                 return "Activity Types"
             case .activities:
                 return "Activities"
+            }
+        }
+
+        var subtitle: String? {
+            switch self {
+            case .tagTotals:
+                if AppSettings.showDurationSeconds {
+                    return nil
+                }
+
+                return "Approximate time by category, rounded to the nearest 30 minutes."
+            case .activityTypeTotals, .activities:
+                return nil
             }
         }
     }
@@ -825,8 +871,12 @@ final class SummarizeMyDayViewController: UIViewController {
             }
         }
 
-        return summariesByID.map { tagID, summary in
-            ActivityTagSummaryRow(
+        return summariesByID.compactMap { tagID, summary in
+            guard ActivityTagSummaryRow.shouldShow(totalDuration: summary.duration) else {
+                return nil
+            }
+
+            return ActivityTagSummaryRow(
                 tagID: tagID,
                 tagName: summary.name,
                 totalDuration: summary.duration
@@ -1102,26 +1152,43 @@ extension SummarizeMyDayViewController: UITableViewDelegate {
         let containerView = UIView()
         containerView.backgroundColor = AppTheme.screenBackground
 
-        let label = UILabel()
-        label.text = visibleSections[section].title
-        label.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
-        label.textColor = AppTheme.metadataText
-        label.numberOfLines = 1
-        label.translatesAutoresizingMaskIntoConstraints = false
+        let titleLabel = UILabel()
+        titleLabel.text = visibleSections[section].title
+        titleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+        titleLabel.textColor = AppTheme.metadataText
+        titleLabel.numberOfLines = 1
 
-        containerView.addSubview(label)
+        let labels: [UILabel]
+        if let subtitle = visibleSections[section].subtitle {
+            let subtitleLabel = UILabel()
+            subtitleLabel.text = subtitle
+            subtitleLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+            subtitleLabel.textColor = AppTheme.metadataText
+            subtitleLabel.numberOfLines = 0
+            labels = [titleLabel, subtitleLabel]
+        } else {
+            labels = [titleLabel]
+        }
+
+        let stackView = UIStackView(arrangedSubviews: labels)
+        stackView.axis = .vertical
+        stackView.alignment = .fill
+        stackView.spacing = 4
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        containerView.addSubview(stackView)
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),
-            label.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
-            label.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 18),
-            label.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -8)
+            stackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),
+            stackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
+            stackView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 18),
+            stackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -8)
         ])
 
         return containerView
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        44
+        visibleSections[section].subtitle == nil ? 44 : UITableView.automaticDimension
     }
 
     private func showActivityDetails(for activity: Activity) {
