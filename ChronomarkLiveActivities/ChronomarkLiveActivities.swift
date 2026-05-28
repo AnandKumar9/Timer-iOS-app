@@ -84,11 +84,15 @@ private struct ChronomarkLockScreenLiveActivityView: View {
     var body: some View {
         VStack(spacing: 16) {
             ChronomarkLiveActivityRow(context: context)
-            ChronomarkLiveActivityControlRow(state: context.state)
+            if Self.showsControls {
+                ChronomarkLiveActivityControlRow(state: context.state)
+            }
         }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
     }
+
+    private static let showsControls = false
 }
 
 private struct ChronomarkLiveActivityControlRow: View {
@@ -169,7 +173,6 @@ private struct ChronomarkLiveActivityPauseIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause Timer"
 
     func perform() async throws -> some IntentResult {
-        print("Chronomark live activity Pause tapped")
         return .result()
     }
 }
@@ -178,7 +181,6 @@ private struct ChronomarkLiveActivityResumeIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Resume Timer"
 
     func perform() async throws -> some IntentResult {
-        print("Chronomark live activity Resume tapped")
         return .result()
     }
 }
@@ -187,7 +189,6 @@ private struct ChronomarkLiveActivityStopIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Stop Timer"
 
     func perform() async throws -> some IntentResult {
-        print("Chronomark live activity Stop tapped")
         return .result()
     }
 }
