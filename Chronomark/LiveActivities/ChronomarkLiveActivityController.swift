@@ -26,7 +26,8 @@ enum ChronomarkLiveActivityController {
                     elapsedSeconds: elapsedSeconds,
                     status: status,
                     timerStartDate: timerStartDate,
-                    fontRawValue: AppTheme.selectedFont.rawValue
+                    fontRawValue: AppTheme.selectedFont.rawValue,
+                    accentColorRawValue: AppTheme.selectedAccentColor.rawValue
                 ),
                 staleDate: nil,
                 relevanceScore: relevanceScore
@@ -50,7 +51,8 @@ enum ChronomarkLiveActivityController {
                     elapsedSeconds: elapsedSeconds,
                     status: status,
                     timerStartDate: timerStartDate,
-                    fontRawValue: AppTheme.selectedFont.rawValue
+                    fontRawValue: AppTheme.selectedFont.rawValue,
+                    accentColorRawValue: AppTheme.selectedAccentColor.rawValue
                 ),
                 staleDate: nil,
                 relevanceScore: relevanceScore
@@ -105,7 +107,8 @@ enum ChronomarkLiveActivityController {
                     elapsedSeconds: elapsedSeconds,
                     status: status,
                     timerStartDate: nil,
-                    fontRawValue: AppTheme.selectedFont.rawValue
+                    fontRawValue: AppTheme.selectedFont.rawValue,
+                    accentColorRawValue: AppTheme.selectedAccentColor.rawValue
                 ),
                 staleDate: nil,
                 relevanceScore: 0

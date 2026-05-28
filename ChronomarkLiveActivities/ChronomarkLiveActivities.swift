@@ -1,3 +1,4 @@
+import AppIntents
 import ActivityKit
 import SwiftUI
 import WidgetKit
@@ -81,9 +82,113 @@ private struct ChronomarkLockScreenLiveActivityView: View {
     let context: ActivityViewContext<ChronomarkTimerAttributes>
 
     var body: some View {
-        ChronomarkLiveActivityRow(context: context)
+        VStack(spacing: 16) {
+            ChronomarkLiveActivityRow(context: context)
+            ChronomarkLiveActivityControlRow(state: context.state)
+        }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
+    }
+}
+
+private struct ChronomarkLiveActivityControlRow: View {
+    let state: ChronomarkTimerAttributes.ContentState
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if state.status.isPausedStatus {
+                ChronomarkLiveActivityControlButton(
+                    title: "Resume",
+                    systemImage: "play.fill",
+                    state: state,
+                    foregroundColor: .chronomarkPrimaryButtonText,
+                    backgroundColor: ChronomarkLiveActivityAccentColor
+                        .resolved(rawValue: state.accentColorRawValue)
+                        .accent
+                        .opacity(0.14),
+                    intent: ChronomarkLiveActivityResumeIntent()
+                )
+            } else {
+                ChronomarkLiveActivityControlButton(
+                    title: "Pause",
+                    systemImage: "pause.fill",
+                    state: state,
+                    foregroundColor: .chronomarkPrimaryButtonText,
+                    backgroundColor: ChronomarkLiveActivityAccentColor
+                        .resolved(rawValue: state.accentColorRawValue)
+                        .paused
+                        .opacity(0.22),
+                    intent: ChronomarkLiveActivityPauseIntent()
+                )
+            }
+
+            ChronomarkLiveActivityControlButton(
+                title: "Stop",
+                systemImage: "stop.fill",
+                state: state,
+                foregroundColor: .chronomarkStopButton,
+                backgroundColor: .chronomarkStopButtonBackground,
+                intent: ChronomarkLiveActivityStopIntent()
+            )
+        }
+        .frame(height: 46)
+    }
+}
+
+private struct ChronomarkLiveActivityControlButton<Intent: AppIntent>: View {
+    let title: String
+    let systemImage: String
+    let state: ChronomarkTimerAttributes.ContentState
+    let foregroundColor: Color
+    let backgroundColor: Color
+    let intent: Intent
+
+    var body: some View {
+        Button(intent: intent) {
+            Label(title, systemImage: systemImage)
+                .font(
+                    ChronomarkLiveActivityFont
+                        .resolved(rawValue: state.fontRawValue)
+                        .font(size: 16, weight: .regular)
+                )
+                .foregroundStyle(foregroundColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(backgroundColor)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+    }
+}
+
+private struct ChronomarkLiveActivityPauseIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Pause Timer"
+
+    func perform() async throws -> some IntentResult {
+        print("Chronomark live activity Pause tapped")
+        return .result()
+    }
+}
+
+private struct ChronomarkLiveActivityResumeIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Resume Timer"
+
+    func perform() async throws -> some IntentResult {
+        print("Chronomark live activity Resume tapped")
+        return .result()
+    }
+}
+
+private struct ChronomarkLiveActivityStopIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Stop Timer"
+
+    func perform() async throws -> some IntentResult {
+        print("Chronomark live activity Stop tapped")
+        return .result()
     }
 }
 
@@ -160,6 +265,36 @@ private enum ChronomarkLiveActivityFontWeight {
     case semibold
 }
 
+private enum ChronomarkLiveActivityAccentColor: String {
+    case teal
+    case purple
+    case coral
+
+    var accent: Color {
+        switch self {
+        case .teal:
+            return Color(red: 0x2D / 255, green: 0xD4 / 255, blue: 0xBF / 255)
+        case .purple:
+            return Color(red: 0x6C / 255, green: 0x63 / 255, blue: 0xF5 / 255)
+        case .coral:
+            return Color(red: 0xFF / 255, green: 0x6B / 255, blue: 0x5F / 255)
+        }
+    }
+
+    var paused: Color {
+        switch self {
+        case .teal, .purple:
+            return Color(red: 0xF5 / 255, green: 0xA6 / 255, blue: 0x23 / 255)
+        case .coral:
+            return Color(red: 0xF2 / 255, green: 0xB8 / 255, blue: 0x4B / 255)
+        }
+    }
+
+    static func resolved(rawValue: String) -> Self {
+        Self(rawValue: rawValue) ?? .teal
+    }
+}
+
 private struct ChronomarkElapsedTimeText: View {
     let state: ChronomarkTimerAttributes.ContentState
 
@@ -183,6 +318,9 @@ private extension Color {
     static let chronomarkClockOrange = Color(red: 1.0, green: 0.64, blue: 0.20)
     static let chronomarkRunningTimer = Color(red: 0x7C / 255, green: 0xFF / 255, blue: 0xA4 / 255)
     static let chronomarkPausedTimer = Color(red: 0xF5 / 255, green: 0xA6 / 255, blue: 0x23 / 255)
+    static let chronomarkStopButton = Color(red: 0xFF / 255, green: 0x6B / 255, blue: 0x6B / 255)
+    static let chronomarkPrimaryButtonText = Color(red: 0xF7 / 255, green: 0xF4 / 255, blue: 0xEE / 255)
+    static let chronomarkStopButtonBackground = Color.white.opacity(0.10)
 }
 
 private extension String {
@@ -206,7 +344,8 @@ struct ChronomarkLiveActivitiesBundle: WidgetBundle {
         elapsedSeconds: 1_245,
         status: "Running",
         timerStartDate: Date().addingTimeInterval(-1_245),
-        fontRawValue: "manrope"
+        fontRawValue: "manrope",
+        accentColorRawValue: "teal"
     )
 }
 
@@ -218,6 +357,7 @@ struct ChronomarkLiveActivitiesBundle: WidgetBundle {
         elapsedSeconds: 1_245,
         status: "Running",
         timerStartDate: Date().addingTimeInterval(-1_245),
-        fontRawValue: "jetBrainsMono"
+        fontRawValue: "jetBrainsMono",
+        accentColorRawValue: "teal"
     )
 }

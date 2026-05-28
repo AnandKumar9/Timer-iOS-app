@@ -8,6 +8,7 @@ struct ChronomarkTimerAttributes: ActivityAttributes {
         var status: String
         var timerStartDate: Date?
         var fontRawValue: String
+        var accentColorRawValue: String
     }
 
     var activityTypeUniqueID: UUID
