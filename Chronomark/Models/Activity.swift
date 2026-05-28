@@ -9,6 +9,7 @@ final class Activity {
     var activityCompletionTime: Date?
     var timeTaken: TimeInterval?
     var activityNotes: String?
+    var isMutedFromSummary: Bool?
 
     init(
         uniqueID: UUID = UUID(),
@@ -16,7 +17,8 @@ final class Activity {
         activityStartTime: Date? = nil,
         activityCompletionTime: Date? = nil,
         timeTaken: TimeInterval? = nil,
-        activityNotes: String? = nil
+        activityNotes: String? = nil,
+        isMutedFromSummary: Bool? = false
     ) {
         self.uniqueID = uniqueID
         self.activityType = activityType
@@ -24,5 +26,6 @@ final class Activity {
         self.activityCompletionTime = activityCompletionTime
         self.timeTaken = timeTaken
         self.activityNotes = activityNotes
+        self.isMutedFromSummary = isMutedFromSummary
     }
 }

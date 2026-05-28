@@ -90,12 +90,14 @@ final class SummarizeMyDayViewController: UIViewController {
         private let timeLabel = UILabel()
         private let activityNameLabel = UILabel()
         private let statusImageView = UIImageView()
+        private let muteButton = UIButton(type: .system)
         private let durationLabel = UILabel()
         private let noteLabel = UILabel()
         private let tagPreviewContainerView = UIView()
         private let tagPreviewStackView = UIStackView()
         private let titleStackView = UIStackView()
         private let detailStackView = UIStackView()
+        private var onMuteToggle: (() -> Void)?
 
         override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
             super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -107,16 +109,28 @@ final class SummarizeMyDayViewController: UIViewController {
             configureCell()
         }
 
-        func configure(with row: DaySummaryRow) {
+        func configure(
+            with row: DaySummaryRow,
+            isMutedFromSummary: Bool,
+            isMuteEditing: Bool,
+            canToggleMute: Bool,
+            onMuteToggle: (() -> Void)?
+        ) {
             backgroundColor = AppTheme.screenBackground
             contentView.backgroundColor = AppTheme.screenBackground
             selectedBackgroundView?.backgroundColor = AppTheme.controlBackground
+            self.onMuteToggle = onMuteToggle
 
             timeLabel.text = row.timeRangeText
             timeLabel.textColor = AppTheme.metadataText
             activityNameLabel.text = row.activityTypeName
             activityNameLabel.textColor = AppTheme.primaryText
             configureStatusIcon(row.timerState)
+            configureMuteButton(
+                isMuted: isMutedFromSummary,
+                isMuteEditing: isMuteEditing,
+                canToggleMute: canToggleMute
+            )
             durationLabel.text = row.durationText
             durationLabel.textColor = AppTheme.durationText
             configureTagPreviews(row.tagTexts)
@@ -161,6 +175,23 @@ final class SummarizeMyDayViewController: UIViewController {
             statusImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
             statusImageView.isHidden = true
 
+            muteButton.setImage(UIImage(systemName: "speaker.slash.fill"), for: .normal)
+            muteButton.tintColor = AppTheme.metadataText
+            muteButton.setPreferredSymbolConfiguration(
+                UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold),
+                forImageIn: .normal
+            )
+            muteButton.accessibilityLabel = "Mute activity from category summary"
+            muteButton.setContentHuggingPriority(.required, for: .horizontal)
+            muteButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+            muteButton.isHidden = true
+            muteButton.addAction(
+                UIAction { [weak self] _ in
+                    self?.onMuteToggle?()
+                },
+                for: .touchUpInside
+            )
+
             durationLabel.font = AppTheme.roundedFont(ofSize: 15, weight: .semibold)
             durationLabel.numberOfLines = 1
             durationLabel.textAlignment = .right
@@ -183,7 +214,7 @@ final class SummarizeMyDayViewController: UIViewController {
 
             tagPreviewContainerView.addSubview(tagPreviewStackView)
 
-            let durationStackView = UIStackView(arrangedSubviews: [statusImageView, durationLabel])
+            let durationStackView = UIStackView(arrangedSubviews: [statusImageView, muteButton, durationLabel])
             durationStackView.axis = .horizontal
             durationStackView.alignment = .center
             durationStackView.spacing = 5
@@ -215,6 +246,8 @@ final class SummarizeMyDayViewController: UIViewController {
                 timeLabel.widthAnchor.constraint(equalToConstant: 76),
                 statusImageView.widthAnchor.constraint(equalToConstant: 18),
                 statusImageView.heightAnchor.constraint(equalToConstant: 18),
+                muteButton.widthAnchor.constraint(equalToConstant: 28),
+                muteButton.heightAnchor.constraint(equalToConstant: 28),
                 tagPreviewStackView.leadingAnchor.constraint(equalTo: tagPreviewContainerView.leadingAnchor),
                 tagPreviewStackView.topAnchor.constraint(equalTo: tagPreviewContainerView.topAnchor),
                 tagPreviewStackView.bottomAnchor.constraint(equalTo: tagPreviewContainerView.bottomAnchor),
@@ -339,6 +372,21 @@ final class SummarizeMyDayViewController: UIViewController {
                 statusImageView.accessibilityLabel = "Timer paused"
                 statusImageView.isHidden = false
             }
+        }
+
+        private func configureMuteButton(
+            isMuted: Bool,
+            isMuteEditing: Bool,
+            canToggleMute: Bool
+        ) {
+            let shouldShowMuteButton = isMuteEditing || isMuted
+            muteButton.isHidden = !shouldShowMuteButton
+            muteButton.isEnabled = isMuteEditing && canToggleMute
+            muteButton.alpha = shouldShowMuteButton ? (isMuted ? 1 : 0.32) : 0
+            muteButton.tintColor = isMuted ? AppTheme.accent : AppTheme.metadataText
+            muteButton.accessibilityLabel = isMuted
+                ? "Unmute activity from category summary"
+                : "Mute activity from category summary"
         }
     }
 
@@ -522,6 +570,7 @@ final class SummarizeMyDayViewController: UIViewController {
         let timerState: ActivityTimerState?
         let noteText: String?
         let tagTexts: [String]
+        let isMutedFromSummary: Bool
     }
 
     private struct ActivityTypeSummaryRow {
@@ -620,6 +669,9 @@ final class SummarizeMyDayViewController: UIViewController {
     private var activityRows: [DaySummaryRow] = []
     private var activityTagSummaryRows: [ActivityTagSummaryRow] = []
     private var activityTypeSummaryRows: [ActivityTypeSummaryRow] = []
+    private var isActivityMuteEditing = false
+    private var pendingMutedActivityIDs: Set<UUID> = []
+    private var hasCategorySummaryEligibleActivities = false
     private var remainingEmptyStateQuotes = SummarizeMyDayViewController.emptyStateQuotes.shuffled()
     private var emptyStateQuotesByDay: [Date: String] = [:]
     private var selectedDay: Date
@@ -871,6 +923,8 @@ final class SummarizeMyDayViewController: UIViewController {
             activityRows = []
             activityTagSummaryRows = []
             activityTypeSummaryRows = []
+            hasCategorySummaryEligibleActivities = false
+            exitActivityMuteEditing()
             updateContent()
             return
         }
@@ -894,16 +948,22 @@ final class SummarizeMyDayViewController: UIViewController {
                     )
                 }
 
+            hasCategorySummaryEligibleActivities = activities.contains(where: isCategorySummaryEligibleActivity)
             activityRows = (completedRows + cachedTimerRows)
                 .sorted { $0.startTime < $1.startTime }
             activityTagSummaryRows = makeActivityTagSummaryRows(from: activities)
             activityTypeSummaryRows = makeActivityTypeSummaryRows(from: activities)
+            if !hasCategorySummaryEligibleActivities {
+                exitActivityMuteEditing()
+            }
             updateContent()
         } catch {
             assertionFailure("Unable to fetch day summary activities: \(error)")
             activityRows = []
             activityTagSummaryRows = []
             activityTypeSummaryRows = []
+            hasCategorySummaryEligibleActivities = false
+            exitActivityMuteEditing()
             updateContent()
         }
     }
@@ -943,6 +1003,10 @@ final class SummarizeMyDayViewController: UIViewController {
         return startTime >= bounds.start && completionTime < bounds.end
     }
 
+    private func isCategorySummaryEligibleActivity(_ activity: Activity) -> Bool {
+        activityIsCompletedFullyInSelectedDay(activity) && !(activity.activityType.tags?.isEmpty ?? true)
+    }
+
     private func selectedDayBounds() -> (start: Date, end: Date) {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: selectedDay)
@@ -968,7 +1032,8 @@ final class SummarizeMyDayViewController: UIViewController {
             durationText: ActivityDisplayFormatter.roundedHistoryDurationText(for: duration),
             timerState: nil,
             noteText: normalizedNote(activity.activityNotes),
-            tagTexts: tagPreviewTexts(for: activity.activityType)
+            tagTexts: tagPreviewTexts(for: activity.activityType),
+            isMutedFromSummary: displayedMuteState(for: activity)
         )
     }
 
@@ -990,7 +1055,8 @@ final class SummarizeMyDayViewController: UIViewController {
             ),
             timerState: cache.isRunning ? .running : .paused,
             noteText: nil,
-            tagTexts: tagPreviewTexts(for: activityType)
+            tagTexts: tagPreviewTexts(for: activityType),
+            isMutedFromSummary: false
         )
     }
 
@@ -1004,7 +1070,7 @@ final class SummarizeMyDayViewController: UIViewController {
         var summariesByID: [UUID: (name: String, duration: TimeInterval)] = [:]
         var uncategorizedDuration: TimeInterval = 0
 
-        for activity in activities where activityIsCompletedFullyInSelectedDay(activity) {
+        for activity in activities where activityIsCompletedFullyInSelectedDay(activity) && !displayedMuteState(for: activity) {
             guard let completionTime = activity.activityCompletionTime else {
                 continue
             }
@@ -1141,6 +1207,99 @@ final class SummarizeMyDayViewController: UIViewController {
         cache.isRunning ? Date() : cache.lastUpdateTime
     }
 
+    private func activityIsMutedFromSummary(_ activity: Activity) -> Bool {
+        activity.isMutedFromSummary ?? false
+    }
+
+    private func displayedMuteState(for activity: Activity) -> Bool {
+        if isActivityMuteEditing {
+            return pendingMutedActivityIDs.contains(activity.uniqueID)
+        }
+
+        return activityIsMutedFromSummary(activity)
+    }
+
+    private func enterActivityMuteEditing() {
+        guard hasCategorySummaryEligibleActivities else {
+            return
+        }
+
+        pendingMutedActivityIDs = Set(
+            activityRows.compactMap { row in
+                guard case let .completed(activity) = row.source,
+                      activityIsMutedFromSummary(activity)
+                else {
+                    return nil
+                }
+
+                return activity.uniqueID
+            }
+        )
+        isActivityMuteEditing = true
+        tableView.reloadData()
+    }
+
+    private func exitActivityMuteEditing() {
+        isActivityMuteEditing = false
+        pendingMutedActivityIDs = []
+    }
+
+    private func toggleActivityMute(_ activity: Activity) {
+        guard isActivityMuteEditing else {
+            return
+        }
+
+        if pendingMutedActivityIDs.contains(activity.uniqueID) {
+            pendingMutedActivityIDs.remove(activity.uniqueID)
+        } else {
+            pendingMutedActivityIDs.insert(activity.uniqueID)
+        }
+
+        reloadActivitiesSectionAndCategorySummary()
+    }
+
+    private func persistActivityMuteSelections() {
+        guard isActivityMuteEditing else {
+            return
+        }
+
+        guard let modelContext else {
+            exitActivityMuteEditing()
+            updateContent()
+            return
+        }
+
+        for row in activityRows {
+            guard case let .completed(activity) = row.source else {
+                continue
+            }
+
+            activity.isMutedFromSummary = pendingMutedActivityIDs.contains(activity.uniqueID)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            assertionFailure("Unable to persist activity mute selections: \(error)")
+        }
+
+        exitActivityMuteEditing()
+        loadActivities()
+    }
+
+    private func reloadActivitiesSectionAndCategorySummary() {
+        activityTagSummaryRows = makeActivityTagSummaryRows(
+            from: activityRows.compactMap { row in
+                guard case let .completed(activity) = row.source else {
+                    return nil
+                }
+
+                return activity
+            }
+        )
+        tableView.reloadData()
+    }
+
     private func normalizedNote(_ note: String?) -> String? {
         guard let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines),
               !trimmedNote.isEmpty
@@ -1236,6 +1395,7 @@ final class SummarizeMyDayViewController: UIViewController {
         let requestedDay = calendar.startOfDay(for: day)
         let today = calendar.startOfDay(for: Date())
         selectedDay = min(requestedDay, today)
+        exitActivityMuteEditing()
         loadActivities()
     }
 
@@ -1308,7 +1468,26 @@ extension SummarizeMyDayViewController: UITableViewDataSource {
                 withIdentifier: DaySummaryCell.reuseIdentifier,
                 for: indexPath
             ) as? DaySummaryCell
-            cell?.configure(with: activityRows[indexPath.row])
+            let row = activityRows[indexPath.row]
+            let completedActivity: Activity?
+            if case let .completed(activity) = row.source {
+                completedActivity = activity
+            } else {
+                completedActivity = nil
+            }
+            cell?.configure(
+                with: row,
+                isMutedFromSummary: completedActivity.map(displayedMuteState) ?? row.isMutedFromSummary,
+                isMuteEditing: isActivityMuteEditing,
+                canToggleMute: completedActivity != nil,
+                onMuteToggle: { [weak self] in
+                    guard let completedActivity else {
+                        return
+                    }
+
+                    self?.toggleActivityMute(completedActivity)
+                }
+            )
             return cell ?? UITableViewCell()
         }
     }
@@ -1326,10 +1505,19 @@ extension SummarizeMyDayViewController: UITableViewDelegate {
             return
         }
 
+        if isActivityMuteEditing {
+            toggleActivityMute(activity)
+            return
+        }
+
         showActivityDetails(for: activity)
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        if visibleSections[section] == .activities && hasCategorySummaryEligibleActivities {
+            return activitiesHeaderView()
+        }
+
         let containerView = UIView()
         containerView.backgroundColor = AppTheme.screenBackground
 
@@ -1369,7 +1557,92 @@ extension SummarizeMyDayViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        visibleSections[section].subtitle == nil ? 44 : UITableView.automaticDimension
+        if visibleSections[section] == .activities && hasCategorySummaryEligibleActivities {
+            return UITableView.automaticDimension
+        }
+
+        return visibleSections[section].subtitle == nil ? 44 : UITableView.automaticDimension
+    }
+
+    private func activitiesHeaderView() -> UIView {
+        let containerView = UIView()
+        containerView.backgroundColor = AppTheme.screenBackground
+
+        let titleLabel = UILabel()
+        titleLabel.text = SummarySection.activities.title
+        titleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+        titleLabel.textColor = AppTheme.metadataText
+        titleLabel.numberOfLines = 1
+
+        let descriptionLabel = UILabel()
+        descriptionLabel.text = "Muted activities don’t add up in categories above."
+        descriptionLabel.font = AppTheme.roundedFont(ofSize: 12, weight: .regular)
+        descriptionLabel.textColor = AppTheme.metadataText
+        descriptionLabel.numberOfLines = 0
+
+        let button = UIButton(type: .system)
+        button.configuration = activityMuteHeaderButtonConfiguration()
+        button.accessibilityLabel = isActivityMuteEditing ? "Done muting activities" : "Mute activities"
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.addAction(
+            UIAction { [weak self] _ in
+                guard let self else {
+                    return
+                }
+
+                if self.isActivityMuteEditing {
+                    self.persistActivityMuteSelections()
+                } else {
+                    self.enterActivityMuteEditing()
+                }
+            },
+            for: .touchUpInside
+        )
+
+        let descriptionStackView = UIStackView(arrangedSubviews: [descriptionLabel, button])
+        descriptionStackView.axis = .horizontal
+        descriptionStackView.alignment = .center
+        descriptionStackView.spacing = 8
+
+        let stackView = UIStackView(arrangedSubviews: [titleLabel, descriptionStackView])
+        stackView.axis = .vertical
+        stackView.alignment = .fill
+        stackView.spacing = 4
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        containerView.addSubview(stackView)
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),
+            stackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
+            stackView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 18),
+            stackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -8)
+        ])
+
+        return containerView
+    }
+
+    private func activityMuteHeaderButtonConfiguration() -> UIButton.Configuration {
+        var configuration = UIButton.Configuration.plain()
+        configuration.baseForegroundColor = AppTheme.accent
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6)
+
+        if isActivityMuteEditing {
+            configuration.title = "Done"
+            configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+                var attributes = attributes
+                attributes.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
+                return attributes
+            }
+        } else {
+            configuration.image = UIImage(systemName: "speaker.slash.fill")
+            configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+                pointSize: 16,
+                weight: .semibold
+            )
+        }
+
+        return configuration
     }
 
     private func showActivityDetails(for activity: Activity) {
