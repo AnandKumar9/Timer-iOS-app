@@ -7,12 +7,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     lazy var modelContainer: ModelContainer = {
         do {
-            return try ModelContainer(
-                for: ActivityType.self,
-                Activity.self,
-                ActivityTag.self,
-                ActivityTimerCache.self
-            )
+            return try ChronomarkModelContainerFactory.makeAppModelContainer()
         } catch {
             fatalError("Unable to create SwiftData model container: \(error)")
         }

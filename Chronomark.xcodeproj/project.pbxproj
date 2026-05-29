@@ -16,6 +16,7 @@
 		440DE4A42FB1000000910C7F /* ScreenshotSampleCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4A32FB1000000910C7F /* ScreenshotSampleCoordinator.swift */; };
 		440DE4A62FB1000000910C7F /* ScreenshotSampleData.json in Resources */ = {isa = PBXBuildFile; fileRef = 440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */; };
 		440DE4A82FB2000000910C7F /* SummarizeMyDayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4A92FB2000000910C7F /* SummarizeMyDayViewController.swift */; };
+		440DE4AC2FB3000000910C7F /* AppGroupSwiftDataMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4AB2FB3000000910C7F /* AppGroupSwiftDataMigration.swift */; };
 		9A0000010000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000011 /* AppDelegate.swift */; };
 		9A0000010000000000000002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000012 /* SceneDelegate.swift */; };
 		9A0000010000000000000003 /* ActivityDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000013 /* ActivityDetailsViewController.swift */; };
@@ -98,6 +99,8 @@
 		440DE4A32FB1000000910C7F /* ScreenshotSampleCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSampleCoordinator.swift; sourceTree = "<group>"; };
 		440DE4A52FB1000000910C7F /* ScreenshotSampleData.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ScreenshotSampleData.json; sourceTree = "<group>"; };
 		440DE4A92FB2000000910C7F /* SummarizeMyDayViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummarizeMyDayViewController.swift; sourceTree = "<group>"; };
+		440DE4AB2FB3000000910C7F /* AppGroupSwiftDataMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupSwiftDataMigration.swift; sourceTree = "<group>"; };
+		440DE4AD2FB3000000910C7F /* Chronomark.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Chronomark.entitlements; sourceTree = "<group>"; };
 		9A0000010000000000000010 /* Chronomark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chronomark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A0000010000000000000011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9A0000010000000000000012 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -264,6 +267,7 @@
 				9A0000010000000000000019 /* Assets.xcassets */,
 				440DE49F2FB0000000910C7F /* LaunchScreen.storyboard */,
 				9A0000010000000000000020 /* Info.plist */,
+				440DE4AD2FB3000000910C7F /* Chronomark.entitlements */,
 			);
 			path = Chronomark;
 			sourceTree = "<group>";
@@ -297,6 +301,7 @@
 				9A0000010000000000000044 /* Activity.swift */,
 				9A0000010000000000000047 /* ActivityTag.swift */,
 				9A000001000000000000004B /* ActivityTimerCache.swift */,
+				440DE4AB2FB3000000910C7F /* AppGroupSwiftDataMigration.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -485,6 +490,7 @@
 				440DE4A82FB2000000910C7F /* SummarizeMyDayViewController.swift in Sources */,
 				B00000000000000000000012 /* ChronomarkTimerAttributes.swift in Sources */,
 				B00000000000000000000014 /* ChronomarkLiveActivityController.swift in Sources */,
+				440DE4AC2FB3000000910C7F /* AppGroupSwiftDataMigration.swift in Sources */,
 				440DE4A22FB1000000910C7F /* ScreenshotSampleData.swift in Sources */,
 				440DE4A42FB1000000910C7F /* ScreenshotSampleCoordinator.swift in Sources */,
 			);
@@ -625,6 +631,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Chronomark/Chronomark.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
@@ -655,6 +662,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Chronomark/Chronomark.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
