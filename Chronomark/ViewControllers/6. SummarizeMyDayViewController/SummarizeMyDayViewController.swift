@@ -1628,12 +1628,11 @@ extension SummarizeMyDayViewController: UITableViewDelegate {
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6)
 
         if isActivityMuteEditing {
-            configuration.title = "Done"
-            configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
-                var attributes = attributes
-                attributes.font = AppTheme.roundedFont(ofSize: 13, weight: .semibold)
-                return attributes
-            }
+            configuration.image = UIImage(systemName: "checkmark")
+            configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+                pointSize: 16,
+                weight: .semibold
+            )
         } else {
             configuration.image = UIImage(systemName: "speaker.slash.fill")
             configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
