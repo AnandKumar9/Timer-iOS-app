@@ -3,6 +3,18 @@ import UIKit
 
 enum AppGroupStoreDiagnostics {
     private static let migrationCompletedVersionKey = "AppGroupSwiftDataMigration.completedVersion"
+    private static let mainTargetUserDefaultsKeys = [
+        "selectedAppAppearance",
+        "ActivityTypeSingleCategoryMigration.completed",
+        "alertWhenTimersRestored",
+        "restoreWindowHours",
+        "showDurationSeconds",
+        "activityTypeDisplayOrder",
+        "ActivityTypesViewController.selectedTagNames",
+        "ActivityTypesViewController.selectedFilterMode",
+        "selectedAppFont",
+        "selectedAppAccentColor"
+    ]
     private static let appGroupStoreFileNames = [
         "Chronomark.store",
         "Chronomark.store-shm",
@@ -20,12 +32,15 @@ enum AppGroupStoreDiagnostics {
         let bundle = Bundle.main
 
         lines.append("Chronomark Store Diagnostics")
+        lines.append("")
         lines.append("Bundle ID: \(bundle.bundleIdentifier ?? "unknown")")
         lines.append("Version: \(bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown")")
         lines.append("Build: \(bundle.infoDictionary?["CFBundleVersion"] as? String ?? "unknown")")
         lines.append("App Group ID: \(ChronomarkModelContainerFactory.appGroupIdentifier)")
         lines.append("")
 
+        appendMainTargetUserDefaults(to: &lines)
+        lines.append("")
         appendAppGroupDetails(to: &lines)
         lines.append("")
         appendLegacyStoreDetails(to: &lines)
@@ -83,6 +98,15 @@ enum AppGroupStoreDiagnostics {
             lines.append("Migration marker: \(userDefaults.integer(forKey: migrationCompletedVersionKey))")
         } else {
             lines.append("Migration marker: unavailable")
+        }
+    }
+
+    private static func appendMainTargetUserDefaults(to lines: inout [String]) {
+        lines.append("Main Target UserDefaults -")
+
+        for key in mainTargetUserDefaultsKeys {
+            let value = UserDefaults.standard.object(forKey: key)
+            lines.append("\(key): \(formattedUserDefaultsValue(value))")
         }
     }
 
@@ -167,6 +191,22 @@ enum AppGroupStoreDiagnostics {
         }
 
         return fileSize.uint64Value
+    }
+
+    private static func formattedUserDefaultsValue(_ value: Any?) -> String {
+        guard let value else {
+            return "unset"
+        }
+
+        if let string = value as? String {
+            return "\"\(string)\""
+        }
+
+        if let array = value as? [String] {
+            return "[\(array.map { "\"\($0)\"" }.joined(separator: ", "))]"
+        }
+
+        return String(describing: value)
     }
 
     private static func topPresentedViewController(from viewController: UIViewController) -> UIViewController {

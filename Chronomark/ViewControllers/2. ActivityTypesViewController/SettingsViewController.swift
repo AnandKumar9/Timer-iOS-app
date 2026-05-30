@@ -435,6 +435,11 @@ final class SettingsViewController: UIViewController {
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
         versionLabel.text = appVersionText()
         versionLabel.textAlignment = .right
+        versionLabel.isUserInteractionEnabled = true
+        versionLabel.accessibilityTraits.insert(.button)
+        versionLabel.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(versionLabelTapped))
+        )
         versionLabel.setContentHuggingPriority(.required, for: .horizontal)
         versionLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
@@ -774,6 +779,14 @@ final class SettingsViewController: UIViewController {
     @objc private func themeDidChange() {
         updateSelections()
         applyTheme()
+    }
+
+    @objc private func versionLabelTapped() {
+        let modelContext = (UIApplication.shared.delegate as? AppDelegate)?.modelContainer.mainContext
+        AppGroupStoreDiagnostics.presentReportIfNeeded(
+            from: self,
+            modelContext: modelContext
+        )
     }
 
     private func appearanceButtonTapped(mode: AppAppearanceMode) {

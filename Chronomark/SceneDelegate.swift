@@ -59,10 +59,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             )
         }
 
-        AppGroupStoreDiagnostics.presentReportIfNeeded(
-            from: navigationController,
-            modelContext: modelContext
-        )
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
