@@ -45,7 +45,6 @@ enum AppGroupStoreDiagnostics {
         modelContext: ModelContext?
     ) {
         let report = makeReport(modelContext: modelContext)
-        print(report)
 
         let alertController = UIAlertController(
             title: "Store Diagnostics",

@@ -58,7 +58,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 on: navigationController
             )
         }
-
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {

@@ -213,7 +213,6 @@ final class ActivityDetailsViewController: UIViewController {
 
             datePicker.date = date
             datePicker.datePickerMode = .dateAndTime
-            datePicker.maximumDate = Date()
             datePicker.preferredDatePickerStyle = .compact
             datePicker.tintColor = AppTheme.accent
             datePicker.translatesAutoresizingMaskIntoConstraints = false
@@ -721,8 +720,6 @@ final class ActivityDetailsViewController: UIViewController {
             return
         }
 
-        datePicker.maximumDate = Date()
-        clampDatePickerToPresent(datePicker)
         datePicker.addAction(
             UIAction { [weak self, weak datePicker] _ in
                 guard let datePicker else {
@@ -735,18 +732,7 @@ final class ActivityDetailsViewController: UIViewController {
         )
     }
 
-    private func clampDatePickerToPresent(_ datePicker: UIDatePicker) {
-        let now = Date()
-        datePicker.maximumDate = now
-
-        if datePicker.date > now {
-            datePicker.date = now
-        }
-    }
-
     private func handleTimestampDatePickerValueChanged(_ datePicker: UIDatePicker) {
-        clampDatePickerToPresent(datePicker)
-
         let currentStartDate = startDatePicker?.date
         let currentCompletionDate = completionDatePicker?.date
         let currentSelectedActivityType = selectedActivityType
@@ -876,6 +862,10 @@ final class ActivityDetailsViewController: UIViewController {
     private func editSaveButtonTapped() {
         if isEditingActivityDetails {
             if hasEditedActivityDetails {
+                guard canPresentSaveConfirmationAlert() else {
+                    return
+                }
+
                 presentSaveConfirmationAlert()
             } else {
                 setEditingActivityDetails(false)
@@ -883,6 +873,22 @@ final class ActivityDetailsViewController: UIViewController {
         } else {
             setEditingActivityDetails(true)
         }
+    }
+
+    private func canPresentSaveConfirmationAlert() -> Bool {
+        guard
+            let activity,
+            let startDate = startDatePicker?.date,
+            let completionDate = completionDatePicker?.date
+        else {
+            return false
+        }
+
+        return validatedAdjustedDurationForTimestampEdits(
+            activity: activity,
+            startDate: startDate,
+            completionDate: completionDate
+        ) != nil
     }
 
     private func setEditingActivityDetails(_ isEditing: Bool) {
@@ -958,22 +964,11 @@ final class ActivityDetailsViewController: UIViewController {
             return
         }
 
-        guard completionDate >= startDate else {
-            presentInvalidDateRangeAlert()
-            return
-        }
-
-        guard startDate <= Date(), completionDate <= Date() else {
-            presentFutureDateAlert()
-            return
-        }
-
-        guard let adjustedDuration = adjustedDurationForTimestampEdits(
+        guard let adjustedDuration = validatedAdjustedDurationForTimestampEdits(
             activity: activity,
             startDate: startDate,
             completionDate: completionDate
-        ), adjustedDuration > 0 else {
-            presentInvalidDurationAlert()
+        ) else {
             return
         }
 
@@ -999,7 +994,6 @@ final class ActivityDetailsViewController: UIViewController {
             TimerSessionState.notifyActivityPersisted(activityTypeID: selectedActivityType.uniqueID)
             setEditingActivityDetails(false)
         } catch {
-            assertionFailure("Unable to save activity details: \(error)")
             presentSaveActivityDetailsErrorAlert()
         }
     }
@@ -1023,7 +1017,6 @@ final class ActivityDetailsViewController: UIViewController {
             TimerSessionState.notifyActivityPersisted(activityTypeID: activity.activityType.uniqueID)
             populateActivityDetails()
         } catch {
-            assertionFailure("Unable to save activity note: \(error)")
             presentSaveActivityDetailsErrorAlert()
         }
     }
@@ -1050,15 +1043,9 @@ final class ActivityDetailsViewController: UIViewController {
         populateActivityDetails()
         if let startDate {
             startDatePicker?.date = startDate
-            if let startDatePicker {
-                clampDatePickerToPresent(startDatePicker)
-            }
         }
         if let completionDate {
             completionDatePicker?.date = completionDate
-            if let completionDatePicker {
-                clampDatePickerToPresent(completionDatePicker)
-            }
         }
     }
 
@@ -1139,7 +1126,6 @@ final class ActivityDetailsViewController: UIViewController {
             TimerSessionState.notifyActivityPersisted(activityTypeID: activityTypeID)
             navigationController?.popViewController(animated: true)
         } catch {
-            assertionFailure("Unable to delete activity: \(error)")
             presentDeleteActivityErrorAlert()
         }
     }
@@ -1178,7 +1164,6 @@ final class ActivityDetailsViewController: UIViewController {
             }
             return activityTypes
         } catch {
-            assertionFailure("Unable to fetch activity types: \(error)")
             return activity.map { [$0.activityType] } ?? []
         }
     }
@@ -1192,6 +1177,46 @@ final class ActivityDetailsViewController: UIViewController {
         case (.some, .none), (.none, .some):
             return false
         }
+    }
+
+    private func resetTimestampPickersToOriginalValues() {
+        if let originalStartTime {
+            startDatePicker?.date = originalStartTime
+        }
+
+        if let originalCompletionTime {
+            completionDatePicker?.date = originalCompletionTime
+        }
+    }
+
+    private func validatedAdjustedDurationForTimestampEdits(
+        activity: Activity,
+        startDate: Date,
+        completionDate: Date
+    ) -> TimeInterval? {
+        guard completionDate >= startDate else {
+            resetTimestampPickersToOriginalValues()
+            presentInvalidDateRangeAlert()
+            return nil
+        }
+
+        guard startDate <= Date(), completionDate <= Date() else {
+            resetTimestampPickersToOriginalValues()
+            presentFutureDateAlert()
+            return nil
+        }
+
+        guard let adjustedDuration = adjustedDurationForTimestampEdits(
+            activity: activity,
+            startDate: startDate,
+            completionDate: completionDate
+        ), adjustedDuration > 0 else {
+            resetTimestampPickersToOriginalValues()
+            presentInvalidDurationAlert()
+            return nil
+        }
+
+        return adjustedDuration
     }
 
     private func presentInvalidDateRangeAlert() {
