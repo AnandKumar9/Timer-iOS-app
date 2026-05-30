@@ -312,6 +312,7 @@ final class ActivityDetailsViewController: UIViewController {
     private let contentStackView = UIStackView()
     private let activityNameLabel = UILabel()
     private let statusCapsuleLabel = UILabel()
+    private let statusCapsuleContainerView = UIView()
     private let durationValueLabel = UILabel()
     private let detailsContainerView = UIView()
     private let detailsStackView = UIStackView()
@@ -470,13 +471,12 @@ final class ActivityDetailsViewController: UIViewController {
         statusCapsuleLabel.clipsToBounds = true
         statusCapsuleLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-        let statusContainerView = UIView()
-        statusContainerView.addSubview(statusCapsuleLabel)
+        statusCapsuleContainerView.addSubview(statusCapsuleLabel)
         statusCapsuleLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            statusCapsuleLabel.topAnchor.constraint(equalTo: statusContainerView.topAnchor),
-            statusCapsuleLabel.centerXAnchor.constraint(equalTo: statusContainerView.centerXAnchor),
-            statusCapsuleLabel.bottomAnchor.constraint(equalTo: statusContainerView.bottomAnchor),
+            statusCapsuleLabel.topAnchor.constraint(equalTo: statusCapsuleContainerView.topAnchor),
+            statusCapsuleLabel.centerXAnchor.constraint(equalTo: statusCapsuleContainerView.centerXAnchor),
+            statusCapsuleLabel.bottomAnchor.constraint(equalTo: statusCapsuleContainerView.bottomAnchor),
             statusCapsuleLabel.heightAnchor.constraint(equalToConstant: 26),
             statusCapsuleLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 96)
         ])
@@ -484,7 +484,7 @@ final class ActivityDetailsViewController: UIViewController {
         let headerStackView = UIStackView(arrangedSubviews: [
             titleCaptionLabel,
             activityNameLabel,
-            statusContainerView
+            statusCapsuleContainerView
         ])
         headerStackView.axis = .vertical
         headerStackView.spacing = 8
@@ -591,7 +591,7 @@ final class ActivityDetailsViewController: UIViewController {
     private func populateActivityDetails() {
         guard let activity else {
             activityNameLabel.text = "Activity"
-            configureStatusCapsule(text: "Unavailable", color: .systemGray)
+            configureStatusCapsule(text: nil, color: AppTheme.tagText)
             durationValueLabel.text = "Unavailable"
             setDetailRows([
                 DetailRowView(iconName: "exclamationmark.circle", title: "Activity", value: "Unavailable")
@@ -603,10 +603,14 @@ final class ActivityDetailsViewController: UIViewController {
         let completionTimeText = formattedDateTime(activity.activityCompletionTime)
         let duration = resolvedDuration(for: activity)
 
-        activityNameLabel.text = activity.activityType.name
+        let displayedActivityType = isEditingActivityDetails
+            ? selectedActivityType ?? activity.activityType
+            : activity.activityType
+
+        activityNameLabel.text = displayedActivityType.name
         configureStatusCapsule(
-            text: statusText(for: activity),
-            color: statusColor(for: activity)
+            text: categoryName(for: displayedActivityType),
+            color: AppTheme.tagText
         )
         durationValueLabel.text = formattedDuration(duration)
 
@@ -691,12 +695,25 @@ final class ActivityDetailsViewController: UIViewController {
                     title: activityType.name,
                     state: activityType.uniqueID == selectedActivityType.uniqueID ? .on : .off
                 ) { [weak self, weak row] _ in
-                    self?.selectedActivityType = activityType
                     row?.updateSelectedName(activityType.name)
+                    self?.handleActivityTypeSelection(activityType)
                 }
             }
         )
         return row
+    }
+
+    private func handleActivityTypeSelection(_ activityType: ActivityType) {
+        let currentStartDate = startDatePicker?.date
+        let currentCompletionDate = completionDatePicker?.date
+
+        DispatchQueue.main.async { [weak self] in
+            self?.refreshActivityDetailsAfterStagingNote(
+                startDate: currentStartDate,
+                completionDate: currentCompletionDate,
+                selectedActivityType: activityType
+            )
+        }
     }
 
     private func configureTimestampDatePicker(_ datePicker: UIDatePicker?) {
@@ -843,7 +860,14 @@ final class ActivityDetailsViewController: UIViewController {
         present(alertController, animated: true)
     }
 
-    private func configureStatusCapsule(text: String, color: UIColor) {
+    private func configureStatusCapsule(text: String?, color: UIColor) {
+        guard let text, !text.isEmpty else {
+            statusCapsuleContainerView.isHidden = true
+            statusCapsuleLabel.text = nil
+            return
+        }
+
+        statusCapsuleContainerView.isHidden = false
         statusCapsuleLabel.text = "  \(text)  "
         statusCapsuleLabel.textColor = color
         statusCapsuleLabel.backgroundColor = color.withAlphaComponent(0.14)
@@ -1201,28 +1225,11 @@ final class ActivityDetailsViewController: UIViewController {
         present(alertController, animated: true)
     }
 
-    private func statusText(for activity: Activity) -> String {
-        if activity.activityCompletionTime != nil {
-            return "Completed"
-        }
-
-        if activity.activityStartTime != nil {
-            return "In Progress"
-        }
-
-        return "Not Started"
-    }
-
-    private func statusColor(for activity: Activity) -> UIColor {
-        if activity.activityCompletionTime != nil {
-            return AppTheme.completed
-        }
-
-        if activity.activityStartTime != nil {
-            return AppTheme.paused
-        }
-
-        return .systemGray
+    private func categoryName(for activityType: ActivityType) -> String? {
+        activityType.tags?
+            .map(\.name)
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+            .first
     }
 
     private func resolvedDuration(for activity: Activity) -> TimeInterval? {

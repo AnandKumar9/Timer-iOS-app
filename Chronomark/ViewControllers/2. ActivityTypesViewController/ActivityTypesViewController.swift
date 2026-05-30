@@ -938,8 +938,6 @@ final class ActivityTypesViewController: UIViewController {
         filterButton.contentHorizontalAlignment = .center
         filterButton.contentVerticalAlignment = .center
         filterButton.showsMenuAsPrimaryAction = true
-        filterButton.widthAnchor.constraint(equalToConstant: 44).isActive = true
-        filterButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
         updateFilterButton()
     }
 
