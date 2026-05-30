@@ -652,7 +652,7 @@
 				CODE_SIGN_ENTITLEMENTS = Chronomark/Chronomark.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chronomark/Info.plist;
@@ -683,7 +683,7 @@
 				CODE_SIGN_ENTITLEMENTS = Chronomark/Chronomark.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					ScreenshotSampleData.swift,
@@ -719,7 +719,7 @@
 				CODE_SIGN_ENTITLEMENTS = ChronomarkLiveActivities/ChronomarkLiveActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChronomarkLiveActivities/Info.plist;
@@ -749,7 +749,7 @@
 				CODE_SIGN_ENTITLEMENTS = ChronomarkLiveActivities/ChronomarkLiveActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChronomarkLiveActivities/Info.plist;

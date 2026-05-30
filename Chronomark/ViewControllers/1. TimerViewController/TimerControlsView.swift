@@ -97,6 +97,12 @@ final class TimerControlsView: UIView {
     var activityTypeName: String {
         activity.activityType.name
     }
+    var isLiveActivitiesOn: Bool {
+        activity.activityType.isLiveActivitiesOn
+    }
+    var showControlsInLiveActivities: Bool {
+        activity.activityType.showControlsInLiveActivities
+    }
     var hasStartedTimer: Bool {
         activity.activityStartTime != nil
     }

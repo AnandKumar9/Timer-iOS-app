@@ -116,6 +116,8 @@ enum AppGroupSwiftDataMigration {
                 sharedActivityType.name = legacyActivityType.name
                 sharedActivityType.creationDate = legacyActivityType.creationDate
                 sharedActivityType.isFavorite = legacyActivityType.isFavorite
+                sharedActivityType.isLiveActivitiesOn = legacyActivityType.isLiveActivitiesOn
+                sharedActivityType.showControlsInLiveActivities = legacyActivityType.showControlsInLiveActivities
                 sharedActivityType.tags = mappedTags
             } else {
                 let sharedActivityType = ActivityType(
@@ -123,6 +125,8 @@ enum AppGroupSwiftDataMigration {
                     name: legacyActivityType.name,
                     creationDate: legacyActivityType.creationDate,
                     isFavorite: legacyActivityType.isFavorite,
+                    isLiveActivitiesOn: legacyActivityType.isLiveActivitiesOn,
+                    showControlsInLiveActivities: legacyActivityType.showControlsInLiveActivities,
                     tags: mappedTags
                 )
                 sharedContext.insert(sharedActivityType)

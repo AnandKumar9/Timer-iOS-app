@@ -1,5 +1,6 @@
 import UIKit
 import SwiftData
+import ActivityKit
 
 final class ActivityHistoryViewController: UIViewController {
     private static let noteCharacterLimit = 35
@@ -168,12 +169,161 @@ final class ActivityHistoryViewController: UIViewController {
         let durationText: String
     }
 
+    private final class LockScreenOptionsViewController: UIViewController {
+        private let stackView = UIStackView()
+        private let showOutsideAppSwitch = UISwitch()
+        private let showControlsSwitch = UISwitch()
+        private let controlsRow = UIStackView()
+        private let controlsLabelsStackView = UIStackView()
+        private let controlsTitleLabel = UILabel()
+        private let controlsSubtitleLabel = UILabel()
+
+        var showsOutsideApp: Bool {
+            didSet {
+                updateControlsAvailability()
+                onShowsOutsideAppChange?(showsOutsideApp)
+            }
+        }
+
+        var showsControls: Bool {
+            didSet {
+                onShowsControlsChange?(showsControls)
+            }
+        }
+
+        var onShowsOutsideAppChange: ((Bool) -> Void)?
+        var onShowsControlsChange: ((Bool) -> Void)?
+
+        init(showsOutsideApp: Bool, showsControls: Bool) {
+            self.showsOutsideApp = showsOutsideApp
+            self.showsControls = showsControls
+            super.init(nibName: nil, bundle: nil)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError("Use init(showsOutsideApp:showsControls:) instead.")
+        }
+
+        override func viewDidLoad() {
+            super.viewDidLoad()
+
+            configure()
+            applyTheme()
+            updateControlsAvailability()
+        }
+
+        private func configure() {
+            view.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 24, leading: 24, bottom: 24, trailing: 24)
+
+            stackView.axis = .vertical
+            stackView.alignment = .fill
+            stackView.spacing = 18
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+
+            let outsideAppRow = makeToggleRow(
+                title: "Show Timer Outside the App",
+                subtitle: "Keep the running timer visible on the Lock Screen and supported system surfaces.",
+                toggle: showOutsideAppSwitch
+            )
+
+            controlsRow.axis = .horizontal
+            controlsRow.alignment = .center
+            controlsRow.spacing = 16
+
+            controlsTitleLabel.text = "Show Timer Controls in Lock Screen"
+            controlsTitleLabel.numberOfLines = 1
+            controlsSubtitleLabel.text = "Also show pause, resume, and stop controls in Lock Screen."
+            controlsSubtitleLabel.numberOfLines = 2
+
+            controlsLabelsStackView.axis = .vertical
+            controlsLabelsStackView.spacing = 3
+            controlsLabelsStackView.addArrangedSubview(controlsTitleLabel)
+            controlsLabelsStackView.addArrangedSubview(controlsSubtitleLabel)
+
+            controlsRow.addArrangedSubview(controlsLabelsStackView)
+            controlsRow.addArrangedSubview(showControlsSwitch)
+
+            showOutsideAppSwitch.isOn = showsOutsideApp
+            showControlsSwitch.isOn = showsControls
+            showOutsideAppSwitch.addTarget(self, action: #selector(showOutsideAppSwitchChanged), for: .valueChanged)
+            showControlsSwitch.addTarget(self, action: #selector(showControlsSwitchChanged), for: .valueChanged)
+
+            stackView.addArrangedSubview(outsideAppRow)
+            stackView.addArrangedSubview(controlsRow)
+            view.addSubview(stackView)
+
+            NSLayoutConstraint.activate([
+                stackView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+                stackView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+                stackView.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor),
+                stackView.bottomAnchor.constraint(lessThanOrEqualTo: view.layoutMarginsGuide.bottomAnchor)
+            ])
+        }
+
+        private func makeToggleRow(
+            title: String,
+            subtitle: String,
+            toggle: UISwitch
+        ) -> UIStackView {
+            let titleLabel = UILabel()
+            titleLabel.text = title
+            titleLabel.numberOfLines = 1
+
+            let subtitleLabel = UILabel()
+            subtitleLabel.text = subtitle
+            subtitleLabel.numberOfLines = 2
+
+            let labelsStackView = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+            labelsStackView.axis = .vertical
+            labelsStackView.spacing = 3
+
+            let rowStackView = UIStackView(arrangedSubviews: [labelsStackView, toggle])
+            rowStackView.axis = .horizontal
+            rowStackView.alignment = .center
+            rowStackView.spacing = 16
+
+            titleLabel.font = AppTheme.roundedFont(ofSize: 16, weight: .semibold)
+            titleLabel.textColor = AppTheme.primaryText
+            subtitleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .regular)
+            subtitleLabel.textColor = AppTheme.metadataText
+
+            toggle.setContentHuggingPriority(.required, for: .horizontal)
+            toggle.setContentCompressionResistancePriority(.required, for: .horizontal)
+            return rowStackView
+        }
+
+        private func applyTheme() {
+            view.backgroundColor = AppTheme.screenBackground
+            showOutsideAppSwitch.onTintColor = AppTheme.accent
+            showControlsSwitch.onTintColor = AppTheme.accent
+            controlsTitleLabel.font = AppTheme.roundedFont(ofSize: 16, weight: .semibold)
+            controlsSubtitleLabel.font = AppTheme.roundedFont(ofSize: 13, weight: .regular)
+        }
+
+        private func updateControlsAvailability() {
+            showControlsSwitch.isEnabled = showsOutsideApp
+            controlsTitleLabel.textColor = showsOutsideApp ? AppTheme.primaryText : AppTheme.metadataText
+            controlsSubtitleLabel.textColor = AppTheme.metadataText
+            controlsLabelsStackView.alpha = showsOutsideApp ? 1 : 0.5
+            showControlsSwitch.alpha = showsOutsideApp ? 1 : 0.5
+        }
+
+        @objc private func showOutsideAppSwitchChanged() {
+            showsOutsideApp = showOutsideAppSwitch.isOn
+        }
+
+        @objc private func showControlsSwitchChanged() {
+            showsControls = showControlsSwitch.isOn
+        }
+    }
+
     private let headerStackView = UIStackView()
     private let activityNameLabel = UILabel()
     private let tagPreviewStackView = UIStackView()
     private let activityStatsLabel = UILabel()
     private let activityStatsRowStackView = UIStackView()
     private let activityStatsSpacerView = UIView()
+    private let lockScreenVisibilityButton = UIButton(type: .system)
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyStateLabel = UILabel()
     private lazy var favoriteButton = UIBarButtonItem(
@@ -190,6 +340,11 @@ final class ActivityHistoryViewController: UIViewController {
     )
     private var activityRows: [ActivityHistoryRow] = []
     private let maximumVisibleTagCount = 4
+    private var showsOnLockScreen = true
+    private var showsLockScreenControls = true
+    private var areLiveActivitiesAvailable: Bool {
+        ActivityAuthorizationInfo().areActivitiesEnabled
+    }
 #if DEBUG
     private var isUsingScreenshotSamples = false
 #endif
@@ -210,6 +365,7 @@ final class ActivityHistoryViewController: UIViewController {
         super.viewWillAppear(animated)
 
         applyTheme()
+        updateLockScreenOptionsVisibility()
         loadActivities()
     }
 
@@ -226,6 +382,7 @@ final class ActivityHistoryViewController: UIViewController {
         configureActivityNameLabel()
         configureTagPreviewStackView()
         configureActivityStatsLabel()
+        configureLockScreenOptionsButton()
         configureTableView()
         configureEmptyStateLabel()
         configureActivityNotifications()
@@ -292,6 +449,7 @@ final class ActivityHistoryViewController: UIViewController {
         activityStatsRowStackView.spacing = 8
         activityStatsRowStackView.addArrangedSubview(activityStatsLabel)
         activityStatsRowStackView.addArrangedSubview(tagPreviewStackView)
+        activityStatsRowStackView.addArrangedSubview(lockScreenVisibilityButton)
         activityStatsRowStackView.addArrangedSubview(activityStatsSpacerView)
 
         activityStatsSpacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -305,6 +463,37 @@ final class ActivityHistoryViewController: UIViewController {
         tagPreviewStackView.isHidden = true
         tagPreviewStackView.setContentHuggingPriority(.required, for: .horizontal)
         tagPreviewStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
+    }
+
+    private func configureLockScreenOptionsButton() {
+        lockScreenVisibilityButton.setPreferredSymbolConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold),
+            forImageIn: .normal
+        )
+        lockScreenVisibilityButton.contentHorizontalAlignment = .center
+        lockScreenVisibilityButton.contentVerticalAlignment = .center
+        lockScreenVisibilityButton.accessibilityLabel = "Lock Screen Timer Options"
+        lockScreenVisibilityButton.addTarget(self, action: #selector(lockScreenVisibilityButtonTapped), for: .touchUpInside)
+        lockScreenVisibilityButton.setContentHuggingPriority(.required, for: .horizontal)
+        lockScreenVisibilityButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        updateLockScreenToggleIcons()
+
+        NSLayoutConstraint.activate([
+            lockScreenVisibilityButton.widthAnchor.constraint(equalToConstant: 26),
+            lockScreenVisibilityButton.heightAnchor.constraint(equalToConstant: 26)
+        ])
+    }
+
+    private func updateLockScreenToggleIcons() {
+        lockScreenVisibilityButton.setImage(
+            UIImage(systemName: showsOnLockScreen ? "lock.rectangle.stack" : "lock.slash"),
+            for: .normal
+        )
+        lockScreenVisibilityButton.accessibilityValue = showsOnLockScreen ? "On" : "Off"
+    }
+
+    private func updateLockScreenOptionsVisibility() {
+        lockScreenVisibilityButton.isHidden = !areLiveActivitiesAvailable
     }
 
     private func configureTableView() {
@@ -333,6 +522,7 @@ final class ActivityHistoryViewController: UIViewController {
         tableView.separatorColor = AppTheme.separator
         activityNameLabel.textColor = AppTheme.primaryText
         activityStatsLabel.textColor = AppTheme.metadataText
+        lockScreenVisibilityButton.tintColor = AppTheme.accent
         emptyStateLabel.textColor = AppTheme.metadataText
         navigationController?.navigationBar.tintColor = AppTheme.accent
         navigationController?.navigationBar.titleTextAttributes = [
@@ -380,6 +570,12 @@ final class ActivityHistoryViewController: UIViewController {
             name: AppSettings.durationDisplayDidChangeNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(liveActivityAuthorizationMayHaveChanged),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
     }
 
     private func registerForThemeChanges() {
@@ -398,10 +594,14 @@ final class ActivityHistoryViewController: UIViewController {
             activityRows = []
             configureTagPreviews([])
             updateActivityStats()
+            updateLockScreenToggleIcons()
             updateContent()
             return
         }
 
+        showsOnLockScreen = activityType.isLiveActivitiesOn
+        showsLockScreenControls = activityType.showControlsInLiveActivities
+        updateLockScreenToggleIcons()
         configureTagPreviews(tagPreviewTexts(for: activityType))
         activityRows = activityType.activities
             .filter { $0.activityStartTime != nil && $0.activityCompletionTime != nil }
@@ -913,6 +1113,69 @@ final class ActivityHistoryViewController: UIViewController {
         }
     }
 
+    private func setLiveActivitiesEnabled(_ isEnabled: Bool) {
+        guard let activityType else {
+            showsOnLockScreen = isEnabled
+            updateLockScreenToggleIcons()
+            return
+        }
+
+        let previousValue = activityType.isLiveActivitiesOn
+        activityType.isLiveActivitiesOn = isEnabled
+        showsOnLockScreen = isEnabled
+        updateLockScreenToggleIcons()
+
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+
+        guard let modelContext else {
+            return
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            activityType.isLiveActivitiesOn = previousValue
+            showsOnLockScreen = previousValue
+            updateLockScreenToggleIcons()
+            assertionFailure("Unable to save Live Activity setting: \(error)")
+            presentSaveLiveActivitySettingsErrorAlert()
+        }
+    }
+
+    private func setLiveActivityControlsEnabled(_ isEnabled: Bool) {
+        guard let activityType else {
+            showsLockScreenControls = isEnabled
+            return
+        }
+
+        let previousValue = activityType.showControlsInLiveActivities
+        activityType.showControlsInLiveActivities = isEnabled
+        showsLockScreenControls = isEnabled
+
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+
+        guard let modelContext else {
+            return
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            activityType.showControlsInLiveActivities = previousValue
+            showsLockScreenControls = previousValue
+            assertionFailure("Unable to save Live Activity controls setting: \(error)")
+            presentSaveLiveActivitySettingsErrorAlert()
+        }
+    }
+
     private func presentDeleteActivityErrorAlert() {
         let alertController = UIAlertController(
             title: "Unable to Delete Activity",
@@ -926,6 +1189,16 @@ final class ActivityHistoryViewController: UIViewController {
     private func presentSaveFavoriteErrorAlert() {
         let alertController = UIAlertController(
             title: "Unable to Save Favorite",
+            message: "Please try again.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
+    private func presentSaveLiveActivitySettingsErrorAlert() {
+        let alertController = UIAlertController(
+            title: "Unable to Save Live Activity Settings",
             message: "Please try again.",
             preferredStyle: .alert
         )
@@ -1037,12 +1310,44 @@ final class ActivityHistoryViewController: UIViewController {
         loadActivities()
     }
 
+    @objc private func liveActivityAuthorizationMayHaveChanged() {
+        updateLockScreenOptionsVisibility()
+    }
+
     @objc private func activityNameLabelTapped() {
         guard activityType != nil else {
             return
         }
 
         presentRenameActivityTypeAlert()
+    }
+
+    @objc private func lockScreenVisibilityButtonTapped() {
+        guard areLiveActivitiesAvailable else {
+            return
+        }
+
+        let optionsViewController = LockScreenOptionsViewController(
+            showsOutsideApp: showsOnLockScreen,
+            showsControls: showsLockScreenControls
+        )
+        optionsViewController.onShowsOutsideAppChange = { [weak self] isEnabled in
+            self?.setLiveActivitiesEnabled(isEnabled)
+        }
+        optionsViewController.onShowsControlsChange = { [weak self] isEnabled in
+            self?.setLiveActivityControlsEnabled(isEnabled)
+        }
+        optionsViewController.modalPresentationStyle = .pageSheet
+
+        if let sheetPresentationController = optionsViewController.sheetPresentationController {
+            sheetPresentationController.detents = [
+                .custom { _ in 210 }
+            ]
+            sheetPresentationController.prefersGrabberVisible = true
+            sheetPresentationController.preferredCornerRadius = 24
+        }
+
+        present(optionsViewController, animated: true)
     }
 
     @objc private func tagPreviewTapped() {

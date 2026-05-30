@@ -84,15 +84,13 @@ private struct ChronomarkLockScreenLiveActivityView: View {
         VStack(spacing: 16) {
             ChronomarkLiveActivityRow(context: context)
                 .widgetURL(ChronomarkLiveActivityWidget.timerURL)
-            if Self.showsControls {
+            if context.attributes.showControls {
                 ChronomarkLiveActivityControlRow(context: context)
             }
         }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
     }
-
-    private static let showsControls = true
 }
 
 private struct ChronomarkLiveActivityControlRow: View {
@@ -337,7 +335,7 @@ struct ChronomarkLiveActivitiesBundle: WidgetBundle {
     }
 }
 
-#Preview("Lock Screen", as: .content, using: ChronomarkTimerAttributes(activityTypeUniqueID: UUID(), activityName: "Focus Session")) {
+#Preview("Lock Screen", as: .content, using: ChronomarkTimerAttributes(activityTypeUniqueID: UUID(), activityName: "Focus Session", showControls: true)) {
     ChronomarkLiveActivityWidget()
 } contentStates: {
     ChronomarkTimerAttributes.ContentState(
@@ -350,7 +348,7 @@ struct ChronomarkLiveActivitiesBundle: WidgetBundle {
     )
 }
 
-#Preview("Dynamic Island", as: .dynamicIsland(.expanded), using: ChronomarkTimerAttributes(activityTypeUniqueID: UUID(), activityName: "Morning commut§e - Dranesville Road")) {
+#Preview("Dynamic Island", as: .dynamicIsland(.expanded), using: ChronomarkTimerAttributes(activityTypeUniqueID: UUID(), activityName: "Morning commut§e - Dranesville Road", showControls: true)) {
     ChronomarkLiveActivityWidget()
 } contentStates: {
     ChronomarkTimerAttributes.ContentState(

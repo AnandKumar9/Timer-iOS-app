@@ -7,6 +7,8 @@ final class ActivityType {
     var name: String
     var creationDate: Date
     var isFavorite: Bool = false
+    var isLiveActivitiesOn: Bool = true
+    var showControlsInLiveActivities: Bool = true
     @Relationship(deleteRule: .cascade, inverse: \Activity.activityType) var activities: [Activity]
     var tags: [ActivityTag]?
 
@@ -15,6 +17,8 @@ final class ActivityType {
         name: String,
         creationDate: Date = .now,
         isFavorite: Bool = false,
+        isLiveActivitiesOn: Bool = true,
+        showControlsInLiveActivities: Bool = true,
         activities: [Activity] = [],
         tags: [ActivityTag]? = nil
     ) {
@@ -22,6 +26,8 @@ final class ActivityType {
         self.name = name
         self.creationDate = creationDate
         self.isFavorite = isFavorite
+        self.isLiveActivitiesOn = isLiveActivitiesOn
+        self.showControlsInLiveActivities = showControlsInLiveActivities
         self.activities = activities
         self.tags = tags
     }

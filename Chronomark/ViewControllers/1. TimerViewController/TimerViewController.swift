@@ -1,5 +1,6 @@
 import UIKit
 import SwiftData
+import ActivityKit
 
 final class TimerViewController: UIViewController {
     fileprivate static var activeInstance: TimerViewController?
@@ -466,6 +467,11 @@ final class TimerViewController: UIViewController {
         guard let startTime = timerControlsView.activityStartTime else {
             return
         }
+        guard timerControlsView.isLiveActivitiesOn,
+              ActivityAuthorizationInfo().areActivitiesEnabled
+        else {
+            return
+        }
 
         do {
             try ChronomarkLiveActivityController.startActivity(
@@ -474,7 +480,8 @@ final class TimerViewController: UIViewController {
                 elapsedSeconds: 0,
                 status: "Running",
                 timerStartDate: startTime,
-                relevanceScore: 100
+                relevanceScore: 100,
+                showControls: timerControlsView.showControlsInLiveActivities
             )
         } catch {
             print("Failed to start Live Activity: \(error)")
@@ -501,7 +508,10 @@ final class TimerViewController: UIViewController {
                 elapsedSeconds: Int(elapsedTime),
                 status: isRunning ? "Running" : "Paused",
                 timerStartDate: isRunning ? Date().addingTimeInterval(-elapsedTime) : nil,
-                relevanceScore: isRunning ? 100 : 50
+                relevanceScore: isRunning ? 100 : 50,
+                showControls: timerControlsView.showControlsInLiveActivities,
+                canStartNewActivity: timerControlsView.isLiveActivitiesOn
+                    && ActivityAuthorizationInfo().areActivitiesEnabled
             )
         } catch {
             print("Failed to restore Live Activity: \(error)")

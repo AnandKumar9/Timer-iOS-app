@@ -13,4 +13,5 @@ struct ChronomarkTimerAttributes: ActivityAttributes {
 
     var activityTypeUniqueID: UUID
     var activityName: String
+    var showControls: Bool
 }

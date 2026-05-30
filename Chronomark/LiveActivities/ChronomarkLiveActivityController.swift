@@ -9,7 +9,8 @@ enum ChronomarkLiveActivityController {
         elapsedSeconds: Int,
         status: String,
         timerStartDate: Date?,
-        relevanceScore: Double
+        relevanceScore: Double,
+        showControls: Bool
     ) throws -> ActivityKit.Activity<ChronomarkTimerAttributes>? {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             return nil
@@ -18,7 +19,8 @@ enum ChronomarkLiveActivityController {
         return try ActivityKit.Activity<ChronomarkTimerAttributes>.request(
             attributes: ChronomarkTimerAttributes(
                 activityTypeUniqueID: activityTypeID,
-                activityName: name
+                activityName: name,
+                showControls: showControls
             ),
             content: ActivityContent(
                 state: ChronomarkTimerAttributes.ContentState(
@@ -70,7 +72,9 @@ enum ChronomarkLiveActivityController {
         elapsedSeconds: Int,
         status: String,
         timerStartDate: Date?,
-        relevanceScore: Double
+        relevanceScore: Double,
+        showControls: Bool,
+        canStartNewActivity: Bool = true
     ) throws -> ActivityKit.Activity<ChronomarkTimerAttributes>? {
         let matchingActivities = activities(activityTypeID: activityTypeID)
         guard matchingActivities.isEmpty else {
@@ -85,13 +89,18 @@ enum ChronomarkLiveActivityController {
             return matchingActivities.first
         }
 
+        guard canStartNewActivity else {
+            return nil
+        }
+
         return try startActivity(
             activityTypeID: activityTypeID,
             name: name,
             elapsedSeconds: elapsedSeconds,
             status: status,
             timerStartDate: timerStartDate,
-            relevanceScore: relevanceScore
+            relevanceScore: relevanceScore,
+            showControls: showControls
         )
     }
 
