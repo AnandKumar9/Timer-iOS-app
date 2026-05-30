@@ -51,6 +51,7 @@
 		9A0000010000000000000060 /* JetBrainsMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000066 /* JetBrainsMono-SemiBold.ttf */; };
 		9A0000010000000000000061 /* JetBrainsMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000067 /* JetBrainsMono-Bold.ttf */; };
 		9A0000010000000000000062 /* Manrope[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000068 /* Manrope[wght].ttf */; };
+		9A0000010000000000000069 /* AppGroupStoreDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A000001000000000000006A /* AppGroupStoreDiagnostics.swift */; };
 		B00000000000000000000001 /* ChronomarkLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003 /* ChronomarkLiveActivities.swift */; };
 		B00000000000000000000002 /* ChronomarkLiveActivities.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* ChronomarkLiveActivities.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B00000000000000000000011 /* ChronomarkTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* ChronomarkTimerAttributes.swift */; };
@@ -144,6 +145,7 @@
 		9A0000010000000000000066 /* JetBrainsMono-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-SemiBold.ttf"; sourceTree = "<group>"; };
 		9A0000010000000000000067 /* JetBrainsMono-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Bold.ttf"; sourceTree = "<group>"; };
 		9A0000010000000000000068 /* Manrope[wght].ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope[wght].ttf"; sourceTree = "<group>"; };
+		9A000001000000000000006A /* AppGroupStoreDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupStoreDiagnostics.swift; sourceTree = "<group>"; };
 		B00000000000000000000003 /* ChronomarkLiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronomarkLiveActivities.swift; sourceTree = "<group>"; };
 		B00000000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B00000000000000000000005 /* ChronomarkLiveActivities.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ChronomarkLiveActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -311,6 +313,7 @@
 				9A0000010000000000000047 /* ActivityTag.swift */,
 				9A000001000000000000004B /* ActivityTimerCache.swift */,
 				440DE4AB2FB3000000910C7F /* AppGroupSwiftDataMigration.swift */,
+				9A000001000000000000006A /* AppGroupStoreDiagnostics.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -496,6 +499,7 @@
 				9A0000010000000000000046 /* ActivityTag.swift in Sources */,
 				9A0000010000000000000048 /* TagsManagementViewController.swift in Sources */,
 				9A000001000000000000004A /* ActivityTimerCache.swift in Sources */,
+				9A0000010000000000000069 /* AppGroupStoreDiagnostics.swift in Sources */,
 				9A000001000000000000004C /* AppAppearanceController.swift in Sources */,
 				9A000001000000000000004E /* AppTheme.swift in Sources */,
 				440DE4A82FB2000000910C7F /* SummarizeMyDayViewController.swift in Sources */,
@@ -652,7 +656,7 @@
 				CODE_SIGN_ENTITLEMENTS = Chronomark/Chronomark.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chronomark/Info.plist;
@@ -683,7 +687,7 @@
 				CODE_SIGN_ENTITLEMENTS = Chronomark/Chronomark.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					ScreenshotSampleData.swift,
@@ -719,7 +723,7 @@
 				CODE_SIGN_ENTITLEMENTS = ChronomarkLiveActivities/ChronomarkLiveActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChronomarkLiveActivities/Info.plist;
@@ -749,7 +753,7 @@
 				CODE_SIGN_ENTITLEMENTS = ChronomarkLiveActivities/ChronomarkLiveActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChronomarkLiveActivities/Info.plist;
