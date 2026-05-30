@@ -56,6 +56,8 @@
 		B00000000000000000000011 /* ChronomarkTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* ChronomarkTimerAttributes.swift */; };
 		B00000000000000000000012 /* ChronomarkTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* ChronomarkTimerAttributes.swift */; };
 		B00000000000000000000014 /* ChronomarkLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000015 /* ChronomarkLiveActivityController.swift */; };
+		B00000000000000000000026 /* ChronomarkLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000028 /* ChronomarkLiveActivityIntents.swift */; };
+		B00000000000000000000027 /* ChronomarkLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000028 /* ChronomarkLiveActivityIntents.swift */; };
 		B00000000000000000000017 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* Assets.xcassets */; };
 		B00000000000000000000019 /* JetBrainsMono-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000063 /* JetBrainsMono-Light.ttf */; };
 		B0000000000000000000001A /* JetBrainsMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000064 /* JetBrainsMono-Regular.ttf */; };
@@ -63,6 +65,11 @@
 		B0000000000000000000001C /* JetBrainsMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000066 /* JetBrainsMono-SemiBold.ttf */; };
 		B0000000000000000000001D /* JetBrainsMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000067 /* JetBrainsMono-Bold.ttf */; };
 		B0000000000000000000001E /* Manrope[wght].ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000068 /* Manrope[wght].ttf */; };
+		B00000000000000000000020 /* ActivityType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000043 /* ActivityType.swift */; };
+		B00000000000000000000021 /* Activity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000044 /* Activity.swift */; };
+		B00000000000000000000022 /* ActivityTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000047 /* ActivityTag.swift */; };
+		B00000000000000000000023 /* ActivityTimerCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A000001000000000000004B /* ActivityTimerCache.swift */; };
+		B00000000000000000000024 /* AppGroupSwiftDataMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440DE4AB2FB3000000910C7F /* AppGroupSwiftDataMigration.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -142,7 +149,9 @@
 		B00000000000000000000005 /* ChronomarkLiveActivities.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ChronomarkLiveActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B00000000000000000000013 /* ChronomarkTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronomarkTimerAttributes.swift; sourceTree = "<group>"; };
 		B00000000000000000000015 /* ChronomarkLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronomarkLiveActivityController.swift; sourceTree = "<group>"; };
+		B00000000000000000000028 /* ChronomarkLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronomarkLiveActivityIntents.swift; sourceTree = "<group>"; };
 		B00000000000000000000018 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B00000000000000000000025 /* ChronomarkLiveActivities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ChronomarkLiveActivities.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -329,6 +338,7 @@
 				B00000000000000000000003 /* ChronomarkLiveActivities.swift */,
 				B00000000000000000000018 /* Assets.xcassets */,
 				B00000000000000000000004 /* Info.plist */,
+				B00000000000000000000025 /* ChronomarkLiveActivities.entitlements */,
 			);
 			path = ChronomarkLiveActivities;
 			sourceTree = "<group>";
@@ -338,6 +348,7 @@
 			children = (
 				B00000000000000000000013 /* ChronomarkTimerAttributes.swift */,
 				B00000000000000000000015 /* ChronomarkLiveActivityController.swift */,
+				B00000000000000000000028 /* ChronomarkLiveActivityIntents.swift */,
 			);
 			path = LiveActivities;
 			sourceTree = "<group>";
@@ -490,6 +501,7 @@
 				440DE4A82FB2000000910C7F /* SummarizeMyDayViewController.swift in Sources */,
 				B00000000000000000000012 /* ChronomarkTimerAttributes.swift in Sources */,
 				B00000000000000000000014 /* ChronomarkLiveActivityController.swift in Sources */,
+				B00000000000000000000026 /* ChronomarkLiveActivityIntents.swift in Sources */,
 				440DE4AC2FB3000000910C7F /* AppGroupSwiftDataMigration.swift in Sources */,
 				440DE4A22FB1000000910C7F /* ScreenshotSampleData.swift in Sources */,
 				440DE4A42FB1000000910C7F /* ScreenshotSampleCoordinator.swift in Sources */,
@@ -502,6 +514,12 @@
 			files = (
 				B00000000000000000000001 /* ChronomarkLiveActivities.swift in Sources */,
 				B00000000000000000000011 /* ChronomarkTimerAttributes.swift in Sources */,
+				B00000000000000000000027 /* ChronomarkLiveActivityIntents.swift in Sources */,
+				B00000000000000000000020 /* ActivityType.swift in Sources */,
+				B00000000000000000000021 /* Activity.swift in Sources */,
+				B00000000000000000000022 /* ActivityTag.swift in Sources */,
+				B00000000000000000000023 /* ActivityTimerCache.swift in Sources */,
+				B00000000000000000000024 /* AppGroupSwiftDataMigration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -698,6 +716,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ChronomarkLiveActivities/ChronomarkLiveActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
@@ -727,6 +746,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ChronomarkLiveActivities/ChronomarkLiveActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;

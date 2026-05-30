@@ -181,6 +181,7 @@ final class TimerViewController: UIViewController {
     }
 
     @objc private func applicationDidBecomeActive() {
+        reconcileTimerControlsWithCache()
         refreshDisplayedTimers()
     }
 
@@ -678,6 +679,16 @@ final class TimerViewController: UIViewController {
         TimerSessionState.notifyActiveTimersChanged()
     }
 
+    private func detachTimerControlsView(activityTypeID: UUID) {
+        guard let timerControlsView = timerControlsViews.first(where: { $0.activityTypeID == activityTypeID }) else {
+            return
+        }
+
+        timerControlsStackView.removeArrangedSubview(timerControlsView)
+        timerControlsView.removeFromSuperview()
+        timerControlsViews.removeAll { $0 === timerControlsView }
+    }
+
     private func promptForInitialActivityTypeIfNeeded() {
 #if DEBUG
         guard !isUsingScreenshotSamples else {
@@ -885,6 +896,67 @@ final class TimerViewController: UIViewController {
     private func refreshDisplayedTimers() {
         for timerControlsView in timerControlsViews {
             timerControlsView.refreshDisplayedElapsedTime()
+        }
+    }
+
+    private func reconcileTimerControlsWithCache() {
+#if DEBUG
+        guard !isUsingScreenshotSamples else {
+            return
+        }
+#endif
+        guard let modelContext else {
+            return
+        }
+
+        do {
+            let now = Date()
+            let activityTypes = try modelContext.fetch(FetchDescriptor<ActivityType>())
+            let activityTypesByID = Dictionary(
+                uniqueKeysWithValues: activityTypes.map { ($0.uniqueID, $0) }
+            )
+            let caches = try modelContext.fetch(FetchDescriptor<ActivityTimerCache>())
+            let cacheIDs = Set(caches.map(\.activityTypeUniqueID))
+            var didChangeTimerControls = false
+            let activeTimerControlsViews = timerControlsViews.filter(\.hasActiveTimer)
+
+            for timerControlsView in activeTimerControlsViews {
+                guard !cacheIDs.contains(timerControlsView.activityTypeID) else {
+                    continue
+                }
+
+                let activityTypeID = timerControlsView.activityTypeID
+                detachTimerControlsView(activityTypeID: timerControlsView.activityTypeID)
+                TimerSessionState.notifyActivityPersisted(activityTypeID: activityTypeID)
+                didChangeTimerControls = true
+            }
+
+            let sortedCaches = caches.sorted { lhs, rhs in
+                lhs.lastUpdateTime > rhs.lastUpdateTime
+            }
+
+            for cache in sortedCaches {
+                guard let activityType = activityTypesByID[cache.activityTypeUniqueID] else {
+                    continue
+                }
+
+                if let timerControlsView = timerControlsViews.first(where: { $0.activityTypeID == cache.activityTypeUniqueID }),
+                   timerControlsView.hasActiveTimer,
+                   timerControlsView.matches(cache: cache, now: now) {
+                    continue
+                }
+
+                detachTimerControlsView(activityTypeID: cache.activityTypeUniqueID)
+                appendRestoredTimerControlsView(activityType: activityType, cache: cache)
+                didChangeTimerControls = true
+            }
+
+            if didChangeTimerControls {
+                TimerSessionState.markTimerStarted()
+                TimerSessionState.notifyActiveTimersChanged()
+            }
+        } catch {
+            assertionFailure("Unable to reconcile timer controls with cache: \(error)")
         }
     }
 

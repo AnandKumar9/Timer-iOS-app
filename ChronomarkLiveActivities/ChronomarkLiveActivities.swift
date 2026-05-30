@@ -7,7 +7,6 @@ struct ChronomarkLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
             ActivityConfiguration(for: ChronomarkTimerAttributes.self) { context in
                 ChronomarkLockScreenLiveActivityView(context: context)
-                    .widgetURL(Self.timerURL)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
@@ -37,7 +36,7 @@ struct ChronomarkLiveActivityWidget: Widget {
         }
     }
 
-    private static let timerURL = URL(string: "chronomark://timer")
+    static let timerURL = URL(string: "chronomark://timer")
     static let activityNameFontSize: CGFloat = 20
 
     static func formattedTime(_ seconds: Int) -> String {
@@ -84,19 +83,24 @@ private struct ChronomarkLockScreenLiveActivityView: View {
     var body: some View {
         VStack(spacing: 16) {
             ChronomarkLiveActivityRow(context: context)
+                .widgetURL(ChronomarkLiveActivityWidget.timerURL)
             if Self.showsControls {
-                ChronomarkLiveActivityControlRow(state: context.state)
+                ChronomarkLiveActivityControlRow(context: context)
             }
         }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
     }
 
-    private static let showsControls = false
+    private static let showsControls = true
 }
 
 private struct ChronomarkLiveActivityControlRow: View {
-    let state: ChronomarkTimerAttributes.ContentState
+    let context: ActivityViewContext<ChronomarkTimerAttributes>
+
+    private var state: ChronomarkTimerAttributes.ContentState {
+        context.state
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -110,7 +114,13 @@ private struct ChronomarkLiveActivityControlRow: View {
                         .resolved(rawValue: state.accentColorRawValue)
                         .accent
                         .opacity(0.14),
-                    intent: ChronomarkLiveActivityResumeIntent()
+                    intent: ChronomarkLiveActivityResumeIntent(
+                        activityTypeID: context.attributes.activityTypeUniqueID,
+                        activityName: state.activityName,
+                        elapsedSeconds: state.elapsedSeconds,
+                        fontRawValue: state.fontRawValue,
+                        accentColorRawValue: state.accentColorRawValue
+                    )
                 )
             } else {
                 ChronomarkLiveActivityControlButton(
@@ -122,7 +132,14 @@ private struct ChronomarkLiveActivityControlRow: View {
                         .resolved(rawValue: state.accentColorRawValue)
                         .paused
                         .opacity(0.22),
-                    intent: ChronomarkLiveActivityPauseIntent()
+                    intent: ChronomarkLiveActivityPauseIntent(
+                        activityTypeID: context.attributes.activityTypeUniqueID,
+                        activityName: state.activityName,
+                        elapsedSeconds: state.elapsedSeconds,
+                        timerStartDate: state.timerStartDate,
+                        fontRawValue: state.fontRawValue,
+                        accentColorRawValue: state.accentColorRawValue
+                    )
                 )
             }
 
@@ -132,7 +149,14 @@ private struct ChronomarkLiveActivityControlRow: View {
                 state: state,
                 foregroundColor: .chronomarkStopButton,
                 backgroundColor: .chronomarkStopButtonBackground,
-                intent: ChronomarkLiveActivityStopIntent()
+                intent: ChronomarkLiveActivityStopIntent(
+                    activityTypeID: context.attributes.activityTypeUniqueID,
+                    activityName: state.activityName,
+                    elapsedSeconds: state.elapsedSeconds,
+                    timerStartDate: state.timerStartDate,
+                    fontRawValue: state.fontRawValue,
+                    accentColorRawValue: state.accentColorRawValue
+                )
             )
         }
         .frame(height: 46)
@@ -166,30 +190,6 @@ private struct ChronomarkLiveActivityControlButton<Intent: AppIntent>: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
-    }
-}
-
-private struct ChronomarkLiveActivityPauseIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Pause Timer"
-
-    func perform() async throws -> some IntentResult {
-        return .result()
-    }
-}
-
-private struct ChronomarkLiveActivityResumeIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Resume Timer"
-
-    func perform() async throws -> some IntentResult {
-        return .result()
-    }
-}
-
-private struct ChronomarkLiveActivityStopIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Stop Timer"
-
-    func perform() async throws -> some IntentResult {
-        return .result()
     }
 }
 

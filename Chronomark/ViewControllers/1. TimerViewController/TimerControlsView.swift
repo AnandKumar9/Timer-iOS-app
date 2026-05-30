@@ -120,6 +120,23 @@ final class TimerControlsView: UIView {
         updateLastActivityRow()
     }
 
+    func matches(cache: ActivityTimerCache, now: Date) -> Bool {
+        guard activityTypeID == cache.activityTypeUniqueID else {
+            return false
+        }
+
+        let expectedState: ActivityTimerState = cache.isRunning ? .running : .paused
+        guard activityTimerState == expectedState else {
+            return false
+        }
+
+        let cachedElapsedTime = cache.isRunning
+            ? cache.timeElapsed + now.timeIntervalSince(cache.lastUpdateTime)
+            : cache.timeElapsed
+
+        return abs(activeElapsedTime - max(0, cachedElapsedTime)) < 2
+    }
+
     func startIfNeeded() {
         guard timerState == .stopped else {
             return
