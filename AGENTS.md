@@ -45,15 +45,16 @@ k redesign theme, explore mode designs
 k settings for dark/light mode
 k create tag button
 
-start stop button in live activity + background run
-intents for app suggestions
-pin activity types
-fav activity type to start from app menu
+k start stop button in live activity + background run
+k fav activity type to start from app menu
 
-server side support
+iCloud support
 more intelligent view when history screen has plenty of data
-does there need to be a watchOS app too
 
+search on types and history screen
+intents for app suggestions
+help screens
+does there need to be a watchOS app too
 
 locations
 insights
