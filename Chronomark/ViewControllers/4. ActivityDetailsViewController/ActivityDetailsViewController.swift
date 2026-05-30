@@ -968,6 +968,15 @@ final class ActivityDetailsViewController: UIViewController {
             return
         }
 
+        guard let adjustedDuration = adjustedDurationForTimestampEdits(
+            activity: activity,
+            startDate: startDate,
+            completionDate: completionDate
+        ), adjustedDuration > 0 else {
+            presentInvalidDurationAlert()
+            return
+        }
+
         let previousActivityType = activity.activityType
         let previousActivityTypeID = previousActivityType.uniqueID
 
@@ -981,7 +990,7 @@ final class ActivityDetailsViewController: UIViewController {
 
         activity.activityStartTime = startDate
         activity.activityCompletionTime = completionDate
-        activity.timeTaken = completionDate.timeIntervalSince(startDate)
+        activity.timeTaken = adjustedDuration
         activity.activityNotes = normalizedNote(editedActivityNotes)
 
         do {
@@ -1195,10 +1204,37 @@ final class ActivityDetailsViewController: UIViewController {
         present(alertController, animated: true)
     }
 
+    private func adjustedDurationForTimestampEdits(
+        activity: Activity,
+        startDate: Date,
+        completionDate: Date
+    ) -> TimeInterval? {
+        guard let originalDuration = resolvedDuration(for: activity) else {
+            return nil
+        }
+
+        let originalStartDate = originalStartTime ?? activity.activityStartTime ?? startDate
+        let originalCompletionDate = originalCompletionTime ?? activity.activityCompletionTime ?? completionDate
+        let startDelta = startDate.timeIntervalSince(originalStartDate)
+        let completionDelta = completionDate.timeIntervalSince(originalCompletionDate)
+
+        return originalDuration - startDelta + completionDelta
+    }
+
     private func presentFutureDateAlert() {
         let alertController = UIAlertController(
             title: "Invalid Time",
             message: "Activity times cannot be in the future.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+
+    private func presentInvalidDurationAlert() {
+        let alertController = UIAlertController(
+            title: "Invalid Duration",
+            message: "Duration must be greater than 0. Adjust the start or completion time and try again.",
             preferredStyle: .alert
         )
         alertController.addAction(UIAlertAction(title: "OK", style: .default))
