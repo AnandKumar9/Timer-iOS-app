@@ -3,17 +3,11 @@ import UIKit
 
 enum AppGroupStoreDiagnostics {
     private static let migrationCompletedVersionKey = "AppGroupSwiftDataMigration.completedVersion"
-    private static let mainTargetUserDefaultsKeys = [
-        "selectedAppAppearance",
-        "ActivityTypeSingleCategoryMigration.completed",
-        "alertWhenTimersRestored",
-        "restoreWindowHours",
-        "showDurationSeconds",
-        "activityTypeDisplayOrder",
-        "ActivityTypesViewController.selectedTagNames",
-        "ActivityTypesViewController.selectedFilterMode",
-        "selectedAppFont",
-        "selectedAppAccentColor"
+    private static let appGroupMigrationUserDefaultsKeys = [
+        "AppGroupSwiftDataMigration.legacyStoreExistedAtMigration",
+        "AppGroupSwiftDataMigration.legacyCountsAtMigration",
+        "AppGroupSwiftDataMigration.sharedCountsAfterMigration",
+        "AppGroupSwiftDataMigration.migratedAt"
     ]
     private static let appGroupStoreFileNames = [
         "Chronomark.store",
@@ -29,19 +23,12 @@ enum AppGroupStoreDiagnostics {
     @MainActor
     static func makeReport(modelContext: ModelContext?) -> String {
         var lines: [String] = []
-        let bundle = Bundle.main
 
-        lines.append("Chronomark Store Diagnostics")
+        appendAppDetails(to: &lines)
         lines.append("")
-        lines.append("Bundle ID: \(bundle.bundleIdentifier ?? "unknown")")
-        lines.append("Version: \(bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown")")
-        lines.append("Build: \(bundle.infoDictionary?["CFBundleVersion"] as? String ?? "unknown")")
-        lines.append("App Group ID: \(ChronomarkModelContainerFactory.appGroupIdentifier)")
-        lines.append("")
-
         appendMainTargetUserDefaults(to: &lines)
         lines.append("")
-        appendAppGroupDetails(to: &lines)
+        appendAppGroupStoreDetails(to: &lines)
         lines.append("")
         appendLegacyStoreDetails(to: &lines)
         lines.append("")
@@ -78,8 +65,19 @@ enum AppGroupStoreDiagnostics {
         }
     }
 
-    private static func appendAppGroupDetails(to lines: inout [String]) {
-        lines.append("App Group")
+    private static func appendAppDetails(to lines: inout [String]) {
+        let bundle = Bundle.main
+
+        lines.append("")
+        lines.append("Bundle ID: \(bundle.bundleIdentifier ?? "unknown")")
+        lines.append("Version: \(bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown")")
+        lines.append("Build: \(bundle.infoDictionary?["CFBundleVersion"] as? String ?? "unknown")")
+        lines.append("App Group ID: \(ChronomarkModelContainerFactory.appGroupIdentifier)")
+    }
+
+    @MainActor
+    private static func appendAppGroupStoreDetails(to lines: inout [String]) {
+        lines.append("App Group Store Details -")
 
         if let containerURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: ChronomarkModelContainerFactory.appGroupIdentifier
@@ -94,24 +92,32 @@ enum AppGroupStoreDiagnostics {
             lines.append("URL: unavailable")
         }
 
-        if let userDefaults = UserDefaults(suiteName: ChronomarkModelContainerFactory.appGroupIdentifier) {
-            lines.append("Migration marker: \(userDefaults.integer(forKey: migrationCompletedVersionKey))")
-        } else {
-            lines.append("Migration marker: unavailable")
-        }
+        lines.append("Record Counts -")
+        appendSharedStoreRecordCounts(to: &lines)
     }
 
     private static func appendMainTargetUserDefaults(to lines: inout [String]) {
-        lines.append("Main Target UserDefaults -")
+        lines.append("Main Target Migration UserDefaults -")
 
-        for key in mainTargetUserDefaultsKeys {
-            let value = UserDefaults.standard.object(forKey: key)
-            lines.append("\(key): \(formattedUserDefaultsValue(value))")
+        guard let appGroupUserDefaults = UserDefaults(
+            suiteName: ChronomarkModelContainerFactory.appGroupIdentifier
+        ) else {
+            lines.append("migrationStepCrossed: unavailable")
+            return
+        }
+
+        lines.append("migrationStepCrossed: \(appGroupUserDefaults.integer(forKey: migrationCompletedVersionKey))")
+        for key in appGroupMigrationUserDefaultsKeys {
+            let value = appGroupUserDefaults.object(forKey: key)
+            lines.append(
+                "\(displayName(forAppGroupMigrationKey: key)): \(formattedMigrationValue(value, forKey: key))"
+            )
         }
     }
 
+    @MainActor
     private static func appendLegacyStoreDetails(to lines: inout [String]) {
-        lines.append("Legacy Store")
+        lines.append("Legacy Store Details -")
 
         guard let applicationSupportURL = FileManager.default.urls(
             for: .applicationSupportDirectory,
@@ -127,14 +133,27 @@ enum AppGroupStoreDiagnostics {
             in: applicationSupportURL,
             to: &lines
         )
+        lines.append("Record Counts -")
+
+        guard legacyStoreExists() else {
+            lines.append("Skipped: default.store is not present")
+            return
+        }
+
+        do {
+            let container = try ChronomarkModelContainerFactory.makeLegacyModelContainer()
+            appendCounts(modelContext: container.mainContext, to: &lines)
+        } catch {
+            lines.append("Open failed: \(error)")
+        }
     }
 
     @MainActor
     private static func appendCurrentStoreCounts(
         modelContext: ModelContext?,
         to lines: inout [String]
-    ) {
-        lines.append("Current Model Context Counts")
+    ) { 
+        lines.append("Current UI Model Context Counts -")
 
         guard let modelContext else {
             lines.append("Unavailable")
@@ -146,10 +165,15 @@ enum AppGroupStoreDiagnostics {
 
     @MainActor
     private static func appendSharedStoreCounts(to lines: inout [String]) {
-        lines.append("Fresh Shared Store Counts")
+        lines.append("Fresh Shared Store Counts -")
+        appendSharedStoreRecordCounts(to: &lines)
+    }
 
+    @MainActor
+    private static func appendSharedStoreRecordCounts(to lines: inout [String]) {
         do {
-            let context = try ModelContext(ChronomarkModelContainerFactory.makeSharedModelContainer())
+            let container = try ChronomarkModelContainerFactory.makeSharedModelContainer()
+            let context = ModelContext(container)
             appendCounts(modelContext: context, to: &lines)
         } catch {
             lines.append("Open failed: \(error)")
@@ -193,6 +217,18 @@ enum AppGroupStoreDiagnostics {
         return fileSize.uint64Value
     }
 
+    private static func legacyStoreExists() -> Bool {
+        guard let applicationSupportURL = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else {
+            return false
+        }
+
+        let storeURL = applicationSupportURL.appendingPathComponent("default.store")
+        return FileManager.default.fileExists(atPath: storeURL.path)
+    }
+
     private static func formattedUserDefaultsValue(_ value: Any?) -> String {
         guard let value else {
             return "unset"
@@ -206,7 +242,36 @@ enum AppGroupStoreDiagnostics {
             return "[\(array.map { "\"\($0)\"" }.joined(separator: ", "))]"
         }
 
+        if let dictionary = value as? [String: Int] {
+            return dictionary
+                .sorted { $0.key < $1.key }
+                .map { "\($0.key)=\($0.value)" }
+                .joined(separator: ", ")
+        }
+
         return String(describing: value)
+    }
+
+    private static func formattedMigrationValue(_ value: Any?, forKey key: String) -> String {
+        guard
+            key == "AppGroupSwiftDataMigration.legacyCountsAtMigration"
+                || key == "AppGroupSwiftDataMigration.sharedCountsAfterMigration"
+        else {
+            return formattedUserDefaultsValue(value)
+        }
+
+        guard let dictionary = value as? [String: Int] else {
+            return formattedUserDefaultsValue(value)
+        }
+
+        return "\(dictionary["Activity"] ?? 0)"
+    }
+
+    private static func displayName(forAppGroupMigrationKey key: String) -> String {
+        key.replacingOccurrences(
+            of: "AppGroupSwiftDataMigration.",
+            with: ""
+        )
     }
 
     private static func topPresentedViewController(from viewController: UIViewController) -> UIViewController {

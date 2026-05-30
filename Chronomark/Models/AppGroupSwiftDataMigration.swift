@@ -59,6 +59,10 @@ enum AppGroupSwiftDataMigration {
 
     private static let migrationVersion = 1
     private static let completedVersionKey = "AppGroupSwiftDataMigration.completedVersion"
+    private static let legacyStoreExistedAtMigrationKey = "AppGroupSwiftDataMigration.legacyStoreExistedAtMigration"
+    private static let legacyCountsAtMigrationKey = "AppGroupSwiftDataMigration.legacyCountsAtMigration"
+    private static let sharedCountsAfterMigrationKey = "AppGroupSwiftDataMigration.sharedCountsAfterMigration"
+    private static let migratedAtKey = "AppGroupSwiftDataMigration.migratedAt"
 
     @MainActor
     static func migrateIfNeeded() throws {
@@ -68,14 +72,21 @@ enum AppGroupSwiftDataMigration {
             return
         }
 
+        let legacyStoreExistedAtMigration = legacyStoreExists()
         let legacyContainer = try ChronomarkModelContainerFactory.makeLegacyModelContainer()
         let sharedContainer = try ChronomarkModelContainerFactory.makeSharedModelContainer()
+        let legacyCountsAtMigration = try recordCounts(in: legacyContainer.mainContext)
 
         try migrate(
             from: legacyContainer.mainContext,
             to: sharedContainer.mainContext
         )
 
+        let sharedCountsAfterMigration = try recordCounts(in: sharedContainer.mainContext)
+        userDefaults.set(legacyStoreExistedAtMigration, forKey: legacyStoreExistedAtMigrationKey)
+        userDefaults.set(legacyCountsAtMigration, forKey: legacyCountsAtMigrationKey)
+        userDefaults.set(sharedCountsAfterMigration, forKey: sharedCountsAfterMigrationKey)
+        userDefaults.set(Date(), forKey: migratedAtKey)
         userDefaults.set(migrationVersion, forKey: completedVersionKey)
         deleteLegacyStoreFilesIfPresent()
     }
@@ -183,6 +194,16 @@ enum AppGroupSwiftDataMigration {
         try sharedContext.save()
     }
 
+    @MainActor
+    private static func recordCounts(in modelContext: ModelContext) throws -> [String: Int] {
+        [
+            "ActivityType": try modelContext.fetchCount(FetchDescriptor<ActivityType>()),
+            "Activity": try modelContext.fetchCount(FetchDescriptor<Activity>()),
+            "ActivityTag": try modelContext.fetchCount(FetchDescriptor<ActivityTag>()),
+            "ActivityTimerCache": try modelContext.fetchCount(FetchDescriptor<ActivityTimerCache>())
+        ]
+    }
+
     private static func deleteLegacyStoreFilesIfPresent() {
         guard let applicationSupportURL = FileManager.default.urls(
             for: .applicationSupportDirectory,
@@ -209,5 +230,17 @@ enum AppGroupSwiftDataMigration {
                 assertionFailure("Unable to delete legacy SwiftData store file \(fileURL): \(error)")
             }
         }
+    }
+
+    private static func legacyStoreExists() -> Bool {
+        guard let applicationSupportURL = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else {
+            return false
+        }
+
+        let storeURL = applicationSupportURL.appendingPathComponent("default.store")
+        return FileManager.default.fileExists(atPath: storeURL.path)
     }
 }
