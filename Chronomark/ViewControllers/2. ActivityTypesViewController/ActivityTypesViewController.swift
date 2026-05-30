@@ -241,10 +241,16 @@ final class ActivityTypesViewController: UIViewController {
             contentView.addSubview(labelStackView)
             contentView.addSubview(actionView)
 
+            let labelStackBottomConstraint = labelStackView.bottomAnchor.constraint(
+                equalTo: contentView.bottomAnchor,
+                constant: -10
+            )
+            labelStackBottomConstraint.priority = .defaultHigh
+
             NSLayoutConstraint.activate([
                 labelStackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
                 labelStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
-                labelStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
+                labelStackBottomConstraint,
                 labelStackView.trailingAnchor.constraint(equalTo: actionView.leadingAnchor, constant: -16),
 
                 actionView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -428,7 +434,7 @@ final class ActivityTypesViewController: UIViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 56
+        tableView.estimatedRowHeight = 68
         tableView.register(ActivityTypeCell.self, forCellReuseIdentifier: ActivityTypeCell.reuseIdentifier)
     }
 
