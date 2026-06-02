@@ -656,7 +656,7 @@
 				CODE_SIGN_ENTITLEMENTS = Chronomark/Chronomark.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chronomark/Info.plist;
@@ -667,7 +667,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.outonaweekend.chronomark;
 				PRODUCT_NAME = Chronomark;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -687,7 +687,7 @@
 				CODE_SIGN_ENTITLEMENTS = Chronomark/Chronomark.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					ScreenshotSampleData.swift,
@@ -703,7 +703,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.outonaweekend.chronomark;
 				PRODUCT_NAME = Chronomark;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -723,7 +723,7 @@
 				CODE_SIGN_ENTITLEMENTS = ChronomarkLiveActivities/ChronomarkLiveActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChronomarkLiveActivities/Info.plist;
@@ -733,7 +733,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.outonaweekend.chronomark.LiveActivities;
 				PRODUCT_NAME = ChronomarkLiveActivities;
 				SKIP_INSTALL = YES;
@@ -753,7 +753,7 @@
 				CODE_SIGN_ENTITLEMENTS = ChronomarkLiveActivities/ChronomarkLiveActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7SPT8XUUFN;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChronomarkLiveActivities/Info.plist;
@@ -763,7 +763,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.outonaweekend.chronomark.LiveActivities;
 				PRODUCT_NAME = ChronomarkLiveActivities;
 				SKIP_INSTALL = YES;
