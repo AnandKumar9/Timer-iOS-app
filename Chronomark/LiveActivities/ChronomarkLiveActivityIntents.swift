@@ -269,8 +269,7 @@ enum ChronomarkLiveActivityIntentHandler {
                     activityCompletionTime: now,
                     timeTaken: elapsedTime
                 )
-                activityType.activities.append(completedActivity)
-                context.insert(completedActivity)
+                try ActivityCompletionPersistence.upsertCompletedActivity(completedActivity, in: context)
             }
 
             context.delete(cache)

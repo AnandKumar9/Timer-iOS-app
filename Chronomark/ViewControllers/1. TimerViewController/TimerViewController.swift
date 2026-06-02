@@ -435,10 +435,7 @@ final class TimerViewController: UIViewController {
         let timerControlsView = TimerControlsView(activity: activity, restoredState: restoredState)
         timerControlsView.translatesAutoresizingMaskIntoConstraints = false
         timerControlsView.onActivityStopped = { [weak self] activity in
-            self?.applyFinalElapsedTime(to: activity)
-            self?.deleteTimerCache(activityTypeID: activity.activityType.uniqueID)
-            self?.endLiveActivity(activityTypeID: activity.activityType.uniqueID, elapsedTime: activity.timeTaken)
-            self?.saveTimerActivity(activity)
+            self?.completeTimerActivity(activity)
         }
         timerControlsView.onTimerStarted = { [weak self] timerControlsView in
             self?.createOrReplaceTimerCache(from: timerControlsView)
@@ -1117,7 +1114,7 @@ final class TimerViewController: UIViewController {
         }
     }
 
-    private func saveTimerActivity(_ activity: Activity) {
+    private func completeTimerActivity(_ activity: Activity) {
 #if DEBUG
         guard !isUsingScreenshotSamples else {
             return
@@ -1131,19 +1128,18 @@ final class TimerViewController: UIViewController {
             return
         }
 
-        if !activity.activityType.activities.contains(where: { $0 === activity }) {
-            activity.activityType.activities.append(activity)
-        }
-
-        modelContext.insert(activity)
-
         do {
+            applyFinalElapsedTime(to: activity)
+            deleteTimerCache(activityTypeID: activity.activityType.uniqueID, shouldSave: false)
+            try ActivityCompletionPersistence.upsertCompletedActivity(activity, in: modelContext)
             try modelContext.save()
+            endLiveActivity(activityTypeID: activity.activityType.uniqueID, elapsedTime: activity.timeTaken)
             TimerSessionState.notifyActivityPersisted(activityTypeID: activity.activityType.uniqueID)
+            TimerSessionState.notifyActiveTimersChanged()
             removeExpiredInactiveTimerControls()
         } catch {
             modelContext.delete(activity)
-            assertionFailure("Unable to save timer activity: \(error)")
+            assertionFailure("Unable to complete timer activity: \(error)")
         }
     }
 
