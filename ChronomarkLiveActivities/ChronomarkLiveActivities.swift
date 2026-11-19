@@ -7,6 +7,9 @@ struct ChronomarkLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
             ActivityConfiguration(for: ChronomarkTimerAttributes.self) { context in
                 ChronomarkLockScreenLiveActivityView(context: context)
+                    .activityBackgroundTint(.chronomarkLiveActivityBackground)
+                    .activitySystemActionForegroundColor(.white)
+                    .environment(\.colorScheme, .dark)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
@@ -205,6 +208,7 @@ private struct ChronomarkLiveActivityRow: View {
 
             Text(context.state.activityName)
                 .font(ChronomarkLiveActivityWidget.activityNameFont(for: context.state))
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .truncationMode(.tail)
