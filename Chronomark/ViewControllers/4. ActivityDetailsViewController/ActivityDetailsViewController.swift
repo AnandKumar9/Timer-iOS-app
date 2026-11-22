@@ -188,18 +188,27 @@ final class ActivityDetailsViewController: UIViewController {
         private let titleLabel = UILabel()
         let datePicker = UIDatePicker()
 
-        init(iconName: String, title: String, date: Date) {
+        init(iconName: String, title: String, date: Date, adjustmentMinutes: Int) {
             super.init(frame: .zero)
-            configure(iconName: iconName, title: title, date: date)
+            configure(iconName: iconName, title: title, date: date, adjustmentMinutes: adjustmentMinutes)
         }
 
         required init?(coder: NSCoder) {
             super.init(coder: coder)
-            configure(iconName: "calendar", title: "", date: Date())
+            configure(iconName: "calendar", title: "", date: Date(), adjustmentMinutes: 15)
         }
 
-        private func configure(iconName: String, title: String, date: Date) {
+        private func configure(iconName: String, title: String, date: Date, adjustmentMinutes: Int) {
             let textStackView = UIStackView()
+            let controlsStackView = UIStackView()
+            let subtractButton = makeTimeAdjustmentButton(
+                title: "-\(adjustmentMinutes)",
+                minuteDelta: -adjustmentMinutes
+            )
+            let addButton = makeTimeAdjustmentButton(
+                title: "+\(adjustmentMinutes)",
+                minuteDelta: adjustmentMinutes
+            )
 
             iconView.image = UIImage(systemName: iconName)
             iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
@@ -216,12 +225,21 @@ final class ActivityDetailsViewController: UIViewController {
             datePicker.preferredDatePickerStyle = .compact
             datePicker.tintColor = AppTheme.accent
             datePicker.translatesAutoresizingMaskIntoConstraints = false
+            datePicker.setContentHuggingPriority(.required, for: .horizontal)
+            datePicker.setContentCompressionResistancePriority(.required, for: .horizontal)
 
             textStackView.axis = .vertical
             textStackView.spacing = 6
             textStackView.translatesAutoresizingMaskIntoConstraints = false
             textStackView.addArrangedSubview(titleLabel)
-            textStackView.addArrangedSubview(datePicker)
+
+            controlsStackView.axis = .horizontal
+            controlsStackView.alignment = .center
+            controlsStackView.spacing = 6
+            controlsStackView.addArrangedSubview(subtractButton)
+            controlsStackView.addArrangedSubview(addButton)
+            controlsStackView.addArrangedSubview(datePicker)
+            textStackView.addArrangedSubview(controlsStackView)
 
             addSubview(iconView)
             addSubview(textStackView)
@@ -237,6 +255,33 @@ final class ActivityDetailsViewController: UIViewController {
                 textStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
                 textStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
             ])
+        }
+
+        private func makeTimeAdjustmentButton(title: String, minuteDelta: Int) -> UIButton {
+            var configuration = UIButton.Configuration.filled()
+            configuration.title = title
+            configuration.baseForegroundColor = .white
+            configuration.baseBackgroundColor = AppTheme.accent
+            configuration.contentInsets = NSDirectionalEdgeInsets(top: 7, leading: 8, bottom: 7, trailing: 8)
+            configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+                var attributes = attributes
+                attributes.font = AppTheme.roundedFont(ofSize: 14, weight: .semibold)
+                return attributes
+            }
+
+            let button = UIButton(type: .system)
+            button.configuration = configuration
+            button.addAction(
+                UIAction { [weak self] _ in
+                    guard let self else { return }
+                    datePicker.date = datePicker.date.addingTimeInterval(TimeInterval(minuteDelta * 60))
+                    datePicker.sendActions(for: .valueChanged)
+                },
+                for: .touchUpInside
+            )
+            button.setContentHuggingPriority(.required, for: .horizontal)
+            button.setContentCompressionResistancePriority(.required, for: .horizontal)
+            return button
         }
     }
 
@@ -615,15 +660,18 @@ final class ActivityDetailsViewController: UIViewController {
 
         if isEditingActivityDetails {
             let activityTypeRow = makeEditableActivityTypeRow(selectedActivityType: selectedActivityType ?? activity.activityType)
+            let adjustmentMinutes = (duration ?? 0) < 60 * 60 ? 15 : 30
             let startDateRow = EditableDateRowView(
                 iconName: "calendar.badge.plus",
                 title: "Start Time",
-                date: activity.activityStartTime ?? Date()
+                date: activity.activityStartTime ?? Date(),
+                adjustmentMinutes: adjustmentMinutes
             )
             let completionDateRow = EditableDateRowView(
                 iconName: "checkmark.circle.fill",
                 title: "Completion Time",
-                date: activity.activityCompletionTime ?? Date()
+                date: activity.activityCompletionTime ?? Date(),
+                adjustmentMinutes: adjustmentMinutes
             )
             startDatePicker = startDateRow.datePicker
             completionDatePicker = completionDateRow.datePicker

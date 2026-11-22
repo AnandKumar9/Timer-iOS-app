@@ -338,6 +338,12 @@ final class ActivityHistoryViewController: UIViewController {
             self?.presentTagsSheet()
         }
     )
+    private lazy var insightsButton = UIBarButtonItem(
+        image: UIImage(systemName: "apple.intelligence"),
+        primaryAction: UIAction { [weak self] _ in
+            self?.showActivityInsights()
+        }
+    )
     private var activityRows: [ActivityHistoryRow] = []
     private let maximumVisibleTagCount = 4
     private var showsOnLockScreen = true
@@ -377,7 +383,8 @@ final class ActivityHistoryViewController: UIViewController {
         title = "Activity History"
         favoriteButton.accessibilityLabel = "Favorite Activity Type"
         tagsButton.accessibilityLabel = "Edit Categories"
-        navigationItem.rightBarButtonItems = [favoriteButton, tagsButton]
+        insightsButton.accessibilityLabel = "Activity Insights"
+        navigationItem.rightBarButtonItems = [favoriteButton, tagsButton, insightsButton]
 
         configureActivityNameLabel()
         configureTagPreviewStackView()
@@ -417,6 +424,11 @@ final class ActivityHistoryViewController: UIViewController {
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
             emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)
         ])
+    }
+
+    private func showActivityInsights() {
+        let activityInsightsViewController = ActivityInsightsViewController()
+        navigationController?.pushViewController(activityInsightsViewController, animated: true)
     }
 
     private func configureActivityNameLabel() {
