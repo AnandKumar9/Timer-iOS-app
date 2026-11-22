@@ -452,7 +452,33 @@ final class TimerViewController: UIViewController {
         timerControlsView.onAddNoteTapped = { [weak self] activity in
             self?.presentNoteEditor(for: activity)
         }
+        timerControlsView.onLastActivityTapped = { [weak self] activity in
+            self?.showActivityDetails(for: activity)
+        }
         return timerControlsView
+    }
+
+    private func showActivityDetails(for activity: Activity) {
+        guard let presentingViewController = navigationController?.presentingViewController ?? presentingViewController else {
+            return
+        }
+
+        let activityDetailsViewController = ActivityDetailsViewController(
+            nibName: "ActivityDetailsViewController",
+            bundle: nil
+        )
+        activityDetailsViewController.modelContext = modelContext
+        activityDetailsViewController.activity = activity
+
+        let detailsNavigationController = UINavigationController(
+            rootViewController: activityDetailsViewController
+        )
+        detailsNavigationController.modalPresentationStyle = .pageSheet
+
+        dismiss(animated: true) { [weak self] in
+            presentingViewController.present(detailsNavigationController, animated: true)
+            detailsNavigationController.presentationController?.delegate = self
+        }
     }
 
     private func startLiveActivity(from timerControlsView: TimerControlsView) {
@@ -1281,6 +1307,12 @@ final class TimerViewController: UIViewController {
         TimerSessionState.notifyActiveTimersChanged()
     }
 #endif
+}
+
+extension TimerViewController: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        TimerSessionState.notifyActiveTimersChanged()
+    }
 }
 
 extension UIViewController {

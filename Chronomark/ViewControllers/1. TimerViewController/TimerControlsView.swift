@@ -47,7 +47,7 @@ struct RestoredTimerControlsState {
     let lastUpdateTime: Date
 }
 
-final class TimerControlsView: UIView {
+final class TimerControlsView: UIView, UIGestureRecognizerDelegate {
     private enum TimerState {
         case running
         case paused
@@ -60,7 +60,7 @@ final class TimerControlsView: UIView {
     private let stopButton = UIButton(type: .system)
     private let contentStackView = UIStackView()
     private let buttonStackView = UIStackView()
-    private let lastActivityRowView = UIView()
+    private let lastActivityRowView = UIControl()
     private let lastActivityDateLabel = UILabel()
     private let lastActivityDurationLabel = UILabel()
     private let lastActivityNoteLabel = UILabel()
@@ -78,6 +78,7 @@ final class TimerControlsView: UIView {
     var onTimerResumed: ((TimerControlsView) -> Void)?
     var onTimerPaused: ((TimerControlsView) -> Void)?
     var onAddNoteTapped: ((Activity) -> Void)?
+    var onLastActivityTapped: ((Activity) -> Void)?
     var hasActiveTimer: Bool {
         timerState != .stopped
     }
@@ -251,6 +252,25 @@ final class TimerControlsView: UIView {
             },
             for: .touchUpInside
         )
+
+        lastActivityRowView.accessibilityTraits = .button
+        lastActivityRowView.accessibilityLabel = "View last completed activity"
+        lastActivityRowView.addAction(
+            UIAction { [weak self] _ in
+                guard let self, let lastActivity = self.latestCompletedActivity() else {
+                    return
+                }
+
+                self.onLastActivityTapped?(lastActivity)
+            },
+            for: .touchUpInside
+        )
+        let lastActivityTapGestureRecognizer = UITapGestureRecognizer(
+            target: self,
+            action: #selector(lastActivityRowTapped)
+        )
+        lastActivityTapGestureRecognizer.delegate = self
+        lastActivityRowView.addGestureRecognizer(lastActivityTapGestureRecognizer)
 
         let summaryStackView = UIStackView(arrangedSubviews: [
             lastActivityDateLabel,
@@ -526,6 +546,22 @@ final class TimerControlsView: UIView {
             addLastActivityNoteButton.isHidden = false
         }
         lastActivityRowView.isHidden = false
+    }
+
+    @objc private func lastActivityRowTapped() {
+        guard let lastActivity = latestCompletedActivity() else {
+            return
+        }
+
+        onLastActivityTapped?(lastActivity)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard let touchedView = touch.view else {
+            return true
+        }
+
+        return !touchedView.isDescendant(of: addLastActivityNoteButton)
     }
 
     @objc private func durationDisplayDidChange() {

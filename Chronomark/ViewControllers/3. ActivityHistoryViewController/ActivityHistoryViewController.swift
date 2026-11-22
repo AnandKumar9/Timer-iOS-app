@@ -428,7 +428,7 @@ final class ActivityHistoryViewController: UIViewController {
 
     private func showActivityInsights() {
         let activityInsightsViewController = ActivityInsightsViewController()
-        navigationController?.pushViewController(activityInsightsViewController, animated: true)
+        present(activityInsightsViewController, animated: true)
     }
 
     private func configureActivityNameLabel() {
