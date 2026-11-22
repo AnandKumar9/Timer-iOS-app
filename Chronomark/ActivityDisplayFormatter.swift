@@ -48,11 +48,14 @@ enum ActivityDisplayFormatter {
             return "< 1 min"
         }
 
-        let totalMinutes = Int(ceil(seconds / 60))
+        let totalMinutes = displayedWholeMinutes(for: seconds)
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
 
         if hours > 0 {
+            guard minutes > 0 else {
+                return "\(hours) hr"
+            }
             return "\(hours) hr \(minutes) min"
         }
 
@@ -65,11 +68,14 @@ enum ActivityDisplayFormatter {
         }
 
         let seconds = max(0, duration)
-        let totalMinutes = max(1, Int(ceil(seconds / 60)))
+        let totalMinutes = max(1, displayedWholeMinutes(for: seconds))
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
 
         if hours > 0 {
+            guard minutes > 0 else {
+                return "\(hours) hr"
+            }
             return "\(hours) hr \(minutes) min"
         }
 
@@ -83,6 +89,9 @@ enum ActivityDisplayFormatter {
         let seconds = totalSeconds % 60
 
         if hours > 0 {
+            guard minutes > 0 || seconds > 0 else {
+                return "\(hours) hr"
+            }
             return "\(hours) hr \(minutes) min \(seconds) sec"
         }
 
@@ -91,5 +100,10 @@ enum ActivityDisplayFormatter {
         }
 
         return "\(seconds) sec"
+    }
+
+    private static func displayedWholeMinutes(for seconds: TimeInterval) -> Int {
+        let minutes = seconds / 60
+        return seconds < 10 * 60 ? Int(ceil(minutes)) : Int(minutes)
     }
 }
