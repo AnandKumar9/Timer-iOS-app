@@ -1,6 +1,9 @@
 import UIKit
 import SwiftData
 import ActivityKit
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 final class ActivityHistoryViewController: UIViewController {
     private static let noteCharacterLimit = 35
@@ -384,7 +387,7 @@ final class ActivityHistoryViewController: UIViewController {
         favoriteButton.accessibilityLabel = "Favorite Activity Type"
         tagsButton.accessibilityLabel = "Edit Categories"
         insightsButton.accessibilityLabel = "Activity Insights"
-        navigationItem.rightBarButtonItems = [favoriteButton, tagsButton, insightsButton]
+        updateInsightsButtonVisibility()
 
         configureActivityNameLabel()
         configureTagPreviewStackView()
@@ -427,8 +430,39 @@ final class ActivityHistoryViewController: UIViewController {
     }
 
     private func showActivityInsights() {
-        let activityInsightsViewController = ActivityInsightsViewController()
-        present(activityInsightsViewController, animated: true)
+        guard let activityType else {
+            return
+        }
+
+        let snapshots = activityType.activities
+            .compactMap { activity -> ActivityInsightSnapshot? in
+                guard
+                    let startTime = activity.activityStartTime,
+                    let endTime = activity.activityCompletionTime
+                else {
+                    return nil
+                }
+
+                return ActivityInsightSnapshot(
+                    startTime: startTime,
+                    endTime: endTime,
+                    name: activityType.name,
+                    activityNotes: activity.activityNotes
+                )
+            }
+            .sorted { $0.startTime > $1.startTime }
+            .prefix(20)
+
+        let activityInsightsViewController = ActivityInsightsViewController(
+            activityTypeID: activityType.uniqueID,
+            activityTypeName: activityType.name,
+            snapshots: Array(snapshots)
+        )
+        let navigationController = UINavigationController(
+            rootViewController: activityInsightsViewController
+        )
+        navigationController.modalPresentationStyle = .pageSheet
+        present(navigationController, animated: true)
     }
 
     private func configureActivityNameLabel() {
@@ -604,6 +638,7 @@ final class ActivityHistoryViewController: UIViewController {
 
         guard let activityType else {
             activityRows = []
+            updateInsightsButtonVisibility()
             configureTagPreviews([])
             updateActivityStats()
             updateLockScreenToggleIcons()
@@ -629,8 +664,27 @@ final class ActivityHistoryViewController: UIViewController {
                 return lhsStartTime > rhsStartTime
             }
             .compactMap(makeActivityHistoryRow)
+        updateInsightsButtonVisibility()
         updateActivityStats()
         updateContent()
+    }
+
+    private func updateInsightsButtonVisibility() {
+        let shouldShowInsights = foundationModelsAreAvailable
+            && (activityType?.activities.count ?? 0) >= 10
+
+        navigationItem.rightBarButtonItems = shouldShowInsights
+            ? [favoriteButton, tagsButton, insightsButton]
+            : [favoriteButton, tagsButton]
+    }
+
+    private var foundationModelsAreAvailable: Bool {
+#if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            return SystemLanguageModel().isAvailable
+        }
+#endif
+        return false
     }
 
     private func updateActivityStats() {
