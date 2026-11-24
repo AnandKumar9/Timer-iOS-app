@@ -446,6 +446,10 @@ final class ActivityHistoryViewController: UIViewController {
                 return ActivityInsightSnapshot(
                     startTime: startTime,
                     endTime: endTime,
+                    activityDuration: activityDuration(
+                        for: activity,
+                        completionTime: endTime
+                    ),
                     name: activityType.name,
                     activityNotes: activity.activityNotes
                 )
